@@ -1,0 +1,163 @@
+# 룰엔진 정의 — 규제에서 파생된 결정적 체크 (설계 문서 §8.2)
+# 각 룰: id / 적용유형 / 패턴 / 위반근거(규제 매핑) / 심각도 / 수정 가이드
+# kind: forbidden(금지 패턴 존재 시 위반) | required(필수 패턴 부재 시 위반, requires_any와 함께)
+# severity: high(🔴 위반) | medium(🟡 주의) | low
+
+rules:
+  - id: R-001
+    name: 단정·확정 표현
+    kind: forbidden
+    types: [deposit, investment, loan]
+    languages: [ko]
+    patterns:
+      - "확정\\s*(?:연\\s*)?[0-9.]+\\s*%"
+      - "확정\\s*(?:수익|금리|이자|이율)"
+      - "무조건"
+      - "100\\s*%\\s*(?:보장|확실|안전)"
+      - "절대\\s*(?:손해|손실|안전)"
+      - "반드시\\s*(?:수익|이익)"
+    severity: high
+    category: assertive
+    basis: FCPA-22-4
+    message: 불확실한 사항에 대한 단정적 표현으로 이익보장 오인 소지가 있습니다.
+    suggestion_map:
+      "확정 연 {n}%": "연 {n}% (세전, 변동 가능)"
+    suggestion: 확정·무조건 등 단정 표현을 제거하고 조건부 표현(세전, 변동 가능, 우대조건 충족 시)으로 수정하세요.
+
+  - id: R-002
+    name: 원금보장 오인 표현
+    kind: forbidden
+    types: [deposit, investment]
+    languages: [ko]
+    patterns:
+      - "원금\\s*(?:100\\s*%\\s*)?보장"
+      - "원금\\s*손실\\s*(?:걱정|위험)\\s*(?:없|제로)"
+      - "손실\\s*(?:없는|제로|0)"
+    severity: high
+    category: guarantee
+    basis: ADREV-GUAR
+    message: 원금이 무제한 보장되는 것으로 오인하게 하는 표현입니다. 예금은 예금자보호 한도를 명시해야 하며, 투자상품은 원금보장 표현 자체가 금지됩니다.
+    suggestion: "'원금 보장' 대신 '예금자보호법에 따라 1인당 최고 5천만원까지 보호' (예금) 또는 삭제 후 원금손실 가능성 고지 (투자)로 수정하세요."
+
+  - id: R-003
+    name: 근거 없는 최상급 표현
+    kind: forbidden
+    types: [deposit, investment, loan]
+    languages: [ko]
+    patterns:
+      - "업계\\s*(?:최고|1\\s*위|최초)"
+      - "최저\\s*금리"
+      - "최고\\s*(?:금리|수익|혜택)"
+      - "국내\\s*유일"
+    severity: medium
+    category: superlative
+    basis: FAIRAD-3
+    message: 객관적 근거 제시 없는 최상급 표현은 거짓·과장 광고에 해당할 수 있습니다.
+    suggestion: 최상급 표현을 삭제하거나 객관적 근거(출처·기준일)를 병기하세요.
+
+  - id: R-004
+    name: 필수고지 누락 — 원금손실 가능성 (투자)
+    kind: required
+    types: [investment]
+    languages: [ko]
+    requires_any:
+      - "원금\\s*손실(?:이)?\\s*(?:발생할?\\s*수|가능)"
+      - "손실은?\\s*투자자에게\\s*귀속"
+    severity: high
+    category: notice
+    basis: CMA-57
+    message: 투자상품 광고에 원금손실 가능성 고지가 누락되었습니다.
+    fix_append: "※ 이 상품은 예금자보호 대상이 아니며, 운용 결과에 따라 원금손실이 발생할 수 있고 그 손실은 투자자에게 귀속됩니다."
+    suggestion: 원금손실 가능성과 손실의 투자자 귀속을 명시하는 고지문을 추가하세요.
+
+  - id: R-005
+    name: 필수고지 누락 — 예금자보호 안내 (예금)
+    kind: required
+    types: [deposit]
+    languages: [ko]
+    requires_any:
+      - "예금자\\s*보호"
+    severity: medium
+    category: notice
+    basis: KFB-AD-DEP
+    message: 예금성 상품 광고에 예금자보호 여부 및 보호 한도 안내가 누락되었습니다.
+    fix_append: "※ 이 예금은 예금자보호법에 따라 예금보험공사가 1인당(원금과 이자를 합하여) 최고 5천만원까지 보호합니다."
+    suggestion: 예금자보호 여부와 1인당 보호 한도(5천만원)를 명시하세요.
+
+  - id: R-006
+    name: 필수고지 누락 — 연체이자율·중도상환수수료 (대출)
+    kind: required
+    types: [loan]
+    languages: [ko]
+    requires_any:
+      - "연체\\s*(?:이자율|금리)"
+    severity: medium
+    category: notice
+    basis: KFB-AD-LOAN
+    message: 대출성 상품 광고에 연체이자율·중도상환수수료 등 필수 안내사항이 누락되었습니다.
+    fix_append: "※ 연체 시 연체이자율(약정이자율+최대 연 3%p, 법정 최고금리 이내)이 적용되며, 중도상환 시 중도상환수수료가 부과될 수 있습니다. 상환능력에 비해 대출금이 과도할 경우 신용점수가 하락할 수 있습니다."
+    suggestion: 연체이자율, 중도상환수수료, 신용점수 하락 경고문구를 추가하세요.
+
+  - id: R-007
+    name: 금리 표기 불충분
+    kind: forbidden
+    types: [deposit, loan]
+    languages: [ko]
+    patterns:
+      - "(?<![가-힣])(?:연\\s*)?[0-9]+(?:\\.[0-9]+)?\\s*%"
+    condition_absent_any:
+      - "세전|세후"
+    severity: medium
+    category: rate
+    basis: ADREV-RATE
+    message: 이자율 표기 시 세전·세후 구분, 변동 가능성, 우대조건이 함께 표시되어야 합니다.
+    suggestion: "금리 옆에 '(세전, 변동 가능)' 및 우대조건 충족 요건을 병기하세요."
+
+  - id: R-008
+    name: 심사 없는 대출 오인 표현
+    kind: forbidden
+    types: [loan]
+    languages: [ko]
+    patterns:
+      - "무조건\\s*승인"
+      - "누구나\\s*(?:대출|승인|가능)"
+      - "무\\s*심사"
+      - "신용\\s*(?:등급|점수)?\\s*무관"
+    severity: high
+    category: assertive
+    basis: KFB-AD-LOAN
+    message: 심사 없이 누구나 대출받을 수 있는 것으로 오인하게 하는 표현입니다.
+    suggestion: "'심사 결과에 따라 대출 한도 및 금리가 달라질 수 있습니다'와 같이 심사 전제를 명시하세요."
+
+  # ── 다국어(영어) 재심의 룰 — 번역 누락/왜곡 검증 (F10) ──
+  - id: R-101
+    name: 보장성 오역 표현 (EN)
+    kind: forbidden
+    types: [deposit, investment, loan]
+    languages: [en]
+    patterns:
+      - "(?i)guaranteed?"
+      - "(?i)risk[- ]?free"
+      - "(?i)principal\\s+protect(?:ed|ion)"
+      - "(?i)no\\s+risk"
+      - "(?i)100%\\s+safe"
+    severity: high
+    category: guarantee
+    basis: JB-INT-02
+    message: "영문 번역에 'guaranteed' 등 보장성 표현이 포함되어 보장 오인을 유발합니다 (오역 가능성)."
+    suggestion: "'guaranteed' 등을 제거하고 'subject to change', 'before tax' 등 조건부 표현으로 수정하세요."
+
+  - id: R-102
+    name: 필수고지 번역 누락 — 예금자보호 (EN)
+    kind: required
+    types: [deposit]
+    languages: [en]
+    requires_any:
+      - "(?i)deposit\\s+(?:insurance|protection)"
+      - "(?i)KDIC"
+    severity: medium
+    category: notice
+    basis: JB-INT-02
+    message: 영문 버전에 예금자보호 안내 문구가 누락되었습니다.
+    fix_append: "* Protected by the Depositor Protection Act (up to KRW 50 million per person including principal and interest, via KDIC)."
+    suggestion: 예금자보호 안내 문구의 영문 번역을 추가하세요.

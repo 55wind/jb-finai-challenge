@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JB 준법 코파일럿</title>
+<style>
+  :root{
+    --jb:#00529b; --jb-dark:#003a6e; --jb-light:#e8f1fa;
+    --ink:#1a1d21; --muted:#5b6470; --line:#e1e5ea; --bg:#fff;
+    --red:#d6334a; --amber:#e3a008; --green:#1f9d55; --code-bg:#f6f8fa;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:#f3f5f8; color:var(--ink); font-size:14.5px; line-height:1.6;
+    font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',-apple-system,'Segoe UI',Roboto,sans-serif;}
+  button{font-family:inherit; cursor:pointer;}
+
+  header.top{background:linear-gradient(135deg,var(--jb),var(--jb-dark)); color:#fff;
+    padding:14px 28px; display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+  header.top h1{font-size:18px; margin:0; font-weight:800; letter-spacing:-.01em;}
+  header.top .sub{font-size:12px; opacity:.85;}
+  .mode-badge{margin-left:auto; font-size:12px; background:rgba(255,255,255,.15);
+    border:1px solid rgba(255,255,255,.3); padding:4px 12px; border-radius:999px;}
+  .mode-badge.llm{background:rgba(31,157,85,.35);}
+
+  nav.tabs{background:#fff; border-bottom:1px solid var(--line); padding:0 28px; display:flex; gap:4px;}
+  nav.tabs button{border:none; background:none; padding:12px 18px; font-size:14px; font-weight:600;
+    color:var(--muted); border-bottom:2.5px solid transparent;}
+  nav.tabs button.active{color:var(--jb-dark); border-bottom-color:var(--jb);}
+
+  main{max-width:1280px; margin:18px auto; padding:0 20px;}
+  .hidden{display:none !important;}
+
+  /* ── 점수 바 ── */
+  .scorebar{display:flex; align-items:center; gap:14px; background:#fff; border:1px solid var(--line);
+    border-radius:10px; padding:12px 18px; margin-bottom:14px;}
+  .scorebar .label{font-weight:800; color:var(--jb-dark);}
+  .gauge{flex:1; height:12px; background:#edf0f4; border-radius:999px; overflow:hidden;}
+  .gauge > div{height:100%; width:0%; border-radius:999px; transition:width .5s, background .5s;}
+  .scoreval{font-weight:800; font-size:17px; min-width:120px; text-align:right;}
+  .grade-pass{color:var(--green);} .grade-caution{color:#9a6c00;} .grade-danger{color:var(--red);}
+
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:900px){.cols{grid-template-columns:1fr;}}
+  .panel{background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px 18px;}
+  .panel h2{margin:0 0 10px; font-size:15px; font-weight:800; color:var(--jb-dark);
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .panel h2 .right{margin-left:auto; display:flex; gap:8px; align-items:center; font-weight:500;}
+
+  select, input[type=text]{border:1px solid var(--line); border-radius:7px; padding:5px 9px; font-size:13px;
+    font-family:inherit; background:#fff;}
+  .btn{border:1px solid var(--line); background:#fff; border-radius:7px; padding:6px 13px; font-size:13px; font-weight:600;}
+  .btn:hover{background:var(--jb-light);}
+  .btn.primary{background:var(--jb); border-color:var(--jb); color:#fff;}
+  .btn.primary:hover{background:var(--jb-dark);}
+  .btn.small{padding:3px 9px; font-size:12px;}
+  .btn.green{background:var(--green); border-color:var(--green); color:#fff;}
+  .btn.red{background:var(--red); border-color:var(--red); color:#fff;}
+  .btn:disabled{opacity:.5; cursor:default;}
+
+  /* ── 에디터(밑줄 하이라이트 오버레이) ── */
+  .editor-wrap{position:relative; border:1.5px solid var(--line); border-radius:9px; overflow:hidden; background:#fff;}
+  .editor-wrap:focus-within{border-color:var(--jb);}
+  .backdrop, textarea.editor{margin:0; padding:13px 15px; font:inherit; font-size:15px; line-height:1.75;
+    width:100%; height:240px; white-space:pre-wrap; word-wrap:break-word; overflow-y:auto;}
+  .backdrop{position:absolute; inset:0; color:var(--ink); pointer-events:none; z-index:0;}
+  textarea.editor{position:relative; z-index:1; background:transparent; color:transparent;
+    caret-color:var(--ink); border:none; outline:none; resize:vertical; display:block;}
+  mark{background:transparent; border-radius:2px; padding:0;}
+  mark.high{background:rgba(214,51,74,.13); border-bottom:2.5px solid var(--red);}
+  mark.medium{background:rgba(227,160,8,.13); border-bottom:2.5px solid var(--amber);}
+  .editor-foot{display:flex; align-items:center; gap:10px; margin-top:8px; font-size:12.5px; color:var(--muted); flex-wrap:wrap;}
+  .live-dot{width:8px; height:8px; border-radius:50%; background:#c2cad4; display:inline-block;}
+  .live-dot.busy{background:var(--amber); animation:pulse 1s infinite;}
+  .live-dot.ok{background:var(--green);}
+  @keyframes pulse{50%{opacity:.3;}}
+
+  details.facts{margin-top:10px; font-size:13px;}
+  details.facts summary{cursor:pointer; color:var(--jb); font-weight:600;}
+  details.facts textarea{width:100%; height:74px; margin-top:6px; border:1px solid var(--line);
+    border-radius:7px; padding:8px 10px; font:inherit; font-size:13px;}
+
+  /* ── 심의 결과 ── */
+  .counts{display:flex; gap:10px; font-size:13px; font-weight:700; margin-bottom:10px;}
+  .finding{border:1px solid var(--line); border-left-width:4px; border-radius:8px; padding:10px 13px; margin:8px 0;}
+  .finding.high{border-left-color:var(--red);} .finding.medium{border-left-color:var(--amber);}
+  .finding .head{display:flex; gap:8px; align-items:baseline; flex-wrap:wrap;}
+  .finding .head b{font-size:14px;}
+  .finding .msg{font-size:13px; color:#333; margin-top:3px;}
+  .finding .basis{font-size:12px; color:var(--jb-dark); margin-top:4px; background:var(--jb-light);
+    display:inline-block; padding:2px 8px; border-radius:6px;}
+  .finding .fixrow{margin-top:7px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:13px;}
+  .finding .fixrow .sg{background:var(--code-bg); border:1px solid var(--line); border-radius:6px; padding:2px 8px;}
+  .sev{font-size:11.5px; font-weight:800; padding:1.5px 8px; border-radius:999px;}
+  .sev.high{background:#fde8eb; color:var(--red);} .sev.medium{background:#fdf3df; color:#9a6c00;}
+  .sev.llm{background:#f0ecff; color:#5b3bbf;}
+
+  .sources{margin-top:12px; border-top:1px dashed var(--line); padding-top:9px;}
+  .sources .src{font-size:12px; color:var(--muted); margin:3px 0;}
+  .empty{color:var(--muted); font-size:13.5px; padding:14px 0; text-align:center;}
+
+  /* ── 오인 시뮬레이터 ── */
+  .sim-panel{margin-top:14px;}
+  .persona-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+  @media (max-width:900px){.persona-grid{grid-template-columns:1fr;}}
+  .persona{border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:#fcfdfe;}
+  .persona h3{margin:0 0 6px; font-size:14.5px;}
+  .persona .speech{background:var(--jb-light); border-radius:8px; padding:8px 11px; font-size:13px; font-style:italic; margin:6px 0;}
+  .persona .act{font-size:12.5px; color:var(--muted);}
+  .persona .mis{margin-top:8px; border-top:1px dashed var(--line); padding-top:7px; font-size:13px;}
+  .persona .mis .m{margin:5px 0;}
+  .persona .trigger{font-size:12px; color:var(--red); font-weight:600;}
+  .risk-pill{font-size:12px; font-weight:800; padding:2px 10px; border-radius:999px;}
+  .risk-high{background:#fde8eb; color:var(--red);} .risk-medium{background:#fdf3df; color:#9a6c00;}
+  .risk-low{background:#e6f6ec; color:var(--green);}
+
+  .send-row{margin:16px 0 30px; text-align:center;}
+  .send-row .btn{font-size:15px; padding:11px 26px;}
+
+  /* ── 승인 뷰 ── */
+  .approve-cols{display:grid; grid-template-columns:280px 1fr; gap:14px;}
+  @media (max-width:900px){.approve-cols{grid-template-columns:1fr;}}
+  .sub-item{border:1px solid var(--line); border-radius:9px; padding:10px 12px; margin:7px 0; cursor:pointer; background:#fff;}
+  .sub-item:hover{border-color:var(--jb);}
+  .sub-item.sel{border-color:var(--jb); background:var(--jb-light);}
+  .sub-item .t{font-weight:700; font-size:13.5px;}
+  .sub-item .m{font-size:12px; color:var(--muted);}
+  .status-pill{font-size:11.5px; font-weight:800; padding:1.5px 9px; border-radius:999px;}
+  .st-pending{background:#fdf3df; color:#9a6c00;} .st-approved{background:#e6f6ec; color:var(--green);}
+  .st-rejected{background:#fde8eb; color:var(--red);}
+  .doc-text{background:var(--code-bg); border:1px solid var(--line); border-radius:8px;
+    padding:11px 14px; font-size:14px; white-space:pre-wrap;}
+  .decision-row{display:flex; gap:9px; margin:13px 0; flex-wrap:wrap; align-items:center;}
+  .decision-row input{flex:1; min-width:180px;}
+  .audit{margin-top:14px;}
+  .audit .entry{font-size:12.5px; border-left:3px solid var(--jb-light); padding:3px 0 3px 11px; margin:6px 0; color:#333;}
+  .audit .entry .ts{color:var(--muted); font-size:11.5px;}
+  .tr-block{border:1px solid var(--line); border-radius:9px; padding:12px 14px; margin-top:10px;}
+
+  .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--jb-dark); color:#fff;
+    padding:10px 22px; border-radius:9px; font-size:13.5px; opacity:0; transition:opacity .3s; pointer-events:none; z-index:50;}
+  .toast.show{opacity:1;}
+  .fixture-row{display:flex; gap:7px; flex-wrap:wrap; margin-bottom:10px;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>⚖ JB 준법 코파일럿</h1>
+    <div class="sub">소비자 오인 방지 중심 준법자문 AI Agent · 온프레미스</div>
+  </div>
+  <div class="mode-badge" id="modeBadge">엔진 확인 중…</div>
+</header>
+
+<nav class="tabs">
+  <button id="tabWork" class="active" onclick="switchTab('work')">✍ 심의 워크스페이스</button>
+  <button id="tabApprove" onclick="switchTab('approve')">👤 준법관리자 검토 <span id="pendingBadge"></span></button>
+</nav>
+
+<main>
+<!-- ════════ 워크스페이스 ════════ -->
+<section id="viewWork">
+  <div class="scorebar">
+    <span class="label">준법 점수</span>
+    <div class="gauge"><div id="gaugeFill"></div></div>
+    <span class="scoreval" id="scoreVal">— / 100</span>
+  </div>
+
+  <div class="cols">
+    <div class="panel">
+      <h2>콘텐츠 초안
+        <span class="right">
+          <select id="selType">
+            <option value="">유형: 자동분류</option>
+            <option value="deposit">유형: 예금·적금</option>
+            <option value="investment">유형: 투자(펀드)</option>
+            <option value="loan">유형: 대출</option>
+          </select>
+          <select id="selLang">
+            <option value="ko">언어: 한국어</option>
+            <option value="en">언어: English</option>
+          </select>
+        </span>
+      </h2>
+      <div class="fixture-row" id="fixtureRow"></div>
+      <div class="editor-wrap">
+        <div class="backdrop" id="backdrop"></div>
+        <textarea class="editor" id="editor" spellcheck="false"
+          placeholder="대고객 광고/콘텐츠 초안을 입력하거나 붙여넣으세요. 입력을 멈추면 자동으로 심의합니다."></textarea>
+      </div>
+      <div class="editor-foot">
+        <span class="live-dot" id="liveDot"></span>
+        <span id="liveLabel">멈춤 시 자동검사</span>
+        <span id="typeInfo"></span>
+        <button class="btn small" style="margin-left:auto" onclick="runReview()">지금 재심의</button>
+      </div>
+      <details class="facts">
+        <summary>상품 실제 조건 (오인 판정 대조용 — 선택)</summary>
+        <textarea id="productFacts" placeholder="예: 기본금리 연 3.0%(세전), 우대 시 최대 연 5.0%. 중도해지 시 중도해지이율 적용. 예금자보호 5천만원."></textarea>
+      </details>
+    </div>
+
+    <div class="panel">
+      <h2>⚖ 심의 결과
+        <span class="right"><button class="btn small" id="btnApplyAll" onclick="applyAllFixes()" disabled>수정안 전체 적용</button></span>
+      </h2>
+      <div class="counts" id="counts"></div>
+      <div id="findings"><div class="empty">초안을 입력하면 심의 결과가 표시됩니다.</div></div>
+      <div class="sources" id="sources"></div>
+    </div>
+  </div>
+
+  <div class="panel sim-panel">
+    <h2>👥 소비자 오인 시뮬레이터
+      <span class="right">오인 위험: <span class="risk-pill risk-low" id="simRisk">—</span></span>
+    </h2>
+    <div class="persona-grid" id="personaGrid"><div class="empty">심의 실행 시 페르소나별 오해 시뮬레이션이 표시됩니다.</div></div>
+  </div>
+
+  <div class="send-row">
+    <input type="text" id="subTitle" placeholder="콘텐츠 제목 (예: 6월 안심예금 SNS 광고)" style="padding:10px 14px; width:300px; max-width:60vw;">
+    <button class="btn primary" id="btnSend" onclick="sendForApproval()" disabled>준법관리자 검토로 전송 ▸</button>
+  </div>
+</section>
+
+<!-- ════════ 승인 뷰 ════════ -->
+<section id="viewApprove" class="hidden">
+  <div class="approve-cols">
+    <div class="panel">
+      <h2>검토 대기열 <span class="right"><button class="btn small" onclick="loadSubmissions()">새로고침</button></span></h2>
+      <div id="subList"><div class="empty">제출된 콘텐츠가 없습니다.</div></div>
+    </div>
+    <div class="panel" id="subDetail"><div class="empty">왼쪽 목록에서 콘텐츠를 선택하세요.</div></div>
+  </div>
+</section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => (s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let state = { report: null, busy: false, selectedSub: null, fixtures: [] };
+
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2600); }
+
+async function api(path, opts={}){
+  const r = await fetch(path, { headers:{"Content-Type":"application/json"}, ...opts });
+  if(!r.ok){ const e = await r.json().catch(()=>({detail:r.statusText})); throw new Error(e.detail || "요청 실패"); }
+  return r.json();
+}
+
+/* ── 헬스체크 (엔진 모드 표시) ── */
+async function checkHealth(){
+  try{
+    const h = await api("/api/health");
+    const b = $("modeBadge");
+    if(h.llm_available){ b.textContent = `🟢 LLM 연결됨 (${h.llm_model})`; b.classList.add("llm"); }
+    else b.textContent = "⚙ 폴백 모드 — Ollama 미연결 (룰엔진+결정적 시뮬레이션)";
+  }catch{ $("modeBadge").textContent = "서버 연결 실패"; }
+}
+
+/* ── 픽스처 (데모 입력) ── */
+async function loadFixtures(){
+  state.fixtures = await api("/api/fixtures");
+  $("fixtureRow").innerHTML = state.fixtures.map((f,i)=>
+    `<button class="btn small" onclick="useFixture(${i})">📋 ${esc(f.name)}</button>`).join("");
+}
+function useFixture(i){
+  const f = state.fixtures[i];
+  $("editor").value = f.text;
+  $("selType").value = f.content_type;
+  $("selLang").value = f.language;
+  $("productFacts").value = f.product_facts || "";
+  runReview();
+}
+
+/* ── 실시간 검사 (F11): 멈춤/붙여넣기 시 자동 ── */
+let debounceTimer = null;
+function scheduleReview(delay=1200){
+  clearTimeout(debounceTimer);
+  $("liveDot").className = "live-dot"; $("liveLabel").textContent = "입력 중… 멈추면 자동검사";
+  debounceTimer = setTimeout(runReview, delay);
+}
+$("editor").addEventListener("input", ()=>{ syncBackdrop(true); scheduleReview(); });
+$("editor").addEventListener("paste", ()=>scheduleReview(350));
+$("editor").addEventListener("scroll", ()=>{ $("backdrop").scrollTop = $("editor").scrollTop; });
+$("selType").addEventListener("change", ()=>runReview());
+$("selLang").addEventListener("change", ()=>runReview());
+
+/* ── 하이라이트 오버레이 ── */
+function syncBackdrop(plain=false){
+  const text = $("editor").value;
+  if(plain || !state.report || state.report.skipped || state.report.text !== text){
+    $("backdrop").innerHTML = esc(text); return;
+  }
+  const hl = []; let last = -1;           // 겹침 제거(앞선 span 우선)
+  for(const h of state.report.highlights){ if(h.start >= last){ hl.push(h); last = h.end; } }
+  let out = "", pos = 0;
+  for(const h of hl){
+    out += esc(text.slice(pos, h.start));
+    out += `<mark class="${h.severity}">${esc(text.slice(h.start, h.end))}</mark>`;
+    pos = h.end;
+  }
+  out += esc(text.slice(pos));
+  $("backdrop").innerHTML = out;
+}
+
+/* ── 심의 실행 ── */
+async function runReview(){
+  clearTimeout(debounceTimer);
+  const text = $("editor").value;
+  if(!text.trim()){ renderEmpty(); return; }
+  state.busy = true;
+  $("liveDot").className = "live-dot busy"; $("liveLabel").textContent = "AI 심의 중…";
+  try{
+    const rep = await api("/api/review", { method:"POST", body: JSON.stringify({
+      text, content_type: $("selType").value || null,
+      language: $("selLang").value, product_facts: $("productFacts").value })});
+    state.report = rep;
+    if(rep.skipped){
+      $("liveDot").className = "live-dot"; $("liveLabel").textContent = rep.reason;
+      renderEmpty(); return;
+    }
+    $("liveDot").className = "live-dot ok"; $("liveLabel").textContent = "심의 완료 — 멈춤 시 자동 재검사";
+    render(rep);
+  }catch(e){
+    $("liveDot").className = "live-dot"; $("liveLabel").textContent = "오류: " + e.message;
+  }finally{ state.busy = false; }
+}
+
+function renderEmpty(){
+  $("scoreVal").textContent = "— / 100"; $("scoreVal").className = "scoreval";
+  $("gaugeFill").style.width = "0%";
+  $("counts").innerHTML = "";
+  $("findings").innerHTML = '<div class="empty">초안을 입력하면 심의 결과가 표시됩니다.</div>';
+  $("sources").innerHTML = ""; $("personaGrid").innerHTML = '<div class="empty">—</div>';
+  $("simRisk").textContent = "—"; $("simRisk").className = "risk-pill risk-low";
+  $("btnSend").disabled = true; $("btnApplyAll").disabled = true;
+  syncBackdrop(true);
+}
+
+const gradeColor = g => g==="pass" ? "var(--green)" : g==="caution" ? "var(--amber)" : "var(--red)";
+
+function citationHtml(c){
+  if(!c) return "";
+  const link = c.source_url && c.source_url.startsWith("http")
+    ? ` <a href="${esc(c.source_url)}" target="_blank" rel="noopener">출처↗</a>` : "";
+  return `<div class="basis">📖 ${esc(c.law)} ${esc(c.article)} — ${esc(c.title)}${link}</div>`;
+}
+
+function render(rep){
+  /* 점수 */
+  $("scoreVal").textContent = `${rep.grade_emoji} ${rep.score} / 100 ${rep.grade_label}`;
+  $("scoreVal").className = "scoreval grade-" + rep.grade;
+  $("gaugeFill").style.width = rep.score + "%";
+  $("gaugeFill").style.background = gradeColor(rep.grade);
+  $("typeInfo").textContent = `자동분류: ${rep.classification ? rep.content_type_label : ""} (신뢰도 ${(rep.classification.confidence*100).toFixed(0)}%)`;
+
+  /* 카운트 */
+  $("counts").innerHTML =
+    `<span style="color:var(--red)">🔴 위반 ${rep.counts.high}</span>` +
+    `<span style="color:#9a6c00">🟡 주의 ${rep.counts.medium}</span>` +
+    `<span style="color:var(--green)">🟢 ${rep.counts.high+rep.counts.medium===0 ? "통과" : ""}</span>` +
+    `<span style="margin-left:auto;color:var(--muted);font-weight:500">엔진: ${esc(rep.review_engine)}</span>`;
+
+  /* 지적 목록 */
+  let html = "";
+  rep.rule_findings.forEach((f, i)=>{
+    const fixBtn = f.fix ? (f.fix.type === "replace"
+        ? `<span class="sg">"${esc(f.fix.original)}" → "${esc(f.fix.replacement)}"</span>
+           <button class="btn small primary" onclick="applyFix(${i})">적용</button>`
+        : `<span class="sg">고지문 추가: ${esc(f.fix.text.slice(0,42))}…</span>
+           <button class="btn small primary" onclick="applyFix(${i})">적용</button>`)
+      : (f.suggestion ? `<span class="sg">${esc(f.suggestion)}</span>` : "");
+    html += `<div class="finding ${f.severity}">
+      <div class="head"><span class="sev ${f.severity}">${f.severity_label}</span>
+        <b>[${esc(f.rule_name)}]</b> ${f.matched_text ? `"${esc(f.matched_text)}"` : "(누락)"}</div>
+      <div class="msg">${esc(f.message)}</div>
+      ${citationHtml(f.citation)}
+      ${fixBtn ? `<div class="fixrow">수정안: ${fixBtn}</div>` : ""}
+    </div>`;
+  });
+  for(const i of rep.llm_issues){
+    html += `<div class="finding ${i.risk}">
+      <div class="head"><span class="sev llm">LLM 심의</span><span class="sev ${i.risk}">${i.risk==="high"?"위반":"주의"}</span>
+        <b>${esc(i.title || "")}</b> ${i.quote ? `"${esc(i.quote)}"` : ""}</div>
+      <div class="msg">${esc(i.explanation || "")}</div>
+      ${citationHtml(i.citation)}
+      ${i.suggestion ? `<div class="fixrow">수정안: <span class="sg">${esc(i.suggestion)}</span></div>` : ""}
+    </div>`;
+  }
+  if(!html) html = '<div class="empty">🟢 지적 사항이 없습니다. 준법 기준을 충족합니다.</div>';
+  if(rep.llm_overall_comment) html += `<div class="msg" style="margin-top:9px;color:var(--muted)">💬 ${esc(rep.llm_overall_comment)}</div>`;
+  $("findings").innerHTML = html;
+
+  /* 근거 출처 */
+  $("sources").innerHTML = rep.retrieval.articles.length
+    ? `<b style="font-size:12.5px">검색된 규제 근거 (${rep.retrieval.backend})</b>` +
+      rep.retrieval.articles.map(a=>`<div class="src">· ${esc(a.law)} ${esc(a.article)} — ${esc(a.title)} <span style="opacity:.6">(유사도 ${a.score})</span></div>`).join("")
+    : `<div class="src">근거 불충분 — 코퍼스에서 관련 조항을 찾지 못했습니다 (허위 인용 방지를 위해 인용 생략).</div>`;
+
+  /* 시뮬레이터 */
+  const sim = rep.simulation;
+  $("simRisk").textContent = sim.misreading_risk_label + (sim.high_risk_count ? ` (위험 오해 ${sim.high_risk_count}건)` : "");
+  $("simRisk").className = "risk-pill risk-" + sim.misreading_risk;
+  $("personaGrid").innerHTML = sim.personas.map(p=>{
+    const mis = p.misunderstandings.map(m=>`
+      <div class="m">🔴 <b>${esc(m.text)}</b>
+        ${m.trigger_phrase ? `<div class="trigger">⟵ 유발 문구: "${esc(m.trigger_phrase)}"</div>` : ""}
+        ${citationHtml(m.citation)}
+      </div>`).join("");
+    return `<div class="persona">
+      <h3>${p.emoji} ${esc(p.name)} ${p.safe ? '<span class="risk-pill risk-low">🟢 안전</span>' : ''}</h3>
+      <div class="speech">"${esc(p.understanding)}"</div>
+      <div class="act">→ ${esc(p.action)}</div>
+      ${mis ? `<div class="mis">${mis}</div>` : ""}
+    </div>`;
+  }).join("");
+
+  $("btnSend").disabled = false;
+  $("btnApplyAll").disabled = !rep.rule_findings.some(f=>f.fix);
+  syncBackdrop();
+}
+
+/* ── 수정안 적용 (F7) ── */
+async function applyFix(idx){
+  const f = state.report.rule_findings[idx];
+  if(!f || !f.fix) return;
+  const r = await api("/api/apply-fixes", { method:"POST",
+    body: JSON.stringify({ text: $("editor").value, fixes: [f.fix] })});
+  $("editor").value = r.text; syncBackdrop(true);
+  toast("수정안을 적용했습니다 — 재심의 중");
+  runReview();
+}
+async function applyAllFixes(){
+  const fixes = state.report.rule_findings.filter(f=>f.fix).map(f=>f.fix);
+  const r = await api("/api/apply-fixes", { method:"POST",
+    body: JSON.stringify({ text: $("editor").value, fixes })});
+  $("editor").value = r.text; syncBackdrop(true);
+  toast(`수정안 ${fixes.length}건 적용 — 재심의 중`);
+  runReview();
+}
+
+/* ── 검토 전송 (F8 진입) ── */
+async function sendForApproval(){
+  if(!state.report || state.report.skipped) return;
+  const title = $("subTitle").value.trim() || "무제 콘텐츠";
+  await api("/api/submissions", { method:"POST", body: JSON.stringify({
+    title, submitter: "마케팅팀", text: $("editor").value,
+    content_type: state.report.content_type, language: state.report.language,
+    product_facts: $("productFacts").value, report: state.report })});
+  toast("준법관리자 검토로 전송되었습니다");
+  switchTab("approve");
+}
+
+/* ── 탭 ── */
+function switchTab(tab){
+  $("viewWork").classList.toggle("hidden", tab!=="work");
+  $("viewApprove").classList.toggle("hidden", tab!=="approve");
+  $("tabWork").classList.toggle("active", tab==="work");
+  $("tabApprove").classList.toggle("active", tab==="approve");
+  if(tab==="approve") loadSubmissions();
+}
+
+/* ── 승인 뷰 (F8·F9·F10) ── */
+async function loadSubmissions(){
+  const subs = await api("/api/submissions");
+  const pending = subs.filter(s=>s.status==="pending").length;
+  $("pendingBadge").textContent = pending ? `(${pending})` : "";
+  $("subList").innerHTML = subs.length ? subs.map(s=>{
+    const rs = s.report_summary;
+    return `<div class="sub-item ${state.selectedSub===s.id?'sel':''}" onclick="selectSub(${s.id})">
+      <div class="t">#A-${s.id} ${esc(s.title)} <span class="status-pill st-${s.status}">${
+        {pending:"검토 대기",approved:"승인·배포가능",rejected:"반려"}[s.status]}</span></div>
+      <div class="m">${esc(s.content_type)} · ${esc(s.submitter)} · AI 1차심의 ${rs.grade_emoji}${rs.grade_label}(${rs.score})</div>
+    </div>`;
+  }).join("") : '<div class="empty">제출된 콘텐츠가 없습니다.</div>';
+  if(state.selectedSub) renderSubDetail(await api("/api/submissions/"+state.selectedSub));
+}
+
+async function selectSub(id){
+  state.selectedSub = id;
+  loadSubmissions();
+}
+
+function renderSubDetail(s){
+  const rep = s.report;
+  const findings = rep.rule_findings.map(f=>`
+    <div class="finding ${f.severity}">
+      <div class="head"><span class="sev ${f.severity}">${f.severity_label}</span><b>[${esc(f.rule_name)}]</b>
+        ${f.matched_text?`"${esc(f.matched_text)}"`:"(누락)"}</div>
+      ${f.fix && f.fix.type==="replace" ? `<div class="msg">→ 수정안: "${esc(f.fix.replacement)}"</div>` : ""}
+      ${citationHtml(f.citation)}
+    </div>`).join("") || '<div class="empty">지적 사항 없음</div>';
+
+  const decisionUi = s.status === "pending" ? `
+    <div class="decision-row">
+      <input type="text" id="decComment" placeholder="코멘트 (선택)">
+      <button class="btn green" onclick="decide(${s.id},'approve')">✓ 승인</button>
+      <button class="btn red" onclick="decide(${s.id},'reject')">✗ 반려</button>
+      <button class="btn" onclick="decide(${s.id},'comment')">💬 코멘트만</button>
+    </div>` : `
+    <div class="decision-row"><span class="status-pill st-${s.status}">${
+      s.status==="approved"?"✓ 승인 — 배포가능":"✗ 반려"}</span>
+      <span style="font-size:12.5px;color:var(--muted)">${esc(s.decided_by||"")} · ${esc(s.decided_at||"")}
+      ${s.decision_comment?` · "${esc(s.decision_comment)}"`:""}</span>
+      ${s.status==="approved" ? `<button class="btn primary" style="margin-left:auto" onclick="translateSub(${s.id})">🌏 영문 버전 생성 + 재심의</button>` : ""}
+    </div>`;
+
+  const translations = (s.translations||[]).map(t=>{
+    const tr = t.report;
+    const tf = tr.rule_findings.map(f=>`
+      <div class="finding ${f.severity}">
+        <div class="head"><span class="sev ${f.severity}">${f.severity_label}</span><b>[${esc(f.rule_name)}]</b>
+          ${f.matched_text?`"${esc(f.matched_text)}"`:"(누락)"}</div>
+        <div class="msg">${esc(f.message)}</div>${citationHtml(f.citation)}
+      </div>`).join("") || '<div class="empty">🟢 재심의 통과</div>';
+    return `<div class="tr-block">
+      <b>🌏 ${t.target_lang.toUpperCase()} 버전</b> <span style="font-size:12px;color:var(--muted)">(${esc(t.engine)}) ·
+      재심의 ${tr.grade_emoji} ${tr.score}/100 ${tr.grade_label}</span>
+      <div class="doc-text" style="margin-top:7px">${esc(t.text)}</div>
+      <div style="margin-top:8px">${tf}</div>
+    </div>`;
+  }).join("");
+
+  const audit = (s.audit||[]).map(a=>`
+    <div class="entry"><span class="ts">${esc(a.ts)}</span> · <b>${esc(a.actor)}</b> [${esc(a.action)}] ${esc(a.detail||"")}</div>`).join("");
+
+  $("subDetail").innerHTML = `
+    <h2>#A-${s.id} ${esc(s.title)}
+      <span class="right" style="font-size:13px;font-weight:600">AI 1차심의: ${rep.grade_emoji} ${rep.score}/100 ${rep.grade_label}</span></h2>
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">
+      유형 ${esc(rep.content_type_label)} · 제출 ${esc(s.submitter)} · ${esc(s.created_at)}</div>
+    <div class="doc-text">${esc(s.text)}</div>
+    <h2 style="margin-top:14px">AI 지적 사항</h2>
+    ${findings}
+    ${decisionUi}
+    ${translations}
+    <div class="audit"><h2>📜 감사로그 (audit trail)</h2>${audit || '<div class="empty">기록 없음</div>'}</div>`;
+  loadAudit(s.id);
+}
+
+async function loadAudit(sid){
+  const entries = await api("/api/audit?submission_id="+sid);
+  const el = document.querySelector("#subDetail .audit");
+  if(!el) return;
+  el.innerHTML = `<h2>📜 감사로그 (audit trail)</h2>` + (entries.map(a=>`
+    <div class="entry"><span class="ts">${esc(a.ts)}</span> · <b>${esc(a.actor)}</b> [${esc(a.action)}] ${esc(a.detail||"")}</div>`).join("")
+    || '<div class="empty">기록 없음</div>');
+}
+
+async function decide(sid, action){
+  const comment = ($("decComment")||{}).value || "";
+  if(action==="comment" && !comment.trim()){ toast("코멘트를 입력하세요"); return; }
+  try{
+    await api(`/api/submissions/${sid}/decision`, { method:"POST",
+      body: JSON.stringify({ action, actor:"준법관리자", comment })});
+    toast(action==="approve" ? "승인 — 배포가능 상태로 전환되었습니다" :
+          action==="reject" ? "반려되었습니다" : "코멘트가 기록되었습니다");
+    loadSubmissions();
+  }catch(e){ toast("오류: " + e.message); }
+}
+
+async function translateSub(sid){
+  toast("영문 버전 생성 + 재심의 중…");
+  try{
+    await api(`/api/submissions/${sid}/translate`, { method:"POST",
+      body: JSON.stringify({ target_lang:"en", actor:"준법관리자" })});
+    toast("영문 버전 생성 및 재심의 완료");
+    loadSubmissions();
+  }catch(e){ toast("오류: " + e.message); }
+}
+
+/* ── 초기화 ── */
+checkHealth(); loadFixtures(); loadSubmissions();
+</script>
+</body>
+</html>

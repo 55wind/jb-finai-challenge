@@ -1,0 +1,57 @@
+[
+  {
+    "id": "FX-01",
+    "name": "예금 — 단정·원금보장 (메인 데모)",
+    "language": "ko",
+    "content_type": "deposit",
+    "text": "확정 연 5%! 원금 보장 안심예금으로 노후를 준비하세요. 지금 가입하면 누구나 최고 금리 혜택!",
+    "product_facts": "JB 안심정기예금. 기본금리 연 3.0%(세전), 우대조건(급여이체+카드실적) 충족 시 최대 연 5.0%(세전). 12개월 만기, 중도해지 시 중도해지이율(연 0.5~1.0%) 적용. 예금자보호법에 따라 1인당 5천만원까지 보호.",
+    "expected_rule_ids": ["R-001", "R-002", "R-003", "R-005", "R-007"],
+    "expected_type": "deposit",
+    "expected_grade": "danger"
+  },
+  {
+    "id": "FX-02",
+    "name": "투자 — 손실고지 누락",
+    "language": "ko",
+    "content_type": "investment",
+    "text": "JB 글로벌 성장 펀드 — 작년 수익률 12%! 전문가가 운용하니 원금 손실 걱정 없이 투자하세요.",
+    "product_facts": "주식형 펀드, 위험등급 2등급(높은 위험). 과거 수익률은 미래 수익을 보장하지 않음. 원금손실 가능.",
+    "expected_rule_ids": ["R-002", "R-004"],
+    "expected_type": "investment",
+    "expected_grade": "danger"
+  },
+  {
+    "id": "FX-03",
+    "name": "대출 — 무조건 승인",
+    "language": "ko",
+    "content_type": "loan",
+    "text": "신용점수 무관! 누구나 무조건 승인되는 JB 빠른대출, 최저금리 연 4.9%로 즉시 입금!",
+    "product_facts": "신용대출, 금리 연 4.9%~9.9%(신용도에 따라 차등), 심사 결과에 따라 거절 가능. 연체이자율 약정금리+3%p, 중도상환수수료 있음.",
+    "expected_rule_ids": ["R-001", "R-003", "R-006", "R-007", "R-008"],
+    "expected_type": "loan",
+    "expected_grade": "danger"
+  },
+  {
+    "id": "FX-04",
+    "name": "예금 — 준법 통과 사례",
+    "language": "ko",
+    "content_type": "deposit",
+    "text": "JB 안심정기예금 — 기본금리 연 3.0%(세전), 우대조건 충족 시 최대 연 5.0%(세전, 변동 가능). 만기 전 해지 시 중도해지이율이 적용됩니다. ※ 이 예금은 예금자보호법에 따라 예금보험공사가 1인당(원금과 이자를 합하여) 최고 5천만원까지 보호합니다. 가입 전 상품설명서를 확인하세요.",
+    "product_facts": "JB 안심정기예금. 기본금리 연 3.0%(세전), 우대 시 최대 연 5.0%(세전). 예금자보호 1인당 5천만원.",
+    "expected_rule_ids": [],
+    "expected_type": "deposit",
+    "expected_grade": "pass"
+  },
+  {
+    "id": "FX-05",
+    "name": "영문 — 보장성 오역 (다국어 재심의)",
+    "language": "en",
+    "content_type": "deposit",
+    "text": "Guaranteed 5% annual returns! Risk-free JB savings account for your future.",
+    "product_facts": "JB 안심정기예금 영문 버전. 기본 3.0%(세전), 우대 시 최대 5.0%(세전).",
+    "expected_rule_ids": ["R-101", "R-102"],
+    "expected_type": "deposit",
+    "expected_grade": "danger"
+  }
+]

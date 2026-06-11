@@ -1,0 +1,146 @@
+"""JB 준법 코파일럿 — FastAPI 백엔드 (API + 정적 프론트 서빙).
+
+실행:  uvicorn app.main:app --reload
+접속:  http://localhost:8000
+"""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
+
+from . import store
+from .pipeline import llm_client, orchestrator
+
+app = FastAPI(title="JB 준법 코파일럿", version="0.1.0")
+
+_STATIC = Path(__file__).resolve().parent / "static"
+_FIXTURES = Path(__file__).resolve().parent / "data" / "fixtures.json"
+
+
+# ── 요청 모델 ──────────────────────────────────────────────
+
+class ReviewRequest(BaseModel):
+    text: str
+    content_type: str | None = Field(default=None, description="deposit|investment|loan (없으면 자동분류)")
+    language: str = "ko"
+    product_facts: str = ""
+
+
+class ApplyFixesRequest(BaseModel):
+    text: str
+    fixes: list[dict]
+
+
+class SubmissionRequest(BaseModel):
+    title: str = "무제 콘텐츠"
+    submitter: str = "마케팅팀"
+    text: str
+    content_type: str
+    language: str = "ko"
+    product_facts: str = ""
+    report: dict
+
+
+class DecisionRequest(BaseModel):
+    action: str = Field(pattern="^(approve|reject|comment)$")
+    actor: str = "준법관리자"
+    comment: str = ""
+
+
+class TranslateRequest(BaseModel):
+    target_lang: str = "en"
+    actor: str = "준법관리자"
+
+
+# ── API ────────────────────────────────────────────────────
+
+@app.get("/api/health")
+async def health():
+    llm_ok = await llm_client.is_available(force_check=True)
+    return {
+        "status": "ok",
+        "llm_available": llm_ok,
+        "llm_model": llm_client.OLLAMA_MODEL if llm_ok else None,
+        "mode": "llm" if llm_ok else "fallback(rule-based) — Ollama 미연결, 룰엔진·결정적 시뮬레이션으로 동작",
+    }
+
+
+@app.get("/api/fixtures")
+def fixtures():
+    return json.loads(_FIXTURES.read_text(encoding="utf-8"))
+
+
+@app.post("/api/review")
+async def review(req: ReviewRequest):
+    return await orchestrator.run_review(req.text, req.content_type, req.language, req.product_facts)
+
+
+@app.post("/api/apply-fixes")
+def apply_fixes(req: ApplyFixesRequest):
+    return {"text": orchestrator.apply_fixes(req.text, req.fixes)}
+
+
+@app.post("/api/submissions")
+def create_submission(req: SubmissionRequest):
+    return store.create_submission(req.title, req.submitter, req.content_type,
+                                   req.language, req.product_facts, req.text, req.report)
+
+
+@app.get("/api/submissions")
+def list_submissions():
+    return store.list_submissions()
+
+
+@app.get("/api/submissions/{sid}")
+def get_submission(sid: int):
+    sub = store.get_submission(sid)
+    if not sub:
+        raise HTTPException(404, "submission not found")
+    return sub
+
+
+@app.post("/api/submissions/{sid}/decision")
+def decide(sid: int, req: DecisionRequest):
+    if req.action == "comment":
+        if not req.comment.strip():
+            raise HTTPException(400, "comment required")
+        store.add_comment(sid, req.actor, req.comment)
+        return store.get_submission(sid)
+    sub = store.decide(sid, req.action, req.actor, req.comment)
+    if not sub:
+        raise HTTPException(404, "submission not found")
+    return sub
+
+
+@app.post("/api/submissions/{sid}/translate")
+async def translate(sid: int, req: TranslateRequest):
+    sub = store.get_submission(sid)
+    if not sub:
+        raise HTTPException(404, "submission not found")
+    if sub["status"] != "approved":
+        raise HTTPException(409, "다국어 생성은 승인된 콘텐츠에서만 가능합니다 (설계: 승인 후 단계).")
+    result = await orchestrator.translate_and_rereview(
+        sub["text"], sub["content_type"], req.target_lang, sub.get("product_facts") or "")
+    store.save_translation(sid, req.target_lang, result["translation"],
+                           result["engine"], result["report"], req.actor)
+    return store.get_submission(sid)
+
+
+@app.get("/api/audit")
+def audit(submission_id: int | None = None):
+    return store.audit_trail(submission_id)
+
+
+# ── 프론트 (정적 SPA) ──────────────────────────────────────
+
+@app.get("/", include_in_schema=False)
+def index():
+    return FileResponse(_STATIC / "index.html")
+
+
+app.mount("/static", StaticFiles(directory=_STATIC), name="static")
