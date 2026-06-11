@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>JB 준법 코파일럿 — 사용 설명서</title>
+<style>
+  :root{
+    --jb:#00529b; --jb-dark:#003a6e; --jb-light:#e8f1fa;
+    --ink:#1a1d21; --muted:#5b6470; --line:#e1e5ea;
+    --red:#d6334a; --amber:#e3a008; --green:#1f9d55; --code-bg:#f6f8fa;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; color:var(--ink); background:#fff;
+    font-family:'Noto Sans CJK KR','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    line-height:1.7; font-size:14.5px;}
+  .page{max-width:920px; margin:0 auto; padding:0 0 48px;}
+  header.cover{background:linear-gradient(135deg,var(--jb) 0%,var(--jb-dark) 100%);
+    color:#fff; padding:40px 48px 34px;}
+  header.cover .kicker{font-size:12.5px; letter-spacing:.12em; text-transform:uppercase; opacity:.85; font-weight:600;}
+  header.cover h1{margin:8px 0 4px; font-size:27px; font-weight:800;}
+  header.cover .sub{font-size:15px; opacity:.92;}
+  header.cover .meta{margin-top:16px; font-size:13px; opacity:.88;}
+  main{padding:6px 48px 0;}
+  h2{font-size:19px; font-weight:800; color:var(--jb-dark); margin:36px 0 8px;
+    padding-bottom:7px; border-bottom:2px solid var(--jb-light);}
+  h2 .num{display:inline-block; background:var(--jb); color:#fff; font-size:12px; font-weight:700;
+    width:24px; height:24px; line-height:24px; text-align:center; border-radius:6px; margin-right:9px; vertical-align:2px;}
+  h3{font-size:15.5px; font-weight:700; margin:20px 0 5px;}
+  p{margin:7px 0;}
+  ul,ol{margin:7px 0; padding-left:22px;} li{margin:3px 0;}
+  code{background:var(--code-bg); border:1px solid var(--line); border-radius:5px; padding:1px 6px;
+    font-size:12.5px; font-family:'Noto Sans Mono CJK KR',Consolas,monospace; color:#b1003e;}
+  pre{background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:13px 16px;
+    overflow-x:auto; font-family:'Noto Sans Mono CJK KR',Consolas,monospace; font-size:12px;
+    line-height:1.55; white-space:pre-wrap;}
+  pre code{background:none; border:none; padding:0; color:#222;}
+  table{border-collapse:collapse; width:100%; margin:12px 0; font-size:13px;}
+  th,td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top;}
+  th{background:var(--jb-light); color:var(--jb-dark); font-weight:700;}
+  tbody tr:nth-child(even){background:#fafbfc;}
+  .lead{font-size:15.5px; background:var(--jb-light); border-left:4px solid var(--jb);
+    padding:13px 18px; border-radius:0 8px 8px 0; margin:12px 0;}
+  .callout{border-radius:8px; padding:12px 16px; margin:14px 0; font-size:13.5px; border:1px solid;}
+  .callout.tip{background:#eefaf3; border-color:#bfe6cf;}
+  .callout.warn{background:#fff7e6; border-color:#f0d99a;}
+  .callout b{display:block; margin-bottom:2px;}
+  figure{margin:14px 0;}
+  figure img{width:100%; border:1px solid var(--line); border-radius:9px;}
+  figcaption{font-size:12.5px; color:var(--muted); margin-top:5px; text-align:center;}
+  kbd{background:#fff; border:1px solid var(--line); border-bottom-width:2.5px; border-radius:5px;
+    padding:0 6px; font-size:12px; font-family:inherit;}
+  .pill{display:inline-block; font-size:11px; font-weight:700; padding:1.5px 8px; border-radius:999px; vertical-align:1px;}
+  .pill.red{background:#fde8eb; color:var(--red);} .pill.amber{background:#fdf3df; color:#9a6c00;}
+  .pill.green{background:#e6f6ec; color:var(--green);}
+  footer{padding:22px 48px 0; color:var(--muted); font-size:12px;}
+  @media print{
+    h2{page-break-after:avoid;} pre,table,figure,.callout{page-break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="cover">
+  <div class="kicker">JB금융그룹 Fin:AI Challenge · Compliance AI · 사용자 문서</div>
+  <h1>JB 준법 코파일럿 — 사용 설명서</h1>
+  <div class="sub">소비자 오인 방지 중심 준법자문 AI Agent · 설치 / 화면 / 사용 시나리오</div>
+  <div class="meta">버전 0.1.0 (MVP) · 2026-06-11 · 함께 보기: 로직 설명서, 설계 문서</div>
+</header>
+
+<main>
+
+<h2><span class="num">1</span>서비스 개요</h2>
+<p class="lead">대고객 금융 콘텐츠(광고·안내문)를 <b>작성 시점부터</b> 자동 심의하고, <b>소비자가 어떻게 오해하는지 시뮬레이션</b>해 위험을 드러내며, <b>규제 근거와 함께 수정안</b>을 제시합니다. 준법관리자는 <b>검토·승인만</b> 수행하고 모든 이력은 감사로그로 남습니다. 전부 로컬에서 구동되는 <b>온프레미스</b> 서비스입니다.</p>
+<table>
+  <thead><tr><th style="width:130px">구성요소</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td>심의 워크스페이스</td><td>초안 입력 → 자동 심의 → 위험 문구 밑줄 + 규제 출처 인용 + 준법점수 + 수정안 [적용]</td></tr>
+    <tr><td>소비자 오인 시뮬레이터</td><td>72세 은퇴자 · 20대 금융초보 · 외국인 거주자 페르소나가 광고를 1인칭으로 읽고 오해하는 과정을 재현</td></tr>
+    <tr><td>준법관리자 검토</td><td>AI 1차심의 결과를 보고 승인/반려/코멘트 (Human-in-the-loop)</td></tr>
+    <tr><td>다국어 재심의</td><td>승인본의 영문 버전 자동 생성 + 영문 룰셋 재심의 (보장성 오역·고지 누락 검출)</td></tr>
+    <tr><td>감사로그</td><td>제출·승인·반려·번역 모든 액션을 누가/언제/근거와 함께 기록</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">2</span>설치 및 실행</h2>
+<h3>2.1 요구사항</h3>
+<ul>
+  <li><b>필수</b>: Python 3.11 이상</li>
+  <li><b>선택</b>: Ollama + Qwen2.5-7B-Instruct (LLM 심의·역할극 활성화, GPU 8GB 이상 권장)</li>
+  <li><b>선택</b>: sentence-transformers (BGE-m3 임베딩 RAG 검색)</li>
+</ul>
+<h3>2.2 빠른 시작 (1분)</h3>
+<pre><code>git clone &lt;repo&gt; &amp;&amp; cd jb-finai-challenge
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+# 브라우저에서 http://localhost:8000 접속</code></pre>
+<div class="callout tip"><b>💡 Ollama 없이도 전 기능 테스트 가능</b>
+LLM 서버가 없으면 자동으로 <b>폴백 모드</b>(룰엔진 + 결정적 시뮬레이션)로 동작합니다. 심의, 오인 시뮬레이터, 수정안 적용, 승인, 다국어 재심의, 감사로그까지 전체 플로우를 그대로 체험할 수 있습니다. 현재 모드는 화면 우측 상단 배지에 표시됩니다.</div>
+<h3>2.3 LLM 연결 (권장)</h3>
+<pre><code>ollama pull qwen2.5:7b-instruct
+ollama serve          # http://localhost:11434 에서 대기</code></pre>
+<p>서버가 떠 있으면 다음 심의부터 자동으로 LLM 모드로 전환됩니다. 환경변수로 조정할 수 있습니다:</p>
+<table>
+  <thead><tr><th>환경변수</th><th>기본값</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td><code>OLLAMA_URL</code></td><td>http://localhost:11434</td><td>Ollama 서버 주소</td></tr>
+    <tr><td><code>OLLAMA_MODEL</code></td><td>qwen2.5:7b-instruct</td><td>사용 모델 (예: qwen2.5:14b-instruct-q4_K_M)</td></tr>
+    <tr><td><code>LLM_TIMEOUT</code></td><td>120</td><td>LLM 호출 타임아웃(초)</td></tr>
+    <tr><td><code>JB_DB_PATH</code></td><td>app/data/app.db</td><td>SQLite 저장 경로</td></tr>
+  </tbody>
+</table>
+<h3>2.4 RAG 임베딩 검색 업그레이드 (선택)</h3>
+<pre><code>pip install sentence-transformers   # 최초 실행 시 BGE-m3 모델(~2GB) 다운로드</code></pre>
+<p>설치만 하면 재시작 후 어휘 검색 → BGE-m3 임베딩 코사인 검색으로 자동 전환됩니다. 심의 결과의 "검색된 규제 근거" 항목에서 현재 백엔드(<code>lexical</code> / <code>bge-m3</code>)를 확인할 수 있습니다.</p>
+
+<h2><span class="num">3</span>화면 구성 — 심의 워크스페이스</h2>
+<figure>
+  <img src="img/ui_workspace.png" alt="심의 워크스페이스">
+  <figcaption>위반 광고 픽스처 심의 결과 — 🔴 52점, 위험 문구 밑줄, 규제 출처 인용, 페르소나별 오해</figcaption>
+</figure>
+<table>
+  <thead><tr><th style="width:170px">영역</th><th>기능</th></tr></thead>
+  <tbody>
+    <tr><td>상단 준법 점수 바</td><td>0~100점 게이지 + 등급 (🟢 통과 / 🟡 주의 / 🔴 위험)</td></tr>
+    <tr><td>콘텐츠 초안 (좌)</td><td>초안 입력 에디터. 위험 문구가 자동 밑줄 표시됩니다(빨강=위반, 노랑=주의). 유형(자동분류/예금/투자/대출)과 언어(한국어/English)를 선택할 수 있습니다.</td></tr>
+    <tr><td>📋 픽스처 버튼</td><td>데모용 샘플 광고 5종을 원클릭 입력 (위반 4종 + 통과 1종)</td></tr>
+    <tr><td>상품 실제 조건</td><td>(선택) 접이식 입력란. 오인 시뮬레이터가 소비자의 '이해'를 실제 조건과 대조할 때 사용</td></tr>
+    <tr><td>⚖ 심의 결과 (우)</td><td>위반/주의 건수, 지적별 [룰명] + 문제 문구 + 설명 + 📖 규제 근거(출처 링크) + 수정안 [적용] 버튼. 하단에 RAG가 검색한 규제 근거 목록</td></tr>
+    <tr><td>👥 오인 시뮬레이터 (하)</td><td>페르소나 3종 카드: 1인칭 이해("…안전한 예금이네") → 행동 → 🔴 위험 오해 + ⟵ 유발 문구 + 근거 조항. 우측 상단에 종합 오인 위험도</td></tr>
+    <tr><td>검토로 전송</td><td>제목 입력 후 [준법관리자 검토로 전송 ▸] → 검토 대기열에 등록</td></tr>
+  </tbody>
+</table>
+<div class="callout tip"><b>실시간 검사 (F11)</b>
+타이핑을 멈추면 약 1.2초 후 자동 심의되고, 붙여넣기 시에는 즉시 검사됩니다. [지금 재심의] 버튼으로 수동 실행도 가능합니다. 8자 미만의 초단문은 검사를 건너뛰고 안내만 표시합니다.</div>
+
+<h2><span class="num">4</span>화면 구성 — 준법관리자 검토</h2>
+<figure>
+  <img src="img/ui_approve.png" alt="준법관리자 검토 화면">
+  <figcaption>검토 대기열(좌) + 상세(우): 원문, AI 지적 사항, 승인/반려/코멘트, 감사로그</figcaption>
+</figure>
+<ul>
+  <li><b>검토 대기열</b>: 제출된 콘텐츠 목록. 상태(검토 대기/승인·배포가능/반려)와 AI 1차심의 등급·점수가 표시됩니다.</li>
+  <li><b>상세 패널</b>: 원문 전문 + AI 지적 사항(근거 인용 포함) 확인 후
+    <span class="pill green">✓ 승인</span> <span class="pill red">✗ 반려</span> 또는 코멘트만 기록할 수 있습니다.</li>
+  <li><b>승인 시</b>: 배포가능 상태로 전환되고 <b>[🌏 영문 버전 생성 + 재심의]</b> 버튼이 활성화됩니다 (다국어는 승인 후 단계).</li>
+  <li><b>감사로그</b>: 해당 콘텐츠의 모든 이력(제출→결정→번역)이 시각·행위자·근거와 함께 표시됩니다.</li>
+</ul>
+
+<h2><span class="num">5</span>표준 사용 시나리오 (90초 데모)</h2>
+<ol>
+  <li>워크스페이스에서 <b>📋 예금 — 단정·원금보장 (메인 데모)</b> 클릭 → <i>"확정 연 5%! 원금 보장 안심예금…"</i> 자동 입력·심의</li>
+  <li>결과 확인: 🔴 위험(52점), "확정 연 5%"·"원금 보장" 밑줄, 금소법 §22 등 근거 인용</li>
+  <li>하단 오인 시뮬레이터: 👵 "원금 보장되는 안전한 예금이네" 등 페르소나별 위험 오해 + 유발 문구 확인</li>
+  <li>우측 상단 <b>[수정안 전체 적용]</b> → 자동 재심의 → 🟢 통과(94점), before/after 효과 확인</li>
+  <li>제목 입력 → <b>[준법관리자 검토로 전송 ▸]</b> → 검토 탭에서 코멘트와 함께 <b>✓ 승인</b></li>
+  <li>승인된 항목에서 <b>[🌏 영문 버전 생성 + 재심의]</b> → 직역에서 생긴 <code>guaranteed</code> 등 보장성 오역·예금자보호 고지 누락을 영문 룰셋이 검출하는 것 확인</li>
+</ol>
+<figure>
+  <img src="img/ui_fixed.png" alt="수정안 적용 후">
+  <figcaption>수정안 전체 적용 후 — 🟢 94점 통과로 전환된 모습</figcaption>
+</figure>
+
+<h2><span class="num">6</span>테스트 실행</h2>
+<pre><code>python -m pytest tests/ -v</code></pre>
+<table>
+  <thead><tr><th>파일</th><th>검증 내용</th></tr></thead>
+  <tbody>
+    <tr><td><code>tests/test_rules.py</code></td><td>TDD 정답셋 — 픽스처(알려진 위반) → 기대 룰 플래그 일치, span/수정안 구조</td></tr>
+    <tr><td><code>tests/test_classifier.py</code></td><td>픽스처별 유형 분류 정확도</td></tr>
+    <tr><td><code>tests/test_pipeline.py</code></td><td>통합 시나리오 — 등급 판정, 수정안 적용 후 점수 상승, 페르소나 오해 검출, 영문 오역 검출, 인용 제한, 초단문 스킵 (LLM 폴백 모드로 고정해 결정적)</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">7</span>API 레퍼런스</h2>
+<p>모든 응답은 JSON이며, 자동 문서는 <code>http://localhost:8000/docs</code> (Swagger UI)에서 확인할 수 있습니다.</p>
+<table>
+  <thead><tr><th style="width:330px">엔드포인트</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /api/health</code></td><td>서버 상태 + LLM 연결 여부·모델·현재 모드</td></tr>
+    <tr><td><code>GET /api/fixtures</code></td><td>데모 픽스처 5종</td></tr>
+    <tr><td><code>POST /api/review</code></td><td>심의 실행. body: <code>{text, content_type?, language?, product_facts?}</code> → 통합 리포트(점수·지적·시뮬레이션·근거·하이라이트)</td></tr>
+    <tr><td><code>POST /api/apply-fixes</code></td><td>수정안 적용. body: <code>{text, fixes[]}</code> → 치환/고지문 추가된 텍스트</td></tr>
+    <tr><td><code>POST /api/submissions</code></td><td>검토 제출 (제목·제출자·본문·리포트)</td></tr>
+    <tr><td><code>GET /api/submissions[/{id}]</code></td><td>제출 목록 / 상세(번역 포함)</td></tr>
+    <tr><td><code>POST /api/submissions/{id}/decision</code></td><td><code>{action: approve|reject|comment, actor, comment}</code></td></tr>
+    <tr><td><code>POST /api/submissions/{id}/translate</code></td><td>승인본의 타깃언어 생성 + 재심의 (승인 상태에서만 허용)</td></tr>
+    <tr><td><code>GET /api/audit?submission_id=</code></td><td>감사로그 조회</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">8</span>문제 해결 (FAQ)</h2>
+<table>
+  <thead><tr><th style="width:300px">증상</th><th>해결</th></tr></thead>
+  <tbody>
+    <tr><td>배지에 "폴백 모드 — Ollama 미연결"</td><td>정상입니다(룰 기반으로 전 기능 동작). LLM을 쓰려면 <code>ollama serve</code> 실행 후 새 심의를 트리거하세요.</td></tr>
+    <tr><td>LLM 응답이 느림</td><td>7B 모델 기준 GPU 권장. CPU만 있으면 <code>LLM_TIMEOUT</code>을 늘리거나 폴백 모드로 데모하세요.</td></tr>
+    <tr><td>포트 8000 충돌</td><td><code>uvicorn app.main:app --port 8080</code></td></tr>
+    <tr><td>검토 이력 초기화</td><td>서버 중지 후 <code>app/data/app.db</code> 삭제 (다음 요청 시 자동 재생성)</td></tr>
+    <tr><td>심의가 실행되지 않음</td><td>입력이 8자 미만이면 의도적으로 건너뜁니다. 하단 안내 문구를 확인하세요.</td></tr>
+    <tr><td>"근거 불충분" 표시</td><td>코퍼스에서 관련 조항을 찾지 못한 경우 허위 인용 방지를 위해 인용을 생략하는 정상 동작입니다.</td></tr>
+  </tbody>
+</table>
+<div class="callout warn"><b>⚠ 데이터 주의</b>
+규제 코퍼스는 MVP용 큐레이션 서브셋이며, "JB 내부 심의 체크리스트"는 시연용 가상 데이터입니다. 실제 운영 적용 전 전체 규제·내규 코퍼스 구축과 준법부서 검증이 필요합니다.</div>
+
+</main>
+<footer>JB 준법 코파일럿 사용 설명서 v0.1.0 · 2026-06-11 · 함께 보기: 로직 설명서(logic-spec), 설계 문서(docs/superpowers/specs)</footer>
+</div>
+</body>
+</html>

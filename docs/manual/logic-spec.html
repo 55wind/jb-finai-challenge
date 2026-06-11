@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>JB 준법 코파일럿 — 로직 설명서</title>
+<style>
+  :root{
+    --jb:#00529b; --jb-dark:#003a6e; --jb-light:#e8f1fa;
+    --ink:#1a1d21; --muted:#5b6470; --line:#e1e5ea;
+    --red:#d6334a; --amber:#e3a008; --green:#1f9d55; --code-bg:#f6f8fa;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; color:var(--ink); background:#fff;
+    font-family:'Noto Sans CJK KR','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    line-height:1.7; font-size:14.5px;}
+  .page{max-width:920px; margin:0 auto; padding:0 0 48px;}
+  header.cover{background:linear-gradient(135deg,var(--jb) 0%,var(--jb-dark) 100%);
+    color:#fff; padding:40px 48px 34px;}
+  header.cover .kicker{font-size:12.5px; letter-spacing:.12em; text-transform:uppercase; opacity:.85; font-weight:600;}
+  header.cover h1{margin:8px 0 4px; font-size:27px; font-weight:800;}
+  header.cover .sub{font-size:15px; opacity:.92;}
+  header.cover .meta{margin-top:16px; font-size:13px; opacity:.88;}
+  main{padding:6px 48px 0;}
+  h2{font-size:19px; font-weight:800; color:var(--jb-dark); margin:36px 0 8px;
+    padding-bottom:7px; border-bottom:2px solid var(--jb-light);}
+  h2 .num{display:inline-block; background:var(--jb); color:#fff; font-size:12px; font-weight:700;
+    width:24px; height:24px; line-height:24px; text-align:center; border-radius:6px; margin-right:9px; vertical-align:2px;}
+  h3{font-size:15.5px; font-weight:700; margin:20px 0 5px;}
+  p{margin:7px 0;}
+  ul,ol{margin:7px 0; padding-left:22px;} li{margin:3px 0;}
+  code{background:var(--code-bg); border:1px solid var(--line); border-radius:5px; padding:1px 6px;
+    font-size:12.5px; font-family:'Noto Sans Mono CJK KR',Consolas,monospace; color:#b1003e;}
+  pre{background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:13px 16px;
+    overflow-x:auto; font-family:'Noto Sans Mono CJK KR',Consolas,monospace; font-size:12px;
+    line-height:1.55; white-space:pre-wrap;}
+  pre code{background:none; border:none; padding:0; color:#222;}
+  table{border-collapse:collapse; width:100%; margin:12px 0; font-size:13px;}
+  th,td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top;}
+  th{background:var(--jb-light); color:var(--jb-dark); font-weight:700;}
+  tbody tr:nth-child(even){background:#fafbfc;}
+  .lead{font-size:15.5px; background:var(--jb-light); border-left:4px solid var(--jb);
+    padding:13px 18px; border-radius:0 8px 8px 0; margin:12px 0;}
+  .callout{border-radius:8px; padding:12px 16px; margin:14px 0; font-size:13.5px; border:1px solid;}
+  .callout.tip{background:#eefaf3; border-color:#bfe6cf;}
+  .callout.warn{background:#fff7e6; border-color:#f0d99a;}
+  .callout b{display:block; margin-bottom:2px;}
+  .file{font-size:12px; color:var(--muted); font-weight:500; margin-left:8px;
+    font-family:'Noto Sans Mono CJK KR',Consolas,monospace;}
+  footer{padding:22px 48px 0; color:var(--muted); font-size:12px;}
+  @media print{
+    h2{page-break-after:avoid;} pre,table,.callout{page-break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="cover">
+  <div class="kicker">JB금융그룹 Fin:AI Challenge · Compliance AI · 기술 문서</div>
+  <h1>JB 준법 코파일럿 — 로직 설명서</h1>
+  <div class="sub">에이전트 파이프라인 · 모듈별 알고리즘 · 점수 산식 · 폴백 전략</div>
+  <div class="meta">버전 0.1.0 (MVP) · 2026-06-11 · 함께 보기: 사용 설명서, 설계 문서</div>
+</header>
+
+<main>
+
+<h2><span class="num">1</span>전체 파이프라인</h2>
+<p class="lead">무거운 에이전트 프레임워크 대신 <b>명시적 파이썬 파이프라인</b>(<code>app/pipeline/orchestrator.py</code>)으로 구성해 모든 단계가 디버깅·설명 가능합니다. ②③과 ④⑤는 각각 <code>asyncio.gather</code>로 병렬 실행됩니다.</p>
+<pre><code>POST /api/review {text, content_type?, language, product_facts?}
+  │  (8자 미만 → skipped=True 즉시 반환)
+  ① 콘텐츠 유형 분류 ────── classifier.py     예금/투자/대출 + 신뢰도
+  │
+  ├─ ② 규제 근거 검색(RAG) ─ retriever.py     코퍼스 top-k 조항 + 유사도   ┐ 병렬
+  └─ ③ 룰엔진(결정적) ────── rules_engine.py  위반 룰 + span + 수정안      ┘
+  │
+  ├─ ④ LLM 심의(뉘앙스) ──── llm_reviewer.py  ②근거+③결과 기반 지적·수정안 ┐ 병렬
+  └─ ⑤ 오인 시뮬레이터 ───── simulator.py     페르소나 역할극 + 오해 판정   ┘
+  │
+  ⑥ 리포트 종합 ──────────── report.py        준법점수·등급·하이라이트·인용
+  │
+  ⑦ 승인/반려 (별도 API) ── store.py          Human-in-the-loop
+  ⑧ 감사로그 + 다국어 ────── store.py / multilingual.py</code></pre>
+<table>
+  <thead><tr><th>설계 원칙</th><th>구현</th></tr></thead>
+  <tbody>
+    <tr><td>LLM은 보조, 판정의 뼈대는 결정적</td><td>룰엔진 결과는 LLM 가용 여부와 무관하게 항상 포함. LLM은 뉘앙스 리스크를 "추가"만 함</td></tr>
+    <tr><td>허위 인용 금지</td><td>모든 인용은 검색된 코퍼스의 조항 id로 제한 (§5.2, §6.3)</td></tr>
+    <tr><td>전 기능 폴백</td><td>LLM 의존 모듈(④⑤, 번역)은 모두 룰 기반 결정적 폴백 보유 → 오프라인 데모·테스트 가능</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">2</span>① 콘텐츠 유형 분류기 <span class="file">app/pipeline/classifier.py</span></h2>
+<p>유형별 키워드 사전(가중치 1~2)에 대한 정규식 매칭 횟수 합산으로 점수를 계산합니다.</p>
+<pre><code>score(유형) = Σ ( 가중치 × 본문 내 패턴 매치 횟수 )
+  deposit    : 예금|적금|예치|만기|이자율|예금자보호(×2) · 정기|입출금|세전|세후(×1) · savings|deposit(×2)
+  investment : 펀드|투자|수익률|운용|주식|채권|ETF(×2) · 원금손실|위험등급(×1) · fund|invest(×2)
+  loan       : 대출|융자|한도|상환|연체(×2) · 승인|신용점수|중도상환(×1) · loan|credit(×2)
+
+content_type = argmax score,   confidence = score(best) / Σ score(전체)</code></pre>
+<ul>
+  <li>전체 점수 합이 0이면(금융 키워드 없음) <code>deposit</code> 기본값 + 신뢰도 0.0 반환.</li>
+  <li>UI에서 유형을 수동 지정하면 분류 결과는 참고 정보로만 표시되고 심의는 지정 유형으로 라우팅됩니다.</li>
+</ul>
+
+<h2><span class="num">3</span>② 규제 근거 검색 (RAG) <span class="file">app/pipeline/retriever.py</span></h2>
+<h3>3.1 코퍼스</h3>
+<p><code>app/data/regulations.json</code> — 12개 조항. 각 항목은 <code>id / law / article / title / text / types(적용유형) / effective_date / source_url</code> 메타데이터를 가지며, 출처 인용과 버전 관리(규제 변경 추적)의 토대가 됩니다. 검색 대상은 <code>유형 일치 ∪ common</code> 조항으로 필터링됩니다.</p>
+<h3>3.2 질의 확장</h3>
+<p>광고 문구는 짧아 법률 용어와 어휘가 겹치지 않으므로, 본문에서 위험 신호를 감지해 법률 도메인 시드 키워드를 질의에 덧붙입니다.</p>
+<pre><code>"확정|무조건|절대|100%|guaranteed"  →  + "단정적 판단 보장 확실 오인"
+"원금|보장|principal|risk"          →  + "원금보장 손실보전 이익보장 예금자보호 한도"
+"%|금리|이자|수익률|rate"           →  + "이자율 수익률 세전 세후 우대조건 변동"
+"최고|최저|1위|유일"                →  + "최상급 거짓 과장 비교 표시 광고"   (등 6종)</code></pre>
+<h3>3.3 스코어링 (이중 백엔드)</h3>
+<pre><code># 기본: 어휘 검색 (의존성 0, 결정적)
+score(d) = |q ∩ d| / ( √|d| · √|q| )        # 정규화 토큰 중첩 (코사인 유사 형태)
+
+# 업그레이드: sentence-transformers 설치 시 자동 전환
+score(d) = BGE-m3(query) · BGE-m3(doc)      # 정규화 임베딩 내적 (코사인)</code></pre>
+<ul>
+  <li>top-k = 4, 점수 임계값 0.05 미만은 버림 → 결과가 0건이면 <code>sufficient=false</code>로 표시하고 UI에 "근거 불충분 — 인용 생략"을 노출합니다 (허위 인용 방지).</li>
+  <li>임베딩 백엔드는 try-import + 실패 시 <code>None</code> 반환으로 어휘 검색에 자동 폴백합니다.</li>
+</ul>
+
+<h2><span class="num">4</span>③ 룰엔진 <span class="file">app/pipeline/rules_engine.py · app/data/rules.yaml</span></h2>
+<p>규제에서 파생한 결정적 체크. 룰은 YAML로 외부화되어 코드 수정 없이 추가·수정할 수 있습니다.</p>
+<h3>4.1 룰 스키마</h3>
+<pre><code>id / name / kind / types[] / languages[] / severity / category / basis(규제 id) / message
+kind: forbidden  →  patterns[] 중 하나라도 매치되면 위반
+      required   →  requires_any[] 가 전부 부재하면 위반 (필수고지 누락)
+forbidden 부가:  condition_absent_any[]  — 이 패턴이 본문에 있으면 룰 면제
+                 suggestion_map           — 매치 문구 → 치환안 템플릿 ({n}=숫자 보존)
+required 부가:   fix_append               — [적용] 시 말미에 추가할 고지문</code></pre>
+<h3>4.2 판정 흐름</h3>
+<ol>
+  <li><b>적용 필터</b>: <code>content_type ∈ types</code> 그리고 <code>language ∈ languages</code>인 룰만 평가 (유형③·다국어② 라우팅).</li>
+  <li><b>forbidden</b>: 모든 패턴의 매치 위치를 <code>spans[{start,end,text}]</code>로 수집 → 에디터 밑줄 하이라이트의 좌표가 됩니다. 면제 조건 예: R-007(금리 표기)은 본문에 <code>세전|세후</code>가 이미 있으면 건너뜀.</li>
+  <li><b>required</b>: 예) 투자 유형에서 <code>원금손실이 발생할 수|가능</code> 계열 문구가 전혀 없으면 R-004 위반. 부정 우회 방지를 위해 "원금 손실 걱정 없이" 같은 문구는 고지로 인정되지 않도록 패턴을 <b>고지 형태</b>로 한정했습니다.</li>
+  <li><b>수정안 생성</b>: <code>suggestion_map</code>의 <code>{n}</code> 템플릿으로 숫자를 보존한 치환안을 만들고("확정 연 5%" → "연 5% (세전, 변동 가능)"), required 룰은 <code>fix_append</code> 고지문을 제공합니다. 결과는 <code>fix:{type: replace|append, ...}</code> 구조로 F7(수정안 적용)에 그대로 전달됩니다.</li>
+</ol>
+<h3>4.3 룰 목록 (KO 8종 + EN 2종)</h3>
+<table>
+  <thead><tr><th>ID</th><th>이름</th><th>종류</th><th>유형</th><th>심각도</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td>R-001</td><td>단정·확정 표현 (확정 n%, 무조건, 100% 보장…)</td><td>forbidden</td><td>전체</td><td>high</td><td>금소법 §22④·영 §20</td></tr>
+    <tr><td>R-002</td><td>원금보장 오인 표현</td><td>forbidden</td><td>예금·투자</td><td>high</td><td>표시·광고 심사지침</td></tr>
+    <tr><td>R-003</td><td>근거 없는 최상급 (업계 1위, 최저금리…)</td><td>forbidden</td><td>전체</td><td>medium</td><td>표시광고법 §3</td></tr>
+    <tr><td>R-004</td><td>원금손실 고지 누락</td><td>required</td><td>투자</td><td>high</td><td>자본시장법 §57</td></tr>
+    <tr><td>R-005</td><td>예금자보호 안내 누락</td><td>required</td><td>예금</td><td>medium</td><td>은행연합회 광고심의</td></tr>
+    <tr><td>R-006</td><td>연체이자율·중도상환수수료 누락</td><td>required</td><td>대출</td><td>medium</td><td>은행연합회 광고심의</td></tr>
+    <tr><td>R-007</td><td>금리 표기 불충분 (세전·세후 부재 시 n% 표기)</td><td>forbidden</td><td>예금·대출</td><td>medium</td><td>심사지침 금리표시</td></tr>
+    <tr><td>R-008</td><td>심사 없는 대출 오인 (무조건 승인, 신용 무관…)</td><td>forbidden</td><td>대출</td><td>high</td><td>은행연합회 광고심의</td></tr>
+    <tr><td>R-101</td><td>보장성 오역 표현 — guaranteed, risk-free…</td><td>forbidden</td><td>전체(EN)</td><td>high</td><td>내부기준 제2호</td></tr>
+    <tr><td>R-102</td><td>예금자보호 번역 누락 (deposit insurance/KDIC)</td><td>required</td><td>예금(EN)</td><td>medium</td><td>내부기준 제2호</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">5</span>④ LLM 심의기 <span class="file">app/pipeline/llm_reviewer.py</span></h2>
+<h3>5.1 프롬프트 구조</h3>
+<pre><code>system: "한국 금융지주 준법감시인" 역할 + 출력 JSON 스키마 강제
+        {"issues":[{quote, risk, title, explanation, suggestion, basis_id}], "overall_comment"}
+user:   [콘텐츠 유형] + [광고 초안]
+        + [규제 근거] ← ② RAG 검색 결과 (id·법령·조문 원문)
+        + [룰엔진 1차 지적] ← ③ 결과
+        + 지시: "룰엔진이 못 잡은 뉘앙스 리스크(맥락상 오인, 조건 축약, 과장 분위기)도 포함"</code></pre>
+<p>Ollama 호출은 <code>format:"json"</code> + temperature 0.2로 구조화 출력을 강제하고, 파싱 실패 시 1회 재시도합니다 (<code>llm_client.chat_json</code>).</p>
+<h3>5.2 환각 방지 후처리 (핵심)</h3>
+<ul>
+  <li><b>인용 제한</b>: <code>basis_id ∉ (검색된 조항 ∪ 룰 근거)</code> 이면 인용을 제거(null) → LLM이 조항번호를 창작할 수 없음.</li>
+  <li><b>quote 검증</b>: <code>quote</code>가 초안 원문에 실제로 존재하지 않으면 비표시 처리 → 없는 문구 지적 방지.</li>
+  <li><b>중복 제거</b>: 룰엔진과 (근거, 문구)가 같은 LLM 지적은 리포트에서 제외 → 이중 감점·중복 표시 방지.</li>
+</ul>
+<h3>5.3 폴백</h3>
+<p>LLM 불가/실패 시 룰엔진 findings를 동일 스키마의 심의 의견으로 결정적 변환하고 <code>engine: "fallback(rule-based)"</code>로 표기합니다.</p>
+
+<h2><span class="num">6</span>⑤ 소비자 오인 시뮬레이터 <span class="file">app/pipeline/simulator.py · app/data/personas.json</span></h2>
+<p class="lead">헤드라인 기능. <b>2단계 구조</b>: (1) 페르소나 역할극 — 광고를 1인칭으로 읽기, (2) 오해 판정기(judge) — '이해'를 사실과 대조해 오해만 추출. 페르소나 3종은 병렬(<code>asyncio.gather</code>)로 추론됩니다.</p>
+<h3>6.1 페르소나 정의</h3>
+<table>
+  <thead><tr><th>페르소나</th><th>프로필 요지</th><th>취약 카테고리</th></tr></thead>
+  <tbody>
+    <tr><td>👵 72세 은퇴자</td><td>금융이해도 낮음, 안전 최우선, '보장·안심'에 반응, 세부조건 안 읽음</td><td>guarantee, assertive</td></tr>
+    <tr><td>🧑 20대 금융초보</td><td>용어 약함, 단기수익 기대, 숫자(%)에 끌리고 작은 글씨 건너뜀</td><td>assertive, rate, superlative</td></tr>
+    <tr><td>🌏 외국인 거주자</td><td>한국어 중급, 금융용어·예금자보호 제도 모름 (전북은행 고객 특성)</td><td>notice, rate, guarantee</td></tr>
+  </tbody>
+</table>
+<h3>6.2 LLM 모드 — 역할극 → 판정 2회 호출</h3>
+<pre><code>1차 (역할극):  system = "당신은 아래 프로필의 실제 금융소비자, 전문가 아님"
+              user = 프로필 + 광고 → {understanding(1인칭 이해), action(행동), expectations[]}
+
+2차 (판정기):  system = "금융소비자보호 심의역 — 이해를 ⓐ상품 실제 조건,
+                         ⓑ규제상 암시 금지 항목(원금보장·확정수익·무심사)과 대조"
+              user = 프로필 + 1차 결과 + 광고 원문 + product_facts
+              → {misunderstandings:[{text, risk, trigger_phrase, category}]}</code></pre>
+<ul>
+  <li><b>유발 문구 역추적</b>: 판정기가 반환한 <code>trigger_phrase</code>가 광고 원문에 실제 존재하는지 검증, 없으면 폐기.</li>
+  <li><b>근거 연결</b>: <code>category → 조항</code> 고정 매핑 (guarantee→금소법 §22③, assertive→§22④, rate→심사지침, notice→§22①, superlative→표시광고법 §3) — 차별 기능이 본 심의의 설명가능성을 강화하는 연결 고리.</li>
+  <li>역할극 출력이 스키마에 어긋나면 해당 페르소나만 폴백으로 강등.</li>
+</ul>
+<h3>6.3 폴백 모드 — 룰 기반 결정적 시뮬레이션</h3>
+<pre><code>hit = {③ 룰엔진 findings의 category 집합}
+key = 페르소나 취약 카테고리 중 hit에 포함된 첫 항목   (없으면 hit ∩ 보유 템플릿, 그것도 없으면 "safe")
+출력 = personas.json의 해당 카테고리 폴백 템플릿(이해/행동/오해/위험도)
+trigger_phrase = 같은 카테고리 룰의 matched_text       (required 룰이면 "(고지 문구 자체가 없음)")</code></pre>
+<h3>6.4 종합 오인 리스크</h3>
+<pre><code>high 오해 ≥ 2건 → "높음"  ·  오해 ≥ 1건 → "중간"  ·  없음 → "낮음"</code></pre>
+
+<h2><span class="num">7</span>⑥ 리포트 종합 — 준법점수 산식 <span class="file">app/pipeline/report.py</span></h2>
+<h3>7.1 감점표</h3>
+<pre><code>점수 = 100
+  − Σ 룰엔진:   high −12 · medium −4 · low −1
+  − Σ LLM 고유 지적(룰과 중복 제외): high −5 · medium −2 · low −1
+  − min( Σ 시뮬레이터 오해: high −4 · medium −2 ,  상한 12 )
+  하한 5점</code></pre>
+<h3>7.2 등급 판정</h3>
+<pre><code>🟢 통과(pass)    : 점수 ≥ 85  그리고 high 지적 0건
+🔴 위험(danger)  : 점수 &lt; 60  또는  (high ≥ 1건 그리고 점수 &lt; 75)
+🟡 주의(caution) : 그 외</code></pre>
+<p>high 1건이라도 있으면 점수가 다소 높아도 위험으로 끌어내리는 비대칭 규칙 — "감점 합계는 작지만 치명적 위반 1건"이 통과로 위장되는 것을 방지합니다.</p>
+<h3>7.3 하이라이트 병합</h3>
+<ul>
+  <li>룰 span + (원문에 존재 검증된) LLM quote 위치를 모아 시작 위치순 정렬.</li>
+  <li>프론트는 겹치는 구간을 앞선 span 우선으로 제거 후, 투명 textarea 뒤의 backdrop 레이어에 <code>&lt;mark&gt;</code>(빨강=high, 노랑=medium)로 렌더링 — 에디터 자동 밑줄의 원리.</li>
+  <li>모든 지적·오해의 <code>basis_id</code>는 코퍼스 메타데이터(법령·조항·출처 URL)로 해석되어 인용 카드로 표시됩니다.</li>
+</ul>
+
+<h2><span class="num">8</span>F7 수정안 적용 <span class="file">orchestrator.apply_fixes</span></h2>
+<pre><code>replace 타입: text.replace(original → replacement)      # 동일 문구 전체 치환
+append  타입: 고지문이 본문에 아직 없으면 말미에 줄바꿈 후 추가 (중복 방지)
+적용 후 프론트가 자동 재심의 → before/after 점수 변화 확인</code></pre>
+
+<h2><span class="num">9</span>⑦⑧ 승인 워크플로 + 감사로그 <span class="file">app/store.py (SQLite)</span></h2>
+<h3>9.1 상태 머신</h3>
+<pre><code>제출(submit) → pending ─ approve → approved (배포가능, 다국어 생성 허용)
+                       └ reject  → rejected
+comment 액션은 상태를 바꾸지 않고 감사로그에만 기록</code></pre>
+<h3>9.2 스키마</h3>
+<pre><code>submissions  : 제출 본문·유형·언어·product_facts·AI 리포트(JSON)·상태·결정자/시각/코멘트
+translations : 승인본의 타깃언어 텍스트 + 생성 엔진 + 재심의 리포트(JSON)
+audit_log    : ts · submission_id · actor(누가) · action(무엇을) · detail(근거/결과 요약)</code></pre>
+<p>제출·승인·반려·코멘트·번역 모든 액션이 자동으로 audit_log에 적재되어 "누가/언제/어떤 근거로"를 재구성할 수 있습니다 (기대④ 감사추적).</p>
+
+<h2><span class="num">10</span>다국어 생성 + 재심의 (F10) <span class="file">app/pipeline/multilingual.py</span></h2>
+<ol>
+  <li><b>생성</b>: LLM 모드 — "충실 번역, 고지 임의 추가·삭제 금지" 지시로 영문 생성. 폴백 모드 — 구문 사전 기반 <b>의도적 순진한 직역</b>("확정 연 5%" → "Guaranteed 5% annual rate").</li>
+  <li><b>재심의</b>: 생성문을 <code>language="en"</code>으로 동일 파이프라인에 재투입 → 영문 룰셋(R-101 보장성 오역, R-102 고지 번역 누락)이 검출.</li>
+</ol>
+<div class="callout tip"><b>폴백 직역이 곧 데모 장치</b>
+직역 사전이 만들어내는 'guaranteed'는 실제 번역 과정에서 흔한 보장성 오역을 재현합니다. 즉 폴백 모드에서도 "번역 → 재심의가 오역을 잡아내는" 설계 §10.3 시나리오가 그대로 작동합니다. 단, 승인 전에 한국어 원문을 수정했다면 직역에도 오역이 없어 재심의를 통과합니다 (정상).</div>
+
+<h2><span class="num">11</span>실시간 검사 (F11) <span class="file">app/static/index.html</span></h2>
+<ul>
+  <li>입력 이벤트마다 타이머 리셋 → <b>1.2초 멈춤</b> 시 심의 호출 (디바운스). 붙여넣기는 0.35초로 단축.</li>
+  <li>유형/언어 변경 시 즉시 재심의. 상태 표시등: 회색(대기) → 노랑 점멸(심의 중) → 초록(완료).</li>
+  <li>서버측 가드: 8자 미만은 <code>skipped=true</code>로 즉시 반환 (LLM 호출 비용 차단).</li>
+</ul>
+
+<h2><span class="num">12</span>에러 처리 매트릭스 (설계 §15 대응)</h2>
+<table>
+  <thead><tr><th>리스크</th><th>구현된 방어</th><th>위치</th></tr></thead>
+  <tbody>
+    <tr><td>LLM 출력 파싱 실패</td><td><code>format:"json"</code> 강제 + 코드펜스/잡담 제거 파서 + 1회 재시도 → 실패 시 룰 기반 폴백</td><td>llm_client / llm_reviewer</td></tr>
+    <tr><td>RAG 무관 조항 검색</td><td>top-k=4 + 임계값 0.05 + "근거 불충분" 표기</td><td>retriever</td></tr>
+    <tr><td>LLM 환각 인용</td><td>basis_id 화이트리스트(검색 코퍼스 한정) + quote 원문 존재 검증</td><td>llm_reviewer / simulator</td></tr>
+    <tr><td>빈/초단문 입력</td><td>8자 미만 검사 스킵 + 안내</td><td>orchestrator</td></tr>
+    <tr><td>번역 오역·고지 누락</td><td>영문 룰셋 재심의 (R-101/R-102)</td><td>multilingual + rules</td></tr>
+    <tr><td>Ollama 다운(런타임)</td><td>호출 예외 → 해당 모듈만 폴백 강등, 파이프라인은 완주</td><td>전 모듈</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">13</span>테스트 전략 <span class="file">tests/ · app/data/fixtures.json</span></h2>
+<ul>
+  <li><b>TDD 정답셋</b>: 픽스처 5종(위반 4 + 통과 1)에 <code>expected_rule_ids / expected_type / expected_grade</code>를 명시 → 룰·분류·등급 회귀 테스트가 파라미터라이즈로 자동 생성됩니다. 픽스처 = 데모 입력 = 정답셋 (삼중 활용).</li>
+  <li><b>결정성</b>: 통합 테스트는 <code>llm_client.is_available</code>을 monkeypatch로 False 고정 → 폴백 모드에서 항상 동일 결과.</li>
+  <li><b>시나리오 검증</b>: 수정안 적용 → 점수 +20 이상 상승 & high 0건 / 72세 페르소나의 "원금 보장" 유발 문구 검출 / 직역 'guaranteed' → R-101·R-102 검출 / 인용은 코퍼스 내 조항만.</li>
+</ul>
+
+<h2><span class="num">14</span>알려진 한계</h2>
+<ul>
+  <li>규제 코퍼스는 큐레이션 서브셋(12조항)이며 조문 원문을 요약·재구성한 것 → 운영 적용 시 전문 수록 및 법무 검증 필요.</li>
+  <li>룰엔진 정규식은 표기 변형(띄어쓰기·이형태)에 대한 커버리지 한계가 있음 → 형태소 분석 기반 매칭으로 고도화 가능.</li>
+  <li>폴백 시뮬레이션은 템플릿 기반이라 페르소나 발화가 고정적 → LLM 모드에서 본래 성능 발휘.</li>
+  <li>준법점수 가중치는 데모 기준 휴리스틱 → 실제 심의 데이터로 캘리브레이션 필요.</li>
+</ul>
+
+</main>
+<footer>JB 준법 코파일럿 로직 설명서 v0.1.0 · 2026-06-11 · 소스: app/pipeline/* · 데이터: app/data/*</footer>
+</div>
+</body>
+</html>
