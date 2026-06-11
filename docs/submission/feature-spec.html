@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>JB 준법 코파일럿 — 기능명세서</title>
+<style>
+  :root{
+    --jb:#00529b; --jb-dark:#003a6e; --jb-light:#e8f1fa;
+    --ink:#1a1d21; --muted:#5b6470; --line:#e1e5ea;
+    --red:#d6334a; --amber:#e3a008; --green:#1f9d55; --code-bg:#f6f8fa;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; color:var(--ink); background:#fff;
+    font-family:'Noto Sans CJK KR','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    line-height:1.68; font-size:14px;}
+  .page{max-width:920px; margin:0 auto; padding:0 0 48px;}
+  header.cover{background:linear-gradient(135deg,var(--jb) 0%,var(--jb-dark) 100%);
+    color:#fff; padding:42px 48px 36px;}
+  header.cover .kicker{font-size:12.5px; letter-spacing:.12em; text-transform:uppercase; opacity:.85; font-weight:600;}
+  header.cover h1{margin:8px 0 4px; font-size:27px; font-weight:800;}
+  header.cover .sub{font-size:15px; opacity:.92;}
+  header.cover .meta{margin-top:18px; display:grid; grid-template-columns:repeat(2,1fr); gap:6px 24px; font-size:13px;}
+  header.cover .meta b{opacity:.78; font-weight:600; margin-right:8px;}
+  main{padding:6px 48px 0;}
+  h2{font-size:18.5px; font-weight:800; color:var(--jb-dark); margin:34px 0 8px;
+    padding-bottom:7px; border-bottom:2px solid var(--jb-light);}
+  h2 .num{display:inline-block; background:var(--jb); color:#fff; font-size:12px; font-weight:700;
+    width:24px; height:24px; line-height:24px; text-align:center; border-radius:6px; margin-right:9px; vertical-align:2px;}
+  h3{font-size:15px; font-weight:700; margin:18px 0 5px;}
+  p{margin:6px 0;}
+  ul,ol{margin:6px 0; padding-left:22px;} li{margin:3px 0;}
+  code{background:var(--code-bg); border:1px solid var(--line); border-radius:5px; padding:1px 6px;
+    font-size:12px; font-family:'Noto Sans Mono CJK KR',Consolas,monospace; color:#b1003e;}
+  pre{background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:12px 15px;
+    overflow-x:auto; font-family:'Noto Sans Mono CJK KR',Consolas,monospace; font-size:11.5px;
+    line-height:1.55; white-space:pre-wrap;}
+  pre code{background:none; border:none; padding:0; color:#222;}
+  table{border-collapse:collapse; width:100%; margin:11px 0; font-size:12.5px;}
+  th,td{border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top;}
+  th{background:var(--jb-light); color:var(--jb-dark); font-weight:700;}
+  tbody tr:nth-child(even){background:#fafbfc;}
+  .lead{font-size:15px; background:var(--jb-light); border-left:4px solid var(--jb);
+    padding:12px 17px; border-radius:0 8px 8px 0; margin:11px 0;}
+  .callout{border-radius:8px; padding:11px 15px; margin:13px 0; font-size:13px; border:1px solid;}
+  .callout.tip{background:#eefaf3; border-color:#bfe6cf;}
+  .callout.warn{background:#fff7e6; border-color:#f0d99a;}
+  .callout b{display:block; margin-bottom:2px;}
+  .pill{display:inline-block; font-size:10.5px; font-weight:700; padding:1.5px 8px; border-radius:999px; vertical-align:1px;}
+  .pill.done{background:#e6f6ec; color:var(--green);}
+  .pill.str{background:#f0ecff; color:#5b3bbf;}
+  .pill.mvp{background:#e7f0fb; color:var(--jb-dark);}
+  figure{margin:13px 0;}
+  figure img{width:100%; border:1px solid var(--line); border-radius:9px;}
+  figcaption{font-size:12px; color:var(--muted); margin-top:4px; text-align:center;}
+  footer{padding:22px 48px 0; color:var(--muted); font-size:12px;}
+  @media print{
+    h2{page-break-after:avoid;} pre,table,figure,.callout{page-break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="cover">
+  <div class="kicker">JB금융그룹 Fin:AI Challenge · 지정주제2 Compliance AI · 제출물 ② 기능명세서</div>
+  <h1>JB 준법 코파일럿 — 기능명세서</h1>
+  <div class="sub">소비자 오인 방지 중심 준법자문 AI Agent 서비스</div>
+  <div class="meta">
+    <div><b>주제</b>준법자문가 AI Agent 서비스 개발 (지정주제2)</div>
+    <div><b>작성일</b>2026-06-11</div>
+    <div><b>산출물</b>동작하는 MVP(코드+README) · 본 기능명세서 · 시연 시나리오</div>
+    <div><b>제약 준수</b>무료·오픈소스 모델만 사용 · 100% 온프레미스</div>
+  </div>
+</header>
+
+<main>
+
+<h2><span class="num">1</span>서비스 개요</h2>
+<p class="lead">대고객 금융 콘텐츠(광고·안내문)를 <b>작성 시점부터</b> AI가 1차 심의하고, <b>소비자(고령자·금융초보·외국인)가 어떻게 오해하는지 시뮬레이션</b>해 위험을 드러내며, <b>규제 근거를 인용한 수정안</b>을 제시한다. 준법관리자는 <b>검토·승인만</b> 수행하고 전 과정이 감사로그로 남는다. 외부 API 없이 오픈모델로 구동되는 <b>온프레미스 AI Agent</b>.</p>
+
+<h3>1.1 해결하려는 문제 (은행 제시 현행·한계 기반)</h3>
+<table>
+  <thead><tr><th style="width:90px">구분</th><th>내용</th></tr></thead>
+  <tbody>
+    <tr><td>현행</td><td>대고객 콘텐츠 전반을 준법관리자가 대부분 <b>수작업</b> 심의. 외국어 콘텐츠도 동일 인력·동일 방식. 심의 지연 → 배포 지연 → <b>마케팅 적시성</b> 손실. 심의 <b>품질 편차</b>와 휴먼에러.</td></tr>
+    <tr><td>한계</td><td>준법 심의가 <b>병목</b>이 되어 콘텐츠 적시성·확장성 제한. 다국어·다채널 확장 시 심의 리소스 <b>선형 증가</b>. 규제 변경의 즉시 반영 어려움.</td></tr>
+    <tr><td>본질</td><td>금융 광고 규제(금소법 §22 등)의 목적은 "표현 적발"이 아니라 <b>소비자 오인·기만 방지</b>다. 기존 수작업·표현매칭 도구는 "실제 소비자가 어떻게 오해하는가"를 직접 다루지 못한다.</td></tr>
+  </tbody>
+</table>
+
+<h3>1.2 대상 사용자와 사용 상황</h3>
+<table>
+  <thead><tr><th style="width:140px">사용자</th><th>사용 상황</th><th style="width:230px">제공 가치</th></tr></thead>
+  <tbody>
+    <tr><td>마케팅·상품·지점 담당자</td><td>광고/SNS/안내문 초안 <b>작성 중</b> — 타이핑을 멈추거나 붙여넣는 순간 자동 심의</td><td>배포 전 사전 차단, 수정안 원클릭 적용, 심의 대기 없는 작성</td></tr>
+    <tr><td>준법관리자(준법감시부)</td><td>AI 1차심의가 끝난 콘텐츠의 <b>검토·승인</b></td><td>전수 초벌심의 자동화 → 판단 업무에 집중, 일관된 기준, 감사추적</td></tr>
+    <tr><td>(간접) 금융소비자</td><td>배포된 콘텐츠 열람</td><td>오인 유발 표현이 제거된 명확·공정한 정보</td></tr>
+  </tbody>
+</table>
+
+<h3>1.3 문제의 중요도 — 금융업·JB 관점</h3>
+<ul>
+  <li><b>제재 리스크 직결</b>: 금소법 §22 위반 광고는 과징금·기관제재 대상. 광고 1건의 오인 표현이 불완전판매 분쟁으로 이어지는 구조적 리스크.</li>
+  <li><b>JB 특수성</b>: 전북·광주은행은 지역 밀착 마케팅 빈도가 높고, 전북 지역 <b>외국인 거주자 고객</b> 비중 증가로 다국어 콘텐츠 수요가 커지는 반면 심의 인력은 한정적.</li>
+  <li><b>서비스 과제 전환성</b>: 입력(콘텐츠 초안)·출력(심의 리포트·승인 상태)·사용자·프로세스 접점이 명확해 그대로 내부 시스템 과제로 전환 가능 — 본 MVP가 그 증명.</li>
+</ul>
+
+<h2><span class="num">2</span>금융업무 연계 및 기대효과</h2>
+<h3>2.1 업무 프로세스 접점 (As-Is → To-Be)</h3>
+<pre><code>As-Is  기획 → 초안 작성 → (수일 대기) 준법 수작업 심의 → 반려·재작성 반복 → 승인 → 배포
+                          ▲ 병목·편차·적시성 손실
+
+To-Be  기획 → 초안 작성 ⟲ AI 실시간 심의·수정안 (작성 중 즉시, 무한 반복 무비용)
+            → 준법관리자 검토·승인 (AI 리포트 기반 판단만) → 배포가능 + 감사로그
+            → (다국어) 승인본 기반 자동 생성 + 재심의</code></pre>
+<h3>2.2 기대효과</h3>
+<table>
+  <thead><tr><th style="width:120px">축</th><th>기대효과</th></tr></thead>
+  <tbody>
+    <tr><td>업무효율</td><td>준법관리자의 초벌 심의(표현 검출·근거 탐색·수정안 작성)를 자동화 → 건당 검토 시간을 "읽고 판단"으로 축소. 다국어 심의의 한계비용 ≈ 0.</td></tr>
+    <tr><td>리스크 감소</td><td>배포 전 전수 1차심의 + 일관된 룰 기준 → 휴먼에러·품질편차 감소. 오인 시뮬레이터로 "규정상 합법이지만 오해 유발" 영역까지 가시화.</td></tr>
+    <tr><td>고객가치</td><td>취약계층(고령·초보·외국인) 관점의 오해를 사전 제거 → 불완전판매·민원 감소, 신뢰 제고.</td></tr>
+    <tr><td>수익기회</td><td>심의 리드타임 단축 → 마케팅 적시성 회복(시즌·금리 이벤트 대응). 콘텐츠 생산량 확대 가능.</td></tr>
+    <tr><td>그룹 AX 부합</td><td>"사람이 하던 반복 판단을 AI가 1차 수행, 사람은 최종 판단" — 그룹 AX·디지털 전환이 지향하는 업무방식 전환의 전형적 사례.</td></tr>
+  </tbody>
+</table>
+<h3>2.3 규제·보안·개인정보·내부통제 고려 (설계에 내장)</h3>
+<ul>
+  <li><b>데이터 주권</b>: 심의 대상(미공개 마케팅 자료·내부 심의기준)은 외부 전송 불가 정보 → <b>100% 온프레미스·외부 API 미사용</b>을 아키텍처 전제로 채택. 망분리 환경에서도 구동 가능.</li>
+  <li><b>개인정보</b>: 처리 대상은 콘텐츠 텍스트뿐, 고객 개인정보를 수집·저장하지 않음. 페르소나는 가상 프로필.</li>
+  <li><b>내부통제</b>: 모든 제출·승인·반려·번역이 감사로그(누가/언제/근거)로 기록 — 광고심의 기록 보존 의무 및 내부통제 점검에 대응.</li>
+    <li><b>책임소재</b>: AI는 1차심의·권고만 수행하고 <b>배포 결정 권한은 항상 사람(준법관리자)</b>에게 있는 Human-in-the-loop 구조로 책임 경계를 명확화.</li>
+</ul>
+
+<h2><span class="num">3</span>차별점</h2>
+<table>
+  <thead><tr><th style="width:185px">차별점</th><th>내용</th></tr></thead>
+  <tbody>
+    <tr><td>① 소비자 오인 시뮬레이터 <span class="pill mvp">독자 기능</span></td><td>고령자·금융초보·외국인 페르소나가 광고를 1인칭으로 읽고 오해하는 과정을 재현 → 위험 오해 + 유발 문구 + 금소법 조항 연결. 해외 유사 제품(Saifr, PerformLine 등)에도 없는 지점이며, 규제의 본질(오인 방지)을 정면 공략.</td></tr>
+    <tr><td>② 작성시점 실시간 예방</td><td>사후 배치 심의가 아니라 작성 중(멈춤·붙여넣기) 자동 검사 → 병목·적시성 문제를 근본 해결.</td></tr>
+    <tr><td>③ 온프레미스·오픈모델</td><td>해외 제품은 영어권 규제 기반 SaaS. 한국어·한국 규제 + 온프레미스는 은행이 <b>실제 도입 가능한 유일한 형태</b>.</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">4</span>AI Agent 설계 — 판단·행동·검증·개선 구조</h2>
+<table>
+  <thead><tr><th style="width:80px">단계</th><th>수행 내용</th></tr></thead>
+  <tbody>
+    <tr><td><b>인지</b></td><td>콘텐츠 유형 분류(①) + 규제 근거 검색 RAG(②)로 맥락 수집</td></tr>
+    <tr><td><b>판단</b></td><td>룰엔진 결정적 판정(③) + LLM 뉘앙스 심의(④) + 오인 시뮬레이터의 페르소나 역할극→오해 판정(⑤)</td></tr>
+    <tr><td><b>행동</b></td><td>수정안 생성·치환, 고지문 추가(F7), 다국어 버전 생성(F10), 승인 시 배포가능 상태 전환</td></tr>
+    <tr><td><b>검증</b></td><td>수정 적용 후 <b>자동 재심의 루프</b>, 번역본 재심의, 인용 화이트리스트·quote 원문 검증(환각 차단), 최종 게이트는 사람 승인(⑦)</td></tr>
+    <tr><td><b>개선</b></td><td>감사로그 축적 + TDD 정답셋(픽스처→기대 플래그) 회귀 체계 → 룰·프롬프트 개선의 피드백 기반</td></tr>
+  </tbody>
+</table>
+<h3>4.1 에이전트 파이프라인 (구현 완료)</h3>
+<pre><code>콘텐츠 초안 입력 (한국어/영어 · 유형 자동/수동 · 8자 미만 스킵)
+ ① 콘텐츠 유형 분류      예금·투자·대출 → 유형별 심의기준 라우팅
+ ② 규제 근거 검색(RAG)   질의 확장 → 코퍼스 top-k 조항 (임계값 미달 시 "근거 불충분") ┐ 병렬
+ ③ 룰엔진(결정적)        금지표현·필수고지·금리표기 — YAML 룰 10종, span 추출        ┘
+ ④ LLM 심의(뉘앙스)      ②근거+③결과 주입 → 위반가능성·표현리스크·수정안 (인용 제한) ┐ 병렬
+ ⑤ ★오인 시뮬레이터      페르소나 3종 역할극 → 오해 판정기 → 유발 문구 역추적          ┘
+ ⑥ 리포트 종합           준법점수(감점식)·등급·하이라이트·인용을 한 화면에
+ ⑦ 준법관리자 검토·승인  승인/반려/코멘트 (Human-in-the-loop)
+ ⑧ 승인 후               배포가능 + 감사로그 + 다국어 생성·재심의</code></pre>
+
+<h2><span class="num">5</span>시스템 아키텍처 및 기술 스택</h2>
+<pre><code>┌────────── Frontend (정적 SPA — FastAPI 서빙, 빌드 불필요) ──────────┐
+│ 심의 워크스페이스 · 오인 시뮬레이터 패널 · 준법관리자 승인 뷰 · 감사로그 │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │ REST (JSON)
+┌───────────────── Backend (FastAPI · 명시적 파이프라인) ─────────────────┐
+│ Orchestrator ── ①분류기 ─ ②Retriever(RAG) ─ ③룰엔진(YAML+정규식)        │
+│              ── ④LLM 심의 ─ ⑤오인 시뮬레이터 ──→ Ollama (Qwen2.5-7B)    │
+│              ── ⑥리포트 종합 ─ 다국어 생성·재심의                        │
+│              ── ⑦⑧승인 워크플로·감사로그 (SQLite)                       │
+│ ※ LLM 미연결 시 룰 기반 결정적 폴백 → 오프라인에서도 전 기능 동작        │
+└─────────────────────────────────────────────────────────────────────┘</code></pre>
+<table>
+  <thead><tr><th>레이어</th><th>선택</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td>LLM</td><td>Qwen2.5-7B-Instruct (Ollama 로컬 서빙)</td><td>한국어·다국어 강함, GPU 8–12GB. 14B 교체는 환경변수 1개</td></tr>
+    <tr><td>RAG</td><td>어휘 검색 기본 + BGE-m3 임베딩(선택 설치 시 자동 전환)</td><td>본선: Chroma/Qdrant 하이브리드</td></tr>
+    <tr><td>룰엔진</td><td>YAML + 정규식 (코드 수정 없이 룰 추가)</td><td>결정적·설명가능</td></tr>
+    <tr><td>백엔드/저장소</td><td>FastAPI(비동기 병렬) / SQLite</td><td>본선: PostgreSQL 전환 용이</td></tr>
+    <tr><td>프론트</td><td>정적 SPA (바닐라 JS)</td><td>1-커맨드 실행. 본선: Next.js 전환 계획</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">6</span>기능 명세 (구현 현황 포함)</h2>
+<table>
+  <thead><tr><th>ID</th><th>기능</th><th>입력 → 출력</th><th style="width:80px">상태</th></tr></thead>
+  <tbody>
+    <tr><td>F1</td><td>콘텐츠 유형 분류</td><td>초안 → 예금/투자/대출 + 신뢰도</td><td><span class="pill done">구현 ✓</span></td></tr>
+    <tr><td>F2</td><td>규제 근거 검색(RAG)</td><td>초안+유형 → 관련 조항 top-k + 출처 + 유사도</td><td><span class="pill done">구현 ✓</span></td></tr>
+    <tr><td>F3</td><td>룰엔진 심의</td><td>초안+유형 → 위반 룰(근거·심각도·위치·수정안)</td><td><span class="pill done">구현 ✓</span></td></tr>
+    <tr><td>F4</td><td>LLM 심의</td><td>초안+F2+F3 → 뉘앙스 리스크·수정안 (인용 제한)</td><td><span class="pill done">구현 ✓</span></td></tr>
+    <tr><td>F5</td><td>★소비자 오인 시뮬레이터</td><td>초안+상품조건 → 페르소나별 오해·유발문구·조항</td><td><span class="pill done">구현 ✓</span></td></tr>
+    <tr><td>F6</td><td>리포트 종합</td><td>F3~F5 → 준법점수·등급·하이라이트 통합 리포트</td><td><span class="pill done">구현 ✓</span></td></tr>
+    <tr><td>F7</td><td>수정안 적용</td><td>수정안 선택 → 치환/고지 추가 + 자동 재심의</td><td><span class="pill done">구현 ✓</span></td></tr>
+    <tr><td>F8</td><td>준법관리자 승인</td><td>리포트 → 승인/반려/코멘트 (Human-in-the-loop)</td><td><span class="pill done">구현 ✓</span></td></tr>
+    <tr><td>F9</td><td>감사로그</td><td>모든 액션 → 누가/언제/근거 기록</td><td><span class="pill done">구현 ✓</span></td></tr>
+    <tr><td>F10</td><td>다국어 생성+재심의</td><td>승인본 → 영문 버전 + 영문 룰셋 재심의(오역 검출)</td><td><span class="pill done">구현 ✓</span></td></tr>
+    <tr><td>F11</td><td>실시간 검사</td><td>입력 멈춤(1.2s)/붙여넣기 → 자동 심의</td><td><span class="pill done">구현 ✓</span></td></tr>
+    <tr><td>F12</td><td>규제 변경 추적·영향분석</td><td>신규 규제 → 영향 콘텐츠 알림</td><td><span class="pill str">본선</span></td></tr>
+    <tr><td>F13</td><td>유형 확장 (카드/이벤트/보험)</td><td>룰·체크리스트 확장</td><td><span class="pill str">본선</span></td></tr>
+    <tr><td>F14</td><td>콘텐츠 큐 대시보드</td><td>리스크 등급 일람</td><td><span class="pill str">본선</span></td></tr>
+  </tbody>
+</table>
+<h3>6.1 은행 제시 요구사항 매핑</h3>
+<table>
+  <thead><tr><th style="width:46%">은행이 제시한 내용</th><th>대응 기능</th></tr></thead>
+  <tbody>
+    <tr><td>(기대①) 최신 규제+내부기준 자동 추적</td><td>규제 지식베이스(메타데이터·시행일·출처) + 가상 내부 체크리스트 등록 — F2 / 본선 F12</td></tr>
+    <tr><td>(기대②) 위반가능성·표현리스크·수정제안 자동 도출</td><td>F3+F4 하이브리드 심의 → 등급·인라인 수정안</td></tr>
+    <tr><td>(기대③) 준법관리자는 검토·승인 역할로 전환</td><td>F8 승인 워크스페이스 (AI 1차심의 → 사람 결정)</td></tr>
+    <tr><td>(기대④) 승인 결과의 프로세스 자동 연계</td><td>승인 → 배포가능 전환 + F9 감사추적</td></tr>
+    <tr><td>(기능①) 규제 문서 검색·참조 근거 제공</td><td>F2 RAG — 모든 지적에 조항 출처 인용</td></tr>
+    <tr><td>(기능②) 다국어 이해 + 리스크 분류</td><td>F10 — 영문 룰셋 재심의로 오역·고지 누락 검출</td></tr>
+    <tr><td>(기능③) 유형별 기준 구조화 + 룰+LLM 결합</td><td>F1 분류 라우팅 + F3 룰(결정적) + F4 LLM(뉘앙스)</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">7</span>MVP 구현 현황 및 검증</h2>
+<figure>
+  <img src="../manual/img/ui_workspace.png" alt="MVP 구동 화면">
+  <figcaption>MVP 실제 구동 화면 — 위반 광고 심의(🔴 52점): 위험 문구 밑줄 · 규제 출처 인용 · 페르소나별 오해 + 유발 문구</figcaption>
+</figure>
+<ul>
+  <li><b>실행</b>: <code>pip install -r requirements.txt && uvicorn app.main:app</code> 1분 구동. LLM 미연결 시 폴백 모드로 전 기능 시연 가능(평가 환경 의존성 제거).</li>
+  <li><b>자동 검증</b>: 테스트 24건 전체 통과 — TDD 정답셋(픽스처 5종 → 기대 룰 플래그), 유형 분류, 등급 판정, 수정 적용 후 점수 상승, 페르소나 오해 검출, 영문 오역 검출, 인용 제한, 초단문 스킵.</li>
+  <li><b>일관성</b>: 설계 문서(HTML) ↔ 본 기능명세서 ↔ 코드 ↔ 사용·로직 설명서가 동일한 기능 ID(F1~F14)·파이프라인 번호(①~⑧)로 정합.</li>
+  <li><b>문서 산출물</b>: 설계 문서 · 사용 설명서(PDF) · 로직 설명서(PDF) · README · 본 기능명세서.</li>
+</ul>
+
+<h2><span class="num">8</span>데이터·오픈소스 출처 및 라이선스</h2>
+<table>
+  <thead><tr><th>자원</th><th>라이선스/출처</th><th>제약·검토사항</th></tr></thead>
+  <tbody>
+    <tr><td>Qwen2.5-7B-Instruct</td><td>Apache 2.0 (Alibaba)</td><td>상업적 사용 가능. 금융권 도입 시 모델 거버넌스 평가 필요</td></tr>
+    <tr><td>Ollama</td><td>MIT</td><td>온프레미스 서빙, 외부 통신 없음</td></tr>
+    <tr><td>BGE-m3 (선택)</td><td>MIT (BAAI)</td><td>상업적 사용 가능</td></tr>
+    <tr><td>FastAPI / Uvicorn / PyYAML / httpx</td><td>MIT / BSD</td><td>—</td></tr>
+    <tr><td>법령 (금소법·표시광고법·자본시장법 등)</td><td>국가법령정보센터 — 법령은 저작권법 §7 비보호 저작물</td><td>MVP 코퍼스는 요약·재구성본 → 운영 시 원문 전문 수록·법무 검증</td></tr>
+    <tr><td>심사지침·협회 광고심의 규정</td><td>금융위·은행연합회·금융투자협회 공개자료</td><td>요지 기반 룰화. 운영 도입 시 원문 대조 필요</td></tr>
+    <tr><td>JB 내부 심의 체크리스트</td><td><b>가상 데이터</b> (시연용 자체 작성)</td><td>실제 내규로 교체하는 슬롯 시연 목적</td></tr>
+    <tr><td>상용 API</td><td><b>사용 없음</b></td><td>대회 제약 및 온프레미스 원칙 준수</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">9</span>확장성 및 발전 경로</h2>
+<h3>9.1 확장 축</h3>
+<table>
+  <thead><tr><th style="width:110px">축</th><th>확장 내용</th></tr></thead>
+  <tbody>
+    <tr><td>계열사</td><td>전북은행·광주은행(은행 광고) → JB우리캐피탈(대출성 룰셋 재사용) → JB자산운용(투자광고 — 자본시장법 룰 이미 보유). 룰·코퍼스의 <code>types</code> 라우팅 구조가 그대로 확장 단위</td></tr>
+    <tr><td>콘텐츠 유형</td><td>카드·이벤트·보험(방카) — YAML 룰 추가만으로 확장 (F13)</td></tr>
+    <tr><td>언어</td><td>영어(구현) → 베트남어·중국어 — 전북 외국인 거주자 다수 언어. Qwen2.5 다국어 역량 활용</td></tr>
+    <tr><td>채널</td><td>웹 에디터(구현) → 사내 결재·CMS 플러그인, 콜센터 스크립트·상품설명서 심의</td></tr>
+  </tbody>
+</table>
+<h3>9.2 발전 경로 (PoC → 서비스화)</h3>
+<pre><code>본선(고도화)   F12 규제 변경 추적(크롤링·diff·영향분석) · Qdrant 하이브리드 검색
+              형태소 기반 룰 매칭 · 페르소나 고도화 · Next.js UI · 베트남어
+PoC           준법감시부와 과거 심의 사례 50~100건 블라인드 비교 (AI vs 사람 심의 일치율)
+파일럿        1개 부서 신규 콘텐츠에 병행 적용 → 검출률·시간 절감 측정, 룰 캘리브레이션
+내부 적용     전 계열사 광고심의 표준 도구화, 내규 코퍼스 정식 등재, 내부통제 보고 연계
+서비스화      그룹 공통 'Compliance AI 플랫폼' — 콘텐츠 외 약관·스크립트·공시로 확대</code></pre>
+
+<h2><span class="num">10</span>운영 리스크 대응</h2>
+<table>
+  <thead><tr><th style="width:120px">리스크</th><th>대응 (구현됨 / 계획)</th></tr></thead>
+  <tbody>
+    <tr><td>환각(허위 인용)</td><td><b>구현</b>: 인용을 검색된 코퍼스 조항 id로 화이트리스트 제한 + 지적 문구의 원문 존재 검증 + 근거 부족 시 "근거 불충분" 명시</td></tr>
+    <tr><td>설명가능성</td><td><b>구현</b>: 판정 뼈대는 결정적 룰엔진(YAML 공개) + 모든 지적에 조항·출처 URL 인용 + 명시적 파이프라인(블랙박스 프레임워크 미사용)</td></tr>
+    <tr><td>책임소재</td><td><b>구현</b>: AI=1차심의·권고, 사람=최종 승인 게이트. 결정 주체·시각·근거가 감사로그에 영구 기록</td></tr>
+    <tr><td>개인정보·보안</td><td><b>구현</b>: 온프레미스·외부 전송 0 · 고객 개인정보 미취급. <b>계획</b>: 접근권한 분리(작성자/승인자 역할), 로그 위변조 방지</td></tr>
+    <tr><td>저작권</td><td><b>구현</b>: §8 라이선스 전수 점검 — 전 구성요소 상업적 사용 가능 라이선스</td></tr>
+    <tr><td>오탐/과탐</td><td><b>구현</b>: TDD 정답셋 회귀 체계. <b>계획</b>: PoC 단계에서 실제 심의 사례로 정밀도·재현율 측정 및 가중치 캘리브레이션</td></tr>
+    <tr><td>모델 노후화</td><td><b>구현</b>: 모델 교체가 환경변수 1개(<code>OLLAMA_MODEL</code>) — 오픈모델 발전을 즉시 수용</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">11</span>한계 및 향후 계획</h2>
+<ul>
+  <li>규제 코퍼스는 큐레이션 서브셋(12조항) → 전체 규제·내규 확장 및 법무 검증 필요.</li>
+  <li>페르소나 3종은 대표 취약 유형 → 실제 고객 세그먼트 데이터 기반 정교화 가능.</li>
+  <li>준법점수 가중치는 휴리스틱 → 실제 심의 데이터로 캘리브레이션 예정.</li>
+  <li>실제 제재 사례 코퍼스(판례형 근거) 추가 시 설득력 강화.</li>
+</ul>
+
+<h2><span class="num">12</span>부록 A — 시연 시나리오 (90초 영상 콘티)</h2>
+<table>
+  <thead><tr><th style="width:70px">구간</th><th style="width:48%">화면</th><th>내레이션 요지</th></tr></thead>
+  <tbody>
+    <tr><td>0:00–0:10</td><td>워크스페이스. "확정 연 5%! 원금 보장 안심예금…" 붙여넣기</td><td>"마케팅 담당자가 광고 초안을 붙여넣습니다. 입력을 멈추는 순간—"</td></tr>
+    <tr><td>0:10–0:25</td><td>자동 심의: 위험 문구 밑줄, 🔴 52점, 우측 금소법 §22 인용 지적 5건</td><td>"AI가 즉시 심의합니다. 모든 지적에는 규제 조항 출처가 붙습니다."</td></tr>
+    <tr><td>0:25–0:45</td><td>오인 시뮬레이터: 페르소나 3종 카드 줌인 — 👵 "원금 보장되는 안전한 예금이네" + 유발 문구</td><td>"핵심 차별점 — 72세 은퇴자, 20대 초보, 외국인이 이 광고를 실제로 어떻게 오해하는지 재현합니다."</td></tr>
+    <tr><td>0:45–0:58</td><td>[수정안 전체 적용] 클릭 → 재심의 → 🟢 94점</td><td>"수정안을 원클릭 적용하면 자동 재심의 — 통과로 바뀝니다."</td></tr>
+    <tr><td>0:58–1:15</td><td>검토 전송 → 승인 뷰: AI 지적 확인 → ✓ 승인 → 감사로그</td><td>"준법관리자는 검토와 승인만. 모든 결정이 감사로그에 남습니다."</td></tr>
+    <tr><td>1:15–1:30</td><td>[영문 버전 생성+재심의]: 'Guaranteed' 검출 화면</td><td>"승인본의 영문 버전을 만들고 재심의 — 번역에서 생긴 보장성 오역까지 잡아냅니다. 전 과정 온프레미스입니다."</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">13</span>부록 B — 평가항목 대응표</h2>
+<table>
+  <thead><tr><th style="width:230px">평가항목</th><th>본 제출물에서의 위치</th></tr></thead>
+  <tbody>
+    <tr><td>1. 주제적합성·문제정의</td><td>§1 (지정주제2 직접 대응 · 사용자/상황 · 은행 제시 현행/한계 · JB 관점 중요도 · 과제 전환성)</td></tr>
+    <tr><td>2. 업무 연계성·고객가치</td><td>§2 (As-Is/To-Be 접점 · 기대효과 4축 · 규제/보안/내부통제 · AX 부합)</td></tr>
+    <tr><td>3. Agent 설계·구현 가능성</td><td>§4 (판단·행동·검증·개선 구조) · §5 (아키텍처/스택) · §8 (출처·라이선스) — 전부 동작 코드로 실증</td></tr>
+    <tr><td>4. MVP 완성도·검증</td><td>§6 (기능 F1~F11 구현 ✓) · §7 (테스트 24건·1분 구동·문서 정합) · §9 (본선 기반)</td></tr>
+    <tr><td>5. 혁신성·확장성·리스크</td><td>§3 (차별점) · §9 (계열사/유형/언어 확장 + PoC→서비스화 경로) · §10 (환각·설명가능성·책임소재 등)</td></tr>
+    <tr><td>+ 시연영상</td><td>§12 콘티 — MVP에서 그대로 촬영 가능 (전 장면 구현 완료)</td></tr>
+  </tbody>
+</table>
+
+</main>
+<footer>JB 준법 코파일럿 기능명세서 · 2026-06-11 · JB금융그룹 Fin:AI Challenge 지정주제2 Compliance AI · 함께 제출: MVP 코드(README), 설계 문서, 사용·로직 설명서</footer>
+</div>
+</body>
+</html>
