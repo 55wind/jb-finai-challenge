@@ -9,16 +9,19 @@ _KEYWORDS: dict[str, list[tuple[str, int]]] = {
     "deposit": [
         (r"예금|적금|예치|만기|이자율|예금자\s*보호", 2),
         (r"(?i)savings|deposit|interest\s+rate", 2),
+        (r"(?i)tiền\s*gửi|tiết\s*kiệm|lãi\s*suất|存款|定期|储蓄|利率|預金|貯金|金利", 2),
         (r"정기|입출금|세전|세후", 1),
     ],
     "investment": [
         (r"펀드|투자|수익률|운용|주식|채권|ETF|집합투자", 2),
         (r"(?i)fund|invest|portfolio|returns?", 2),
+        (r"(?i)đầu\s*tư|quỹ|lợi\s*nhuận|sinh\s*lời|基金|投资|收益|理财|投資|ファンド|利回り|運用", 2),
         (r"원금\s*손실|위험등급", 1),
     ],
     "loan": [
         (r"대출|융자|한도|상환|금리\s*인하|연체", 2),
         (r"(?i)loan|credit|borrow|repay", 2),
+        (r"(?i)khoản\s*vay|cho\s*vay|lãi\s*vay|贷款|借款|信贷|ローン|融資|借入", 2),
         (r"승인|신용\s*(?:점수|등급)|중도상환", 1),
     ],
 }
