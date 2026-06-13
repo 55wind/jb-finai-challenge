@@ -16,6 +16,20 @@ _corpus_cache: list[dict] | None = None
 
 SCORE_THRESHOLD = 0.05  # 이 미만이면 "근거 불충분" 처리 (허위 인용 방지)
 
+# 법률 교차참조 그래프 — 조항은 의미 유사성이 아니라 참조 관계(시행령·고시·연계 규정)로
+# 얽힌 트리 구조다. 단순 임베딩 top-k가 끊어먹는 맥락을 검색 결과에서 참조 조항으로 확장한다.
+_REFERENCES = {
+    "FCPA-22-1": ["FCPA-22-3", "FCPA-22-4"],
+    "FCPA-22-3": ["ADREV-GUAR", "CMA-57"],
+    "FCPA-22-4": ["ADREV-RATE", "FAIRAD-3"],
+    "ADREV-RATE": ["KFB-AD-DEP"],
+    "ADREV-GUAR": ["FCPA-22-3", "KFB-AD-DEP"],
+    "CMA-57": ["KOFIA-AD", "FCPA-22-3"],
+    "KFB-AD-DEP": ["ADREV-GUAR", "ADREV-RATE"],
+    "KFB-AD-LOAN": ["FAIRAD-3"],
+    "KOFIA-AD": ["CMA-57"],
+}
+
 # 어휘 검색이 짧은 광고 문구로도 관련 조항을 찾도록 카테고리 시드 키워드로 질의 확장
 _QUERY_EXPANSION = [
     (r"확정|무조건|절대|100\s*%|guaranteed?|đảm\s*bảo|cam\s*kết|chắc\s*chắn|保证|保本|无风险|确定|元本保証|確実|リスクなし|必ず",
@@ -107,4 +121,15 @@ def retrieve(text: str, content_type: str, top_k: int = 4) -> dict:
         for doc, score in ranked[:top_k]
         if score >= SCORE_THRESHOLD
     ]
+
+    # 참조 그래프 확장: 검색된 조항이 참조하는 조항(시행령·고시·연계)을 맥락으로 추가
+    by_id = {a["id"]: a for a in load_corpus()}
+    seen = {h["id"] for h in hits}
+    for h in list(hits):
+        for ref in _REFERENCES.get(h["id"], []):
+            if ref in seen or ref not in by_id:
+                continue
+            hits.append({**by_id[ref], "score": round(h["score"] * 0.5, 4), "linked_from": h["id"]})
+            seen.add(ref)
+
     return {"articles": hits, "backend": backend, "sufficient": len(hits) > 0}

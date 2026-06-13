@@ -309,6 +309,10 @@
   .sev.high{background:var(--red-bg); color:var(--red-fg);} .sev.medium{background:var(--amber-bg); color:var(--amber-fg);} .sev.llm{background:var(--violet-bg); color:var(--violet);}
   .decision-row{display:flex; gap:9px; margin:15px 0; flex-wrap:wrap; align-items:center;}
   .decision-row input{flex:1; min-width:170px;}
+  .ack-row{font-size:12px; color:var(--text-2,#5b6470); background:#fff7e6; border:1px solid #f0d99a;
+    border-radius:8px; padding:9px 11px; margin:14px 0 0; line-height:1.5;}
+  .ack-chk{display:block; margin-top:6px; font-weight:600; color:var(--text,#1a1d21); cursor:pointer;}
+  .ack-chk input{margin-right:5px;}
   .audit{margin-top:16px;}
   .audit .entry{font-size:11.5px; border-left:2px solid var(--border); padding:5px 0 5px 12px; margin:7px 0; color:var(--text-2); line-height:1.55;}
   .audit .entry .ts{color:var(--text-3); font-size:11px;}
@@ -486,7 +490,7 @@
           <section class="hero-sim" id="simSec">
             <div class="hero-head"><span class="hero-title">👥 소비자는 이렇게 오해합니다</span>
               <span class="risk-pill risk-low" id="simRisk">—</span></div>
-            <div class="hero-sub">작성 시점에 취약 소비자(고령·금융초보·외국인)가 이 광고를 어떻게 오해하는지 미리 시뮬레이션합니다.</div>
+            <div class="hero-sub">작성 시점에 취약 소비자(고령·금융초보·외국인)가 이 광고를 어떻게 오해하는지 미리 시뮬레이션합니다. <b>참고지표 — 법적 판정이 아닌 표현 개선 권고이며, 준법 등급은 규정(룰엔진) 기준입니다.</b></div>
             <div class="persona-list" id="personaGrid"><div class="empty">초안을 작성하면 페르소나별 오해를 1인칭으로 재현합니다.</div></div>
           </section>
 
@@ -1148,7 +1152,11 @@ function renderSubDetail(s){
       ${citationHtml(f.citation)}
     </div>`).join("") || '<div class="empty">지적 사항 없음</div>';
 
+  const engineNote = (rep.review_engine === "fallback(rule-based)" ? " · ⚠ 폴백 모드(LLM 미연결) 심의" : "")
+    + (rep.language_confidence === "low" ? " · ⚠ 다국어 저신뢰(사람 검토 필수)" : "");
   const decisionUi = s.status === "pending" ? `
+    <div class="ack-row">⚠ AI 1차심의는 <b>보조 자료</b>입니다 — 최종 판단·책임은 검토자에게 있습니다.${engineNote}
+      <label class="ack-chk"><input type="checkbox" id="ackReview"> 원문과 지적 사항을 직접 검토했습니다 <span style="color:#b1003e">(승인 필수)</span></label></div>
     <div class="decision-row">
       <input type="text" id="decComment" placeholder="코멘트 (선택)">
       <button class="btn green" onclick="decide(${s.id},'approve')">✓ 승인</button>
@@ -1216,6 +1224,9 @@ async function loadAudit(sid){
 async function decide(sid, action){
   const comment = ($("decComment")||{}).value || "";
   if(action==="comment" && !comment.trim()){ toast("코멘트를 입력하세요"); return; }
+  if(action==="approve" && !($("ackReview")||{}).checked){
+    toast("승인 전 '원문을 직접 검토했습니다'를 확인해 주세요"); return;  // 확증편향 방지
+  }
   try{
     await api(`/api/submissions/${sid}/decision`, { method:"POST",
       body: JSON.stringify({ action, actor:"준법관리자", comment })});

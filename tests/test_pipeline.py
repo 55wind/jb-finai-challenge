@@ -79,6 +79,12 @@ def test_retrieval_cites_only_corpus_articles():
     assert any(a["id"].startswith("FCPA") or a["id"].startswith("ADREV") for a in out["articles"])
 
 
+def test_retrieval_expands_cross_references():
+    """법률 교차참조 — 검색된 조항이 참조하는 조항이 맥락으로 확장되어야 함."""
+    out = retrieve("확정 연 5% 원금 보장 예금", "deposit")
+    assert any(a.get("linked_from") for a in out["articles"]), "참조 그래프 확장이 일어나야 함"
+
+
 @pytest.mark.anyio
 async def test_short_input_skipped():
     rep = await orchestrator.run_review("짧")          # 1자 미만만 스킵 (MIN_TEXT_LEN=2)
