@@ -36,6 +36,14 @@ class ApplyFixesRequest(BaseModel):
     fixes: list[dict]
 
 
+class AutopilotRequest(BaseModel):
+    text: str
+    content_type: str | None = None
+    language: str = "ko"
+    product_facts: str = ""
+    max_iter: int = Field(default=4, ge=1, le=6)
+
+
 class SubmissionRequest(BaseModel):
     title: str = "무제 콘텐츠"
     submitter: str = "마케팅팀"
@@ -44,6 +52,7 @@ class SubmissionRequest(BaseModel):
     language: str = "ko"
     product_facts: str = ""
     report: dict
+    autopilot_summary: str = ""
 
 
 class DecisionRequest(BaseModel):
@@ -85,10 +94,18 @@ def apply_fixes(req: ApplyFixesRequest):
     return {"text": orchestrator.apply_fixes(req.text, req.fixes)}
 
 
+@app.post("/api/autopilot")
+async def autopilot(req: AutopilotRequest):
+    """준법 오토파일럿 — 통과/종료조건까지 자율 개선, 회차 trace 반환."""
+    return await orchestrator.autopilot(req.text, req.content_type, req.language,
+                                        req.product_facts, req.max_iter)
+
+
 @app.post("/api/submissions")
 def create_submission(req: SubmissionRequest):
     return store.create_submission(req.title, req.submitter, req.content_type,
-                                   req.language, req.product_facts, req.text, req.report)
+                                   req.language, req.product_facts, req.text, req.report,
+                                   req.autopilot_summary)
 
 
 @app.get("/api/submissions")

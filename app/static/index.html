@@ -316,6 +316,36 @@
     .persona-list{grid-template-columns:1fr;}
     .toast{left:50%;}
   }
+  /* ── 준법 오토파일럿 ── */
+  .btn.autopilot{background:linear-gradient(135deg,#0a66c2,#003a6e); color:#fff; border:none; font-weight:700;}
+  .btn.autopilot:hover:not(:disabled){filter:brightness(1.08);}
+  .btn.autopilot:disabled{opacity:.45;}
+  .ap-overlay{position:fixed; inset:0; background:rgba(12,20,33,.55); backdrop-filter:blur(2px); z-index:200;
+    display:none; align-items:center; justify-content:center; padding:24px;}
+  .ap-overlay.show{display:flex;}
+  .ap-card{background:#fff; width:min(560px,94vw); max-height:90vh; overflow:auto; border-radius:16px;
+    box-shadow:0 20px 60px rgba(0,0,0,.35); padding:24px 26px;}
+  .ap-card h3{margin:0 0 2px; font-size:18px; color:var(--text-1,#1a1d21);}
+  .ap-card .ap-sub{font-size:12.5px; color:var(--text-3,#5b6470); margin-bottom:16px;}
+  .ap-score{display:flex; align-items:baseline; gap:10px; margin:6px 0 4px;}
+  .ap-score .num{font-size:46px; font-weight:800; line-height:1; transition:color .4s;}
+  .ap-score .grade{font-size:15px; font-weight:700;}
+  .ap-gauge{height:8px; border-radius:99px; background:#eceff3; overflow:hidden; margin:8px 0 18px;}
+  .ap-gauge > div{height:100%; width:0; border-radius:99px; transition:width .6s ease, background .4s;}
+  .ap-status{font-size:13px; color:var(--text-2,#5b6470); margin-bottom:10px; display:flex; align-items:center; gap:8px;}
+  .ap-spin{width:13px; height:13px; border:2px solid #cbd5e1; border-top-color:#0a66c2; border-radius:50%; animation:apspin .7s linear infinite;}
+  @keyframes apspin{to{transform:rotate(360deg);}}
+  .ap-steps{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+  .ap-step{border:1px solid var(--border,#e1e5ea); border-left:3px solid #0a66c2; border-radius:8px; padding:9px 12px;
+    font-size:13px; opacity:0; transform:translateY(6px); transition:opacity .35s, transform .35s; background:#fafbfc;}
+  .ap-step.in{opacity:1; transform:none;}
+  .ap-step.pass{border-left-color:var(--green,#1f9d55); background:#f1faf4;}
+  .ap-step .it-h{font-weight:700; margin-bottom:3px;}
+  .ap-step .chg{color:var(--text-2,#444); margin:2px 0; font-size:12.5px;}
+  .ap-step .chg .b{color:#b1003e;} .ap-step .chg .a{color:#0a7d3e;} .ap-step .chg .basis{color:#5b6470; font-size:11.5px;}
+  .ap-final{margin-top:16px; padding-top:14px; border-top:1px solid var(--border,#e1e5ea);}
+  .ap-final .head{font-size:15px; font-weight:800; margin-bottom:10px;}
+  .ap-actions{display:flex; gap:8px; justify-content:flex-end;}
 </style>
 </head>
 <body>
@@ -353,6 +383,7 @@
       </div>
       <div class="ws-actions">
         <button class="btn small" id="btnApplyAll" onclick="applyAllFixes()" disabled>수정안 전체 적용</button>
+        <button class="btn small autopilot" id="btnAutopilot" onclick="runAutopilot()" disabled>🚀 준법 통과까지 자동 개선</button>
         <button class="btn small primary" id="btnSend" onclick="sendForApproval()" disabled>검토 전송 →</button>
       </div>
     </header>
@@ -443,6 +474,28 @@
 
 <div class="hint-pop" id="hintPopup"></div>
 <div class="toast" id="toast"></div>
+
+<div class="ap-overlay" id="apOverlay">
+  <div class="ap-card">
+    <h3>🚀 준법 오토파일럿</h3>
+    <div class="ap-sub">심의 → 잔여 위반 고쳐쓰기 → 재심의를 통과까지 자율 반복합니다. 합격 판정은 결정적 룰엔진이 검증합니다.</div>
+    <div class="ap-score">
+      <span class="num" id="apScoreNum">—</span>
+      <span class="grade" id="apScoreGrade"></span>
+      <span style="font-size:13px;color:#9aa3ad">/ 100</span>
+    </div>
+    <div class="ap-gauge"><div id="apGauge"></div></div>
+    <div class="ap-status" id="apStatus"><span class="ap-spin"></span><span id="apStatusText">자율 개선 중…</span></div>
+    <ul class="ap-steps" id="apSteps"></ul>
+    <div class="ap-final" id="apFinal" style="display:none">
+      <div class="head" id="apFinalHead"></div>
+      <div class="ap-actions">
+        <button class="btn small" onclick="closeAutopilot()">닫기</button>
+        <button class="btn small primary" id="apSendBtn" onclick="sendFromAutopilot()">검토관리자 검토로 전송 →</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -600,7 +653,7 @@ function renderEmpty(){
   $("findings").innerHTML = '<div class="empty">초안을 작성하면 실시간으로 위반·주의 항목이 분류되어 표시됩니다.</div>';
   $("sources").innerHTML = ""; $("personaGrid").innerHTML = '<div class="empty">—</div>';
   $("simRisk").textContent = "—"; $("simRisk").className = "risk-pill risk-low";
-  $("btnSend").disabled = true; $("btnApplyAll").disabled = true;
+  $("btnSend").disabled = true; $("btnApplyAll").disabled = true; $("btnAutopilot").disabled = true;
   updateStatusbar(null);
   syncBackdrop(true);
 }
@@ -730,6 +783,7 @@ function render(rep){
   updateStatusbar(rep);
   $("btnSend").disabled = false;
   $("btnApplyAll").disabled = !rep.rule_findings.some(f=>f.fix);
+  $("btnAutopilot").disabled = rep.grade === "pass";   // 이미 통과면 개선 불필요
   syncBackdrop();
 }
 
@@ -752,6 +806,74 @@ async function applyAllFixes(){
   runReview();
 }
 
+/* ── 준법 오토파일럿 (자율 개선 루프) ── */
+const sleep = ms => new Promise(r=>setTimeout(r, ms));
+const gradeLabel = g => g==="pass" ? "통과" : g==="caution" ? "주의" : "위험";
+const gradeEmoji = g => g==="pass" ? "🟢" : g==="caution" ? "🟡" : "🔴";
+
+async function runAutopilot(){
+  const text = $("editor").value;
+  if(!text.trim() || state.busy) return;
+  $("apSteps").innerHTML = ""; $("apFinal").style.display = "none";
+  $("apStatus").style.display = "flex"; $("apStatusText").textContent = "자율 개선 중… (심의 → 고쳐쓰기 → 재심의 반복)";
+  $("apScoreNum").textContent = "—"; $("apScoreGrade").textContent = ""; $("apGauge").style.width = "0%";
+  $("apOverlay").classList.add("show");
+  state.busy = true; $("btnAutopilot").disabled = true;
+  try{
+    const res = await api("/api/autopilot", { method:"POST", body: JSON.stringify({
+      text, content_type: $("selType").value || null,
+      language: $("selLang").value, product_facts: $("productFacts").value })});
+    await playAutopilot(res);
+  }catch(e){ $("apStatusText").textContent = "오류: " + e.message; }
+  finally{ state.busy = false; }
+}
+
+async function playAutopilot(res){
+  let shown = 0;
+  for(const it of res.iterations){
+    // 점수 카운트업 + 게이지
+    animateScore(shown, it.score, it.grade); shown = it.score;
+    const li = document.createElement("li");
+    li.className = "ap-step" + (it.grade==="pass" ? " pass" : "");
+    const changesHtml = it.changes.length
+      ? it.changes.map(c=>`<div class="chg"><span class="b">${esc((c.before||"").slice(0,30))}</span> → <span class="a">${esc((c.after||"").slice(0,40))}</span>${c.basis_id?` <span class="basis">〔${esc(c.basis_id)}〕</span>`:""}</div>`).join("")
+      : (it.grade==="pass" ? `<div class="chg">✅ 준법 통과 — 더 고칠 위반 없음</div>` : `<div class="chg">변경 없음</div>`);
+    li.innerHTML = `<div class="it-h">${it.iter+1}회차 · ${gradeEmoji(it.grade)} ${it.score}점 (${gradeLabel(it.grade)})</div>${changesHtml}`;
+    $("apSteps").appendChild(li);
+    requestAnimationFrame(()=>li.classList.add("in"));
+    await sleep(950);
+  }
+  // 종료 — 결과 반영
+  $("apStatus").style.display = "none";
+  const f = res.final, init = res.initial;
+  const nSteps = res.iterations.filter(it=>it.changes.length).length;
+  const stopMsg = res.converged ? "준법 통과까지 자동 개선 완료" :
+    ({plateau:"점수 정체로 종료", no_change:"더 개선 불가로 종료", regressed:"품질 저하 감지로 종료", max_iter:"최대 회차 도달"}[res.stop_reason] || "종료") + " — 잔여 위반은 사람 검토 필요";
+  $("apFinalHead").innerHTML = `${gradeEmoji(init.grade)}${init.score} → ${gradeEmoji(f.grade)}${f.score} · ${nSteps}회 자동 개선<br><span style="font-weight:600;font-size:12.5px;color:#5b6470">${stopMsg}</span>`;
+  $("apFinal").style.display = "block";
+  // 에디터에 최종안 반영 + 재심의 동기화 (마지막 회차의 전체 리포트 사용)
+  const lastReport = res.iterations[res.iterations.length-1].report;
+  $("editor").value = f.text; syncBackdrop(true);
+  state.report = lastReport;
+  render(lastReport);
+  // 감사로그용 요약 저장 (은행 내부통제)
+  state.autopilotSummary = `AI 자동개선 ${nSteps}회 · ${init.score}→${f.score}(${gradeLabel(f.grade)}) · ${res.converged?"통과 수렴":"미수렴("+res.stop_reason+")"}`;
+}
+
+function animateScore(from, to, grade){
+  const el = $("apScoreNum"), gz = $("apGauge"), gd = $("apScoreGrade");
+  const col = gradeColor(grade);
+  el.style.color = col; gz.style.background = col; gd.style.color = col;
+  gd.textContent = gradeEmoji(grade) + " " + gradeLabel(grade);
+  gz.style.width = to + "%";
+  const steps = 18; let i = 0;
+  const t = setInterval(()=>{ i++; el.textContent = Math.round(from + (to-from)*i/steps);
+    if(i>=steps){ clearInterval(t); el.textContent = to; } }, 22);
+}
+
+function closeAutopilot(){ $("apOverlay").classList.remove("show"); }
+function sendFromAutopilot(){ closeAutopilot(); sendForApproval(); }
+
 /* ── 검토 전송 (F8 진입) ── */
 async function sendForApproval(){
   if(!state.report || state.report.skipped) return;
@@ -759,7 +881,9 @@ async function sendForApproval(){
   await api("/api/submissions", { method:"POST", body: JSON.stringify({
     title, submitter: "마케팅팀", text: $("editor").value,
     content_type: state.report.content_type, language: state.report.language,
-    product_facts: $("productFacts").value, report: state.report })});
+    product_facts: $("productFacts").value, report: state.report,
+    autopilot_summary: state.autopilotSummary || "" })});
+  state.autopilotSummary = "";   // 1회성: 다음 제출에 잘못 붙지 않도록 초기화
   toast("준법관리자 검토로 전송되었습니다");
   switchTab("approve");
 }

@@ -63,7 +63,8 @@ def log(conn: sqlite3.Connection, submission_id: int | None, actor: str, action:
 
 
 def create_submission(title: str, submitter: str, content_type: str, language: str,
-                      product_facts: str, text: str, report: dict) -> dict:
+                      product_facts: str, text: str, report: dict,
+                      autopilot_summary: str = "") -> dict:
     with _conn() as conn:
         cur = conn.execute(
             "INSERT INTO submissions (created_at, title, submitter, content_type, language, product_facts, text, report_json) "
@@ -71,6 +72,9 @@ def create_submission(title: str, submitter: str, content_type: str, language: s
             (_now(), title, submitter, content_type, language, product_facts, text,
              json.dumps(report, ensure_ascii=False)))
         sid = cur.lastrowid
+        # 책임소재: AI 자동개선과 사람의 제출/승인을 분리 기록 (내부통제·검사 대응, 설계 §8)
+        if autopilot_summary:
+            log(conn, sid, "AI-오토파일럿", "auto_remediate", autopilot_summary)
         log(conn, sid, submitter, "submit",
             f"AI 1차심의 {report.get('grade_emoji','')}{report.get('grade_label','')}({report.get('score','')}점) — 검토 요청")
     return get_submission(sid)

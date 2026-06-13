@@ -6,12 +6,13 @@ from __future__ import annotations
 
 import asyncio
 
-from . import llm_reviewer, multilingual, report, simulator
+from . import llm_reviewer, multilingual, remediator, report, simulator
 from .classifier import classify
 from .retriever import retrieve
 from .rules_engine import run_rules
 
 MIN_TEXT_LEN = 8
+AUTOPILOT_MAX_ITER = 4
 
 
 async def run_review(text: str, content_type: str | None = None, language: str = "ko",
@@ -56,6 +57,83 @@ def apply_fixes(text: str, fixes: list[dict]) -> str:
         if note not in text:
             text = text.rstrip() + "\n" + note
     return text
+
+
+def _rule_fix_changes(rule_findings: list[dict]) -> list[dict]:
+    """결정적 룰 치환·고지추가를 데모용 변경내역으로 변환."""
+    out = []
+    for f in rule_findings:
+        fix = f.get("fix")
+        if not fix:
+            continue
+        if fix.get("type") == "replace":
+            out.append({"before": fix.get("original", ""), "after": fix.get("replacement", ""),
+                        "basis_id": f.get("basis_id"), "rationale": f.get("message", ""), "engine": "rule"})
+        elif fix.get("type") == "append":
+            out.append({"before": "(고지 없음)", "after": fix.get("text", ""),
+                        "basis_id": f.get("basis_id"), "rationale": f.get("message", ""), "engine": "rule"})
+    return out
+
+
+def _summary(report_: dict, text: str) -> dict:
+    return {"score": report_["score"], "grade": report_["grade"],
+            "grade_label": report_["grade_label"], "grade_emoji": report_["grade_emoji"],
+            "text": text}
+
+
+async def autopilot(text: str, content_type: str | None = None, language: str = "ko",
+                    product_facts: str = "", max_iter: int = AUTOPILOT_MAX_ITER) -> dict:
+    """준법 오토파일럿 — 심의→고쳐쓰기→재심의를 통과/종료조건까지 자율 반복 (설계 §4).
+
+    합격 판정은 결정적 룰엔진(run_review의 grade)만 — LLM이 통과를 위장할 수 없음.
+    """
+    current = (text or "").strip()
+    iterations: list[dict] = []
+    converged = False
+    stop_reason = "max_iter"
+    prev_score: int | None = None
+
+    for i in range(max_iter):
+        report_ = await run_review(current, content_type, language, product_facts)
+        ctype = report_["content_type"]
+        score = report_["score"]
+
+        # 발산 방지: 직전보다 나빠지면 이 회차를 버리고 직전 결과 유지 후 종료
+        if prev_score is not None and score < prev_score:
+            stop_reason = "regressed"
+            break
+
+        iterations.append({"iter": i, "draft": current, "report": report_,
+                           "score": score, "grade": report_["grade"], "changes": []})
+
+        if report_["grade"] == "pass":          # 종료조건 — 목표 달성
+            converged = True
+            stop_reason = "passed"
+            break
+        if prev_score is not None and score == prev_score:  # 정체 — 진전 없음
+            stop_reason = "plateau"
+            break
+        prev_score = score
+
+        # ── 행동: (a) 결정적 룰 치환 먼저 → (b) 잔여 비정형 위반만 LLM 재작성 ──
+        det_fixes = [f["fix"] for f in report_["rule_findings"] if f.get("fix")]
+        fixed = apply_fixes(current, det_fixes)
+        residual = [f for f in report_["rule_findings"] if not f.get("fix")] + report_.get("llm_issues", [])
+        rem = await remediator.remediate(fixed, residual, report_["retrieval"], ctype)
+
+        iterations[-1]["changes"] = _rule_fix_changes(report_["rule_findings"]) + rem["changes"]
+
+        nxt = rem["text"].strip()
+        if nxt == current:                       # 텍스트 불변 — 더 개선 불가
+            stop_reason = "no_change"
+            break
+        current = nxt
+
+    initial = _summary(iterations[0]["report"], iterations[0]["draft"])
+    final = _summary(iterations[-1]["report"], iterations[-1]["draft"])
+    return {"iterations": iterations, "initial": initial, "final": final,
+            "converged": converged, "stop_reason": stop_reason,
+            "content_type": iterations[-1]["report"]["content_type"], "language": language}
 
 
 async def translate_and_rereview(text: str, content_type: str, target_lang: str = "en",
