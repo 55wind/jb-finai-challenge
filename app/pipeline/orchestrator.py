@@ -5,13 +5,14 @@
 from __future__ import annotations
 
 import asyncio
+import re
 
 from . import llm_client, llm_reviewer, multilingual, remediator, report, simulator
 from .classifier import classify
 from .retriever import retrieve
 from .rules_engine import run_rules
 
-MIN_TEXT_LEN = 8
+MIN_TEXT_LEN = 2   # 짧은 위험 구절("원금 보장", "확정 연 5%")도 즉시 검사
 AUTOPILOT_MAX_ITER = 4
 # 7B 로컬 모델이 한국어·영어 대비 신뢰도가 낮은 저자원 언어 — LLM 출력을 참고로만,
 # 룰엔진(언어별 룰셋)을 권위로 두고 사람 검토를 권장한다.
@@ -107,6 +108,28 @@ def _rule_fix_changes(rule_findings: list[dict]) -> list[dict]:
     return out
 
 
+def _strip_residual_high(text: str, rule_findings: list[dict]) -> tuple[str, list[dict]]:
+    """det 치환으로 해소 안 되는 고위험 금지 문구를 결정적으로 제거(또는 제안으로 치환).
+
+    오토파일럿이 LLM 재작성으로 못 없앤 high 위반 때문에 '위험' 등급에서 정체하는 것을
+    방지한다 — 금지 표현 제거는 그 자체로 올바른 준법 조치다.
+    """
+    changes = []
+    for f in rule_findings:
+        mt = f.get("matched_text")
+        if f.get("severity") != "high" or f.get("fix") or not mt or mt not in text:
+            continue
+        repl = (f.get("suggestion") or "").strip()
+        # 치환안이 길면(설명형) 제거가 안전 — 짧은 대체구만 사용
+        replacement = repl if (repl and len(repl) <= len(mt) + 10) else ""
+        new = re.sub(re.escape(mt) + r"\s*", (replacement + " ") if replacement else "", text).strip()
+        if new != text:
+            text = re.sub(r"\s{2,}", " ", new)
+            changes.append({"before": mt, "after": replacement or "(삭제)", "basis_id": f.get("basis_id"),
+                            "rationale": "고위험 금지 표현 자동 제거(안전망)", "engine": "rule"})
+    return text, changes
+
+
 def _summary(report_: dict, text: str) -> dict:
     return {"score": report_["score"], "grade": report_["grade"],
             "grade_label": report_["grade_label"], "grade_emoji": report_["grade_emoji"],
@@ -147,13 +170,14 @@ async def autopilot(text: str, content_type: str | None = None, language: str = 
             break
         prev_score = score
 
-        # ── 행동: (a) 결정적 룰 치환 먼저 → (b) 잔여 비정형 위반만 LLM 재작성 ──
+        # ── 행동: (a) 결정적 룰 치환 → (b) 고위험 금지문구 안전망 제거 → (c) 잔여만 LLM 재작성 ──
         det_fixes = [f["fix"] for f in report_["rule_findings"] if f.get("fix")]
         fixed = apply_fixes(current, det_fixes)
+        fixed, strip_changes = _strip_residual_high(fixed, report_["rule_findings"])  # 위험 등급 탈출 보장
         residual = [f for f in report_["rule_findings"] if not f.get("fix")] + report_.get("llm_issues", [])
         rem = await remediator.remediate(fixed, residual, report_["retrieval"], ctype)
 
-        iterations[-1]["changes"] = _rule_fix_changes(report_["rule_findings"]) + rem["changes"]
+        iterations[-1]["changes"] = _rule_fix_changes(report_["rule_findings"]) + strip_changes + rem["changes"]
 
         nxt = rem["text"].strip()
         if nxt == current:                       # 텍스트 불변 — 더 개선 불가

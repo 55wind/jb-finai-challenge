@@ -81,5 +81,12 @@ def test_retrieval_cites_only_corpus_articles():
 
 @pytest.mark.anyio
 async def test_short_input_skipped():
-    rep = await orchestrator.run_review("짧음")
+    rep = await orchestrator.run_review("짧")          # 1자 미만만 스킵 (MIN_TEXT_LEN=2)
     assert rep["skipped"] is True
+
+
+@pytest.mark.anyio
+async def test_short_risky_phrase_reviewed():
+    rep = await orchestrator.run_review("원금 보장", "deposit")   # 5자 — 이제 검사됨
+    assert rep["skipped"] is False
+    assert any(f["rule_id"] == "R-002" for f in rep["rule_findings"])
