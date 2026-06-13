@@ -126,15 +126,34 @@
   .editor-wrap:focus-within{border-color:var(--brand); box-shadow:0 0 0 3px var(--ring);}
   .backdrop, textarea.editor{margin:0; padding:20px 24px; font-family:inherit; font-size:16px; line-height:1.9;
     width:100%; height:100%; white-space:pre-wrap; word-wrap:break-word; overflow-y:auto; letter-spacing:-.003em;}
-  .backdrop{position:absolute; inset:0; color:transparent; pointer-events:none; z-index:1;}
-  textarea.editor{position:relative; z-index:2; background:transparent; color:var(--text);
+  /* 오버레이를 최상단(z-index 2)에 두되 컨테이너는 클릭 통과, mark만 상호작용 */
+  .backdrop{position:absolute; inset:0; color:transparent; pointer-events:none; z-index:2;}
+  textarea.editor{position:relative; z-index:1; background:transparent; color:var(--text);
     caret-color:var(--brand); border:none; outline:none; resize:none; display:block;}
   textarea.editor::placeholder{color:var(--text-3); letter-spacing:0;}
-  mark{background:transparent; color:transparent;
+  mark{background:transparent; color:transparent; pointer-events:auto; cursor:pointer;
     text-decoration-line:underline; text-decoration-style:wavy; text-decoration-thickness:1.6px;
     text-underline-offset:3px;}
   mark.high{text-decoration-color:var(--red);}
   mark.medium{text-decoration-color:var(--amber);}
+  mark.high:hover{background:rgba(229,72,77,.10);}
+  mark.medium:hover{background:rgba(224,144,10,.12);}
+
+  /* 물결 밑줄 호버 말풍선 (빠른 수정) */
+  .hint-pop{position:fixed; z-index:60; display:none; max-width:340px; background:var(--surface);
+    border:1px solid var(--border-strong); border-radius:10px; box-shadow:var(--shadow-md);
+    padding:11px 13px; font-size:12px;}
+  .hint-pop .hp-h{display:flex; align-items:center; gap:7px; margin-bottom:5px;}
+  .hint-pop .hp-h .dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .hint-pop .hp-h .dot.high{background:var(--red);} .hint-pop .hp-h .dot.medium{background:var(--amber);}
+  .hint-pop .hp-h b{font-size:12.5px; font-weight:700;}
+  .hint-pop .hp-h .sev{margin-left:auto;}
+  .hint-pop .hp-m{color:var(--text-2); line-height:1.55;}
+  .hint-pop .hp-c{margin-top:6px; font-size:11px; color:var(--brand-700);}
+  .hint-pop .hp-fix{margin-top:9px; padding-top:8px; border-top:1px dashed var(--border);
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .hint-pop .hp-fix code{font-family:var(--mono); font-size:11px; background:var(--surface-3);
+    border:1px solid var(--border); border-radius:5px; padding:1px 5px;}
   .editor-foot{display:flex; align-items:center; gap:9px; margin-top:11px; font-size:12px;
     color:var(--text-2); flex-wrap:wrap;}
   .live-dot{width:8px; height:8px; border-radius:50%; background:#c4ccd6; display:inline-block; flex-shrink:0;}
@@ -419,6 +438,7 @@
   </div>
 </div>
 
+<div class="hint-pop" id="hintPopup"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -487,7 +507,7 @@ function syncBackdrop(plain=false){
   let out = "", pos = 0;
   for(const h of hl){
     out += esc(text.slice(pos, h.start));
-    out += `<mark class="${h.severity}">${esc(text.slice(h.start, h.end))}</mark>`;
+    out += `<mark class="${h.severity}" data-k="${h.start}_${h.end}" data-s="${h.start}" data-e="${h.end}">${esc(text.slice(h.start, h.end))}</mark>`;
     pos = h.end;
   }
   out += esc(text.slice(pos));
@@ -505,6 +525,47 @@ function focusSpan(s, e){
   ed.scrollTop = Math.max(0, before*lh - ed.clientHeight/2);
   $("backdrop").scrollTop = ed.scrollTop;
 }
+
+/* ── 물결 밑줄 호버 말풍선 (빠른 수정) ── */
+let hintHideT = null;
+function showHint(m){
+  const info = state.hintMap && state.hintMap[m.dataset.k];
+  if(!info){ return; }
+  clearTimeout(hintHideT);
+  const sevLabel = info.sev==="high" ? "위반" : "주의";
+  let fix = "";
+  if(info.fix && info.fix.type==="replace")
+    fix = `<div class="hp-fix"><span>→</span><code>"${esc(info.fix.replacement)}"</code>
+           <button class="apply" onclick="applyFix(${info.fixIdx});hideHint()">적용</button></div>`;
+  else if(info.fix && info.fix.type==="append")
+    fix = `<div class="hp-fix"><span>고지문 추가</span>
+           <button class="apply" onclick="applyFix(${info.fixIdx});hideHint()">적용</button></div>`;
+  else if(info.suggestion)
+    fix = `<div class="hp-fix"><span>${esc(info.suggestion)}</span></div>`;
+  const hp = $("hintPopup");
+  hp.innerHTML =
+    `<div class="hp-h"><span class="dot ${info.sev}"></span><b>${esc(info.rule)}</b>
+       <span class="sev ${info.sev}">${sevLabel}</span></div>
+     <div class="hp-m">${esc(info.msg||"")}</div>
+     ${info.citation ? `<div class="hp-c">${citeShort(info.citation)}</div>` : ""}
+     ${fix}`;
+  hp.style.display = "block";
+  const r = m.getBoundingClientRect();
+  const hpr = hp.getBoundingClientRect();
+  let top = r.top - hpr.height - 8;
+  if(top < 8) top = r.bottom + 8;
+  let left = r.left;
+  if(left + hpr.width > window.innerWidth - 8) left = window.innerWidth - 8 - hpr.width;
+  hp.style.top = top + "px";
+  hp.style.left = Math.max(8, left) + "px";
+}
+function scheduleHideHint(){ clearTimeout(hintHideT); hintHideT = setTimeout(hideHint, 180); }
+function hideHint(){ $("hintPopup").style.display = "none"; }
+$("backdrop").addEventListener("mouseover", e=>{ const m = e.target.closest && e.target.closest("mark"); if(m) showHint(m); });
+$("backdrop").addEventListener("mouseout", e=>{ const m = e.target.closest && e.target.closest("mark"); if(m) scheduleHideHint(); });
+$("backdrop").addEventListener("click", e=>{ const m = e.target.closest && e.target.closest("mark"); if(m) focusSpan(+m.dataset.s, +m.dataset.e); });
+$("hintPopup").addEventListener("mouseenter", ()=>clearTimeout(hintHideT));
+$("hintPopup").addEventListener("mouseleave", hideHint);
 
 /* ── 심의 실행 ── */
 async function runReview(){
@@ -648,6 +709,20 @@ function render(rep){
       ${m ? `<div class="p-mis">${esc(m.text)}${m.trigger_phrase ? ` <span class="p-trig">⟵ "${esc(m.trigger_phrase)}"</span>` : ""}</div>` : ""}
     </div>`;
   }).join("");
+
+  /* 물결 밑줄 호버 말풍선용 매핑 (start_end → 지적 정보) */
+  state.hintMap = {};
+  rep.rule_findings.forEach((f, i)=>{
+    (f.spans || []).forEach(sp=>{
+      state.hintMap[sp.start+"_"+sp.end] = {sev:f.severity, rule:f.rule_name, msg:f.message,
+        fix:f.fix||null, fixIdx:(f.fix ? i : -1), suggestion:f.suggestion, citation:f.citation};
+    });
+  });
+  rep.llm_issues.forEach(it=>{
+    if(it.quote){ const s = rep.text.indexOf(it.quote);
+      if(s >= 0) state.hintMap[s+"_"+(s+it.quote.length)] = {sev:it.risk, rule:"AI 심의",
+        msg:it.explanation, fix:null, fixIdx:-1, suggestion:it.suggestion, citation:it.citation}; }
+  });
 
   updateStatusbar(rep);
   $("btnSend").disabled = false;
