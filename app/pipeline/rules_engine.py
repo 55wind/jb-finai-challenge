@@ -37,58 +37,54 @@ def _suggestion_for(rule: dict, matched: str) -> str:
     return ""
 
 
-def run_rules(text: str, content_type: str, language: str = "ko") -> list[dict]:
-    """초안 + 유형 → 위반 룰 리스트 (근거·심각도·span·수정안 포함)."""
+def _eval_rule(rule: dict, text: str, content_type: str, language: str, source: str) -> dict | None:
+    """단일 룰 평가 → 위반 finding 또는 None. 법규 룰·내규 룰 공용."""
+    if content_type not in rule["types"] or language not in rule.get("languages", ["ko"]):
+        return None
+
+    base = {
+        "rule_id": rule["id"],
+        "rule_name": rule["name"],
+        "severity": rule["severity"],
+        "severity_label": SEVERITY_LABEL[rule["severity"]],
+        "category": rule["category"],
+        "basis_id": rule["basis"],
+        "message": rule["message"],
+        "suggestion": rule.get("suggestion", ""),
+        "source": source,   # "rule"(법규) | "internal"(내규)
+    }
+
+    if rule["kind"] == "required":
+        if any(re.search(p, text) for p in rule["requires_any"]):
+            return None
+        return {**base, "matched_text": None, "spans": [],
+                "fix": {"type": "append", "text": rule["fix_append"]} if rule.get("fix_append") else None}
+
+    # forbidden: condition_absent_any가 있으면 그 패턴이 이미 본문에 있을 때 룰 면제
+    if rule.get("condition_absent_any") and any(re.search(p, text) for p in rule["condition_absent_any"]):
+        return None
+    spans = []
+    for pat in rule["patterns"]:
+        spans += [{"start": m.start(), "end": m.end(), "text": m.group()} for m in re.finditer(pat, text)]
+    if not spans:
+        return None
+    spans.sort(key=lambda s: s["start"])
+    matched = spans[0]["text"]
+    replacement = _suggestion_for(rule, matched)
+    return {**base, "matched_text": matched, "spans": spans,
+            "fix": {"type": "replace", "original": matched, "replacement": replacement} if replacement else None}
+
+
+def run_rules(text: str, content_type: str, language: str = "ko",
+              extra_rules: list[dict] | None = None) -> list[dict]:
+    """초안 + 유형 → 위반 룰 리스트. extra_rules(내규)를 법규 룰과 함께 적용."""
     findings: list[dict] = []
     for rule in load_rules():
-        if content_type not in rule["types"] or language not in rule.get("languages", ["ko"]):
-            continue
-
-        if rule["kind"] == "required":
-            if not any(re.search(p, text) for p in rule["requires_any"]):
-                findings.append({
-                    "rule_id": rule["id"],
-                    "rule_name": rule["name"],
-                    "severity": rule["severity"],
-                    "severity_label": SEVERITY_LABEL[rule["severity"]],
-                    "category": rule["category"],
-                    "basis_id": rule["basis"],
-                    "message": rule["message"],
-                    "matched_text": None,
-                    "spans": [],
-                    "fix": {"type": "append", "text": rule["fix_append"]} if rule.get("fix_append") else None,
-                    "suggestion": rule.get("suggestion", ""),
-                })
-            continue
-
-        # forbidden: condition_absent_any가 있으면 그 패턴이 이미 본문에 있을 때 룰 면제
-        if rule.get("condition_absent_any") and any(
-            re.search(p, text) for p in rule["condition_absent_any"]
-        ):
-            continue
-
-        spans = []
-        for pat in rule["patterns"]:
-            spans += [
-                {"start": m.start(), "end": m.end(), "text": m.group()}
-                for m in re.finditer(pat, text)
-            ]
-        if not spans:
-            continue
-        spans.sort(key=lambda s: s["start"])
-        matched = spans[0]["text"]
-        replacement = _suggestion_for(rule, matched)
-        findings.append({
-            "rule_id": rule["id"],
-            "rule_name": rule["name"],
-            "severity": rule["severity"],
-            "severity_label": SEVERITY_LABEL[rule["severity"]],
-            "category": rule["category"],
-            "basis_id": rule["basis"],
-            "message": rule["message"],
-            "matched_text": matched,
-            "spans": spans,
-            "fix": {"type": "replace", "original": matched, "replacement": replacement} if replacement else None,
-            "suggestion": rule.get("suggestion", ""),
-        })
+        f = _eval_rule(rule, text, content_type, language, source="rule")
+        if f:
+            findings.append(f)
+    for rule in (extra_rules or []):
+        f = _eval_rule(rule, text, content_type, language, source="internal")
+        if f:
+            findings.append(f)
     return findings

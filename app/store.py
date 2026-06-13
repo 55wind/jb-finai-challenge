@@ -43,6 +43,14 @@ CREATE TABLE IF NOT EXISTS audit_log (
   action TEXT NOT NULL,
   detail TEXT
 );
+CREATE TABLE IF NOT EXISTS internal_rules (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT NOT NULL,
+  name TEXT NOT NULL,
+  source_text TEXT,            -- 원본 자연어 지침
+  rule_json TEXT NOT NULL,     -- 룰엔진 스키마 룰
+  active INTEGER NOT NULL DEFAULT 1
+);
 """
 
 
@@ -128,6 +136,46 @@ def save_translation(sid: int, target_lang: str, text: str, engine: str, report:
             (sid, _now(), target_lang, text, engine, json.dumps(report, ensure_ascii=False)))
         log(conn, sid, actor, "translate",
             f"{target_lang} 버전 생성({engine}) + 재심의 {report.get('grade_emoji','')}{report.get('grade_label','')}({report.get('score','')}점)")
+
+
+def add_internal_rules(rules: list[dict], source_text: str = "") -> list[dict]:
+    """확인된 내규 룰들을 저장."""
+    with _conn() as conn:
+        for r in rules:
+            conn.execute(
+                "INSERT INTO internal_rules (created_at, name, source_text, rule_json, active) VALUES (?,?,?,?,1)",
+                (_now(), r.get("name", "내규 룰"), source_text, json.dumps(r, ensure_ascii=False)))
+    return list_internal_rules()
+
+
+def list_internal_rules() -> list[dict]:
+    with _conn() as conn:
+        rows = conn.execute("SELECT * FROM internal_rules ORDER BY id DESC").fetchall()
+    out = []
+    for r in rows:
+        rule = json.loads(r["rule_json"])
+        out.append({"id": r["id"], "created_at": r["created_at"], "name": r["name"],
+                    "active": bool(r["active"]), "kind": rule.get("kind"),
+                    "severity": rule.get("severity"), "message": rule.get("message"),
+                    "types": rule.get("types")})
+    return out
+
+
+def active_internal_rules() -> list[dict]:
+    """활성 내규 룰의 룰엔진 스키마 dict 리스트 (orchestrator 로더용)."""
+    with _conn() as conn:
+        rows = conn.execute("SELECT rule_json FROM internal_rules WHERE active=1").fetchall()
+    return [json.loads(r["rule_json"]) for r in rows]
+
+
+def set_internal_rule_active(rule_id: int, active: bool) -> None:
+    with _conn() as conn:
+        conn.execute("UPDATE internal_rules SET active=? WHERE id=?", (1 if active else 0, rule_id))
+
+
+def delete_internal_rule(rule_id: int) -> None:
+    with _conn() as conn:
+        conn.execute("DELETE FROM internal_rules WHERE id=?", (rule_id,))
 
 
 def audit_trail(submission_id: int | None = None) -> list[dict]:

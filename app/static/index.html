@@ -346,6 +346,23 @@
   .ap-final{margin-top:16px; padding-top:14px; border-top:1px solid var(--border,#e1e5ea);}
   .ap-final .head{font-size:15px; font-weight:800; margin-bottom:10px;}
   .ap-actions{display:flex; gap:8px; justify-content:flex-end;}
+  /* ── 내부 심의기준(내규) ── */
+  .src-internal{display:inline-block; font-size:10.5px; font-weight:800; padding:1px 7px; border-radius:999px;
+    background:#5b3bbf; color:#fff; margin-right:4px; vertical-align:1px;}
+  .ir-ta{width:100%; min-height:96px; border:1px solid var(--border,#e1e5ea); border-radius:9px; padding:10px 12px;
+    font-size:13.5px; font-family:inherit; resize:vertical; line-height:1.6;}
+  .ir-hint{font-size:12px; color:var(--text-3,#5b6470); margin:6px 0 12px;}
+  .ir-preview{list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:7px; max-height:34vh; overflow:auto;}
+  .ir-row{display:flex; gap:9px; align-items:flex-start; border:1px solid var(--border,#e1e5ea); border-radius:8px; padding:8px 11px; font-size:13px;}
+  .ir-row .k{font-size:10.5px; font-weight:800; padding:1px 7px; border-radius:999px; white-space:nowrap; margin-top:1px;}
+  .ir-row .k.forbidden{background:#fde8eb; color:#b1003e;} .ir-row .k.required{background:#fdf3df; color:#9a6c00;}
+  .ir-row .nm{font-weight:700;} .ir-row .ms{color:var(--text-2,#5b6470); font-size:12.5px;}
+  .ir-existing{margin-top:14px; padding-top:12px; border-top:1px solid var(--border,#e1e5ea);}
+  .ir-chip{display:inline-flex; align-items:center; gap:6px; background:#f3effd; border:1px solid #e0d7fa; color:#4a2fb0;
+    border-radius:999px; padding:3px 10px; font-size:12px; margin:3px 4px 0 0;}
+  .ir-chip button{border:none; background:none; color:#9a8fc4; cursor:pointer; font-size:13px; line-height:1; padding:0;}
+  .btn.internal{background:#fff; border:1px solid #c9bdf0; color:#5b3bbf; font-weight:700;}
+  .btn.internal:hover{background:#f6f2ff;}
 </style>
 </head>
 <body>
@@ -408,6 +425,7 @@
                 <option value="zh">中文</option>
                 <option value="ja">日本語</option>
               </select>
+              <button class="btn small internal" onclick="openInternalRules()">📋 내부 심의기준</button>
               <button class="btn small" onclick="runReview()">재심의</button>
             </div>
           </div>
@@ -493,6 +511,30 @@
         <button class="btn small" onclick="closeAutopilot()">닫기</button>
         <button class="btn small primary" id="apSendBtn" onclick="sendFromAutopilot()">검토관리자 검토로 전송 →</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="ap-overlay" id="irOverlay">
+  <div class="ap-card">
+    <h3>📋 내부 심의기준 (내규)</h3>
+    <div class="ap-sub">우리 기관의 내부 심의기준을 <b>평문으로</b> 적으면 AI가 룰로 변환해 <b>법규와 함께</b> 적용합니다. 코드·정규식 필요 없습니다.</div>
+    <textarea class="ir-ta" id="irText" placeholder="한 줄에 하나씩, 예:
+'업계 최초' '유일' 표현 사용 금지
+모든 예금 광고에 '영업점 문의' 안내 필수 포함
+'세일' '땡처리' 등 과장 표현 금지"></textarea>
+    <div class="ir-hint">금지 표현 → 「금지」, 필수 고지 → 「필수/반드시」 키워드를 쓰면 더 정확합니다.</div>
+    <div class="ap-actions" style="justify-content:flex-start">
+      <button class="btn small autopilot" id="irExtractBtn" onclick="extractInternalRules()">✨ AI로 룰 변환</button>
+    </div>
+    <ul class="ir-preview" id="irPreview"></ul>
+    <div class="ap-actions" id="irSaveRow" style="display:none; margin-top:12px">
+      <button class="btn small" onclick="$('irPreview').innerHTML='';$('irSaveRow').style.display='none'">취소</button>
+      <button class="btn small primary" id="irSaveBtn" onclick="saveInternalRules()">선택한 룰 적용 →</button>
+    </div>
+    <div class="ir-existing" id="irExisting"></div>
+    <div class="ap-actions" style="margin-top:14px">
+      <button class="btn small" onclick="closeInternalRules()">닫기</button>
     </div>
   </div>
 </div>
@@ -718,9 +760,11 @@ function render(rep){
       <span class="dot ${f.severity}"></span>
       <div class="issue-body">
         <div class="issue-h"><span class="rule">${esc(f.rule_name)}</span>${
+          f.source==="internal" ? `<span class="src-internal">내규</span>` : ""}${
           f.matched_text ? `<code class="q">"${esc(f.matched_text)}"</code>` : `<span class="missing">필수항목 누락</span>`}</div>
         <div class="issue-m">${esc(f.message)}</div>
-        ${f.citation ? `<div class="issue-cite">${citeShort(f.citation)}</div>` : ""}
+        ${f.citation ? `<div class="issue-cite">${citeShort(f.citation)}</div>`
+          : (f.source==="internal" ? `<div class="issue-cite">〔내부 심의기준 (내규)〕</div>` : "")}
         ${fixUi ? `<div class="issue-f">${fixUi}</div>` : ""}
       </div></div>`;
   });
@@ -873,6 +917,57 @@ function animateScore(from, to, grade){
 
 function closeAutopilot(){ $("apOverlay").classList.remove("show"); }
 function sendFromAutopilot(){ closeAutopilot(); sendForApproval(); }
+
+/* ── 내부 심의기준(내규) ── */
+let irExtracted = [];
+function openInternalRules(){ $("irOverlay").classList.add("show"); loadExistingInternalRules(); }
+function closeInternalRules(){ $("irOverlay").classList.remove("show"); }
+
+async function extractInternalRules(){
+  const text = $("irText").value.trim();
+  if(!text){ toast("내부 심의기준을 입력하세요"); return; }
+  $("irExtractBtn").disabled = true; $("irExtractBtn").textContent = "변환 중…";
+  try{
+    const r = await api("/api/internal-rules/extract", { method:"POST", body: JSON.stringify({ text })});
+    irExtracted = r.rules || [];
+    if(!irExtracted.length){ $("irPreview").innerHTML = `<li class="ir-row">변환된 룰이 없습니다. 금지/필수 키워드를 넣어 다시 시도해 보세요.</li>`; $("irSaveRow").style.display="none"; }
+    else{
+      $("irPreview").innerHTML = irExtracted.map((rl,i)=>`
+        <li class="ir-row">
+          <input type="checkbox" id="irc${i}" checked style="margin-top:3px">
+          <span class="k ${rl.kind}">${rl.kind==="forbidden"?"금지":"필수"}</span>
+          <div><div class="nm">${esc(rl.name)}</div><div class="ms">${esc(rl.message)}</div></div>
+        </li>`).join("");
+      $("irSaveRow").style.display = "flex";
+    }
+  }catch(e){ toast("오류: " + e.message); }
+  finally{ $("irExtractBtn").disabled = false; $("irExtractBtn").textContent = "✨ AI로 룰 변환"; }
+}
+
+async function saveInternalRules(){
+  const chosen = irExtracted.filter((_,i)=>$("irc"+i) && $("irc"+i).checked);
+  if(!chosen.length){ toast("적용할 룰을 선택하세요"); return; }
+  await api("/api/internal-rules", { method:"POST", body: JSON.stringify({ rules: chosen, source_text: $("irText").value })});
+  $("irPreview").innerHTML = ""; $("irSaveRow").style.display="none"; $("irText").value="";
+  toast(`내규 ${chosen.length}건 적용 · 재심의`);
+  await loadExistingInternalRules();
+  if(state.report && !state.report.skipped) runReview();   // 즉시 반영
+}
+
+async function loadExistingInternalRules(){
+  const r = await api("/api/internal-rules");
+  const rules = r.rules || [];
+  $("irExisting").innerHTML = rules.length
+    ? `<div style="font-size:12.5px;font-weight:700;color:#5b6470;margin-bottom:6px">적용 중인 내규 (${rules.length})</div>` +
+      rules.map(rl=>`<span class="ir-chip">${rl.active?"":"⏸ "}${esc(rl.name)}<button title="삭제" onclick="deleteInternalRule(${rl.id})">✕</button></span>`).join("")
+    : `<div style="font-size:12.5px;color:#9aa3ad">아직 등록된 내규가 없습니다.</div>`;
+}
+
+async function deleteInternalRule(id){
+  await api("/api/internal-rules/"+id, { method:"DELETE" });
+  await loadExistingInternalRules();
+  if(state.report && !state.report.skipped) runReview();
+}
 
 /* ── 검토 전송 (F8 진입) ── */
 async function sendForApproval(){

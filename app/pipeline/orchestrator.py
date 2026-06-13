@@ -14,6 +14,15 @@ from .rules_engine import run_rules
 MIN_TEXT_LEN = 8
 AUTOPILOT_MAX_ITER = 4
 
+# 내부 심의기준(내규) 로더 — 앱 기동 시 store에서 활성 내규를 읽도록 주입(main.py).
+# 기본은 빈 리스트라 파이프라인이 저장소와 분리되고 테스트가 결정적으로 유지된다.
+_internal_rules_loader = lambda: []  # noqa: E731
+
+
+def set_internal_rules_loader(fn) -> None:
+    global _internal_rules_loader
+    _internal_rules_loader = fn
+
 
 async def run_review(text: str, content_type: str | None = None, language: str = "ko",
                      product_facts: str = "") -> dict:
@@ -26,10 +35,13 @@ async def run_review(text: str, content_type: str | None = None, language: str =
     classification = classify(text)
     ctype = content_type or classification["content_type"]
 
-    # ②③ 병렬: 규제 근거 검색 + 룰엔진
+    # 내규(내부 심의기준) — 법규 룰과 함께 적용
+    internal = _internal_rules_loader() or None
+
+    # ②③ 병렬: 규제 근거 검색 + 룰엔진(법규 + 내규)
     retrieval, rule_findings = await asyncio.gather(
         asyncio.to_thread(retrieve, text, ctype),
-        asyncio.to_thread(run_rules, text, ctype, language),
+        asyncio.to_thread(run_rules, text, ctype, language, internal),
     )
 
     # ④⑤ 병렬: LLM 심의 + 오인 시뮬레이터

@@ -14,9 +14,12 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import store
-from .pipeline import llm_client, orchestrator
+from .pipeline import internal_rules, llm_client, orchestrator
 
 app = FastAPI(title="JB 준법 코파일럿", version="0.1.0")
+
+# 내규(내부 심의기준) 로더 주입 — 심의 시 활성 내규를 법규와 함께 적용
+orchestrator.set_internal_rules_loader(store.active_internal_rules)
 
 _STATIC = Path(__file__).resolve().parent / "static"
 _FIXTURES = Path(__file__).resolve().parent / "data" / "fixtures.json"
@@ -42,6 +45,15 @@ class AutopilotRequest(BaseModel):
     language: str = "ko"
     product_facts: str = ""
     max_iter: int = Field(default=4, ge=1, le=6)
+
+
+class InternalExtractRequest(BaseModel):
+    text: str
+
+
+class InternalSaveRequest(BaseModel):
+    rules: list[dict]
+    source_text: str = ""
 
 
 class SubmissionRequest(BaseModel):
@@ -99,6 +111,37 @@ async def autopilot(req: AutopilotRequest):
     """준법 오토파일럿 — 통과/종료조건까지 자율 개선, 회차 trace 반환."""
     return await orchestrator.autopilot(req.text, req.content_type, req.language,
                                         req.product_facts, req.max_iter)
+
+
+# ── 내부 심의기준(내규) ────────────────────────────────────
+
+@app.post("/api/internal-rules/extract")
+async def internal_extract(req: InternalExtractRequest):
+    """자연어 내규 → 구조화 룰 미리보기 (저장 안 함)."""
+    return {"rules": await internal_rules.extract(req.text)}
+
+
+@app.post("/api/internal-rules")
+def internal_save(req: InternalSaveRequest):
+    """확인된 내규 룰 저장 → 이후 심의에 법규와 함께 적용."""
+    return {"rules": store.add_internal_rules(req.rules, req.source_text)}
+
+
+@app.get("/api/internal-rules")
+def internal_list():
+    return {"rules": store.list_internal_rules()}
+
+
+@app.post("/api/internal-rules/{rule_id}/toggle")
+def internal_toggle(rule_id: int, active: bool = True):
+    store.set_internal_rule_active(rule_id, active)
+    return {"rules": store.list_internal_rules()}
+
+
+@app.delete("/api/internal-rules/{rule_id}")
+def internal_delete(rule_id: int):
+    store.delete_internal_rule(rule_id)
+    return {"rules": store.list_internal_rules()}
 
 
 @app.post("/api/submissions")
