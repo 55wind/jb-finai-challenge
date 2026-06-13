@@ -598,7 +598,16 @@ function useFixture(i){
   $("selLang").value = f.language;
   $("productFacts").value = f.product_facts || "";
   $("subTitle").value = f.name || "";
-  runReview();
+  syncBackdrop(true);
+  runReview(true);   // 빠른 검사 즉시 → LLM 보강
+}
+
+/* 첫 로드 시 메인 데모를 자동으로 띄워 헤드라인 시뮬레이터 첫인상 강화 */
+function autoLoadDemo(){
+  if(!state.fixtures || !state.fixtures.length) return;
+  if($("editor").value.trim()) return;            // 사용자가 이미 입력했으면 건너뜀
+  let i = state.fixtures.findIndex(f => /메인 데모/.test(f.name));
+  useFixture(i < 0 ? 0 : i);
 }
 
 /* ── 실시간 검사 (F11): 멈춤/붙여넣기 시 자동 (2단계: 빠른 룰검사 → LLM 보강) ── */
@@ -1140,7 +1149,12 @@ async function translateSub(sid){
 }
 
 /* ── 초기화 ── */
-checkHealth(); loadFixtures(); loadSubmissions();
+(async function init(){
+  await checkHealth();          // 엔진 모드 먼저 (LLM 보강 여부 판단)
+  await loadFixtures();
+  loadSubmissions();
+  autoLoadDemo();               // 메인 데모 자동 로드 → 첫인상
+})();
 </script>
 </body>
 </html>
