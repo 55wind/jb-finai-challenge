@@ -228,17 +228,36 @@
   summary.rsec-sum::-webkit-details-marker{display:none;}
   summary.rsec-sum .chev{transition:transform .15s; color:var(--text-3); font-size:11px;}
   summary.rsec-sum .risk-pill{margin-left:auto;}
-  .persona-list{display:flex; flex-direction:column; gap:9px; margin-top:11px;}
-  .persona{border:1px solid var(--border); border-radius:9px; padding:11px 12px; background:var(--surface-2);}
-  .persona.safe{opacity:.72;}
-  .p-h{display:flex; align-items:center; gap:7px;}
-  .p-emoji{font-size:16px;}
-  .p-name{font-size:12.5px; font-weight:700;}
-  .p-h .risk-pill{margin-left:auto;}
-  .p-speech{font-size:11.5px; color:var(--text-2); margin-top:7px; line-height:1.5; font-style:italic;}
-  .p-mis{font-size:11.5px; color:var(--red-fg); font-weight:600; margin-top:7px; line-height:1.5;
-    background:var(--red-bg); border-radius:7px; padding:7px 9px;}
-  .p-trig{font-weight:600; color:var(--text-2); font-style:normal;}
+  /* ── 헤드라인: 소비자 오인 시뮬레이터 ── */
+  .hero-sim{border:1px solid #e4dcfa; border-radius:13px; padding:14px 15px 16px; margin-bottom:13px;
+    background:linear-gradient(180deg,#faf7ff 0%,var(--surface) 70%); box-shadow:0 1px 2px rgba(91,59,191,.05);}
+  .hero-head{display:flex; align-items:center; gap:9px;}
+  .hero-title{font-size:14.5px; font-weight:800; color:var(--text); letter-spacing:-.01em;}
+  .hero-head .risk-pill{margin-left:auto; font-size:11px; padding:3px 11px;}
+  .hero-sub{font-size:11.5px; color:var(--text-3); margin:4px 0 0; line-height:1.5;}
+  .persona-list{display:flex; flex-direction:column; gap:10px; margin-top:13px;}
+  .persona{position:relative; border:1px solid var(--border); border-left:4px solid var(--border);
+    border-radius:11px; padding:12px 13px; background:var(--surface); transition:transform .12s, box-shadow .12s;}
+  .persona[onclick]{cursor:pointer;}
+  .persona[onclick]:hover{transform:translateY(-1px); box-shadow:0 5px 16px rgba(0,0,0,.09);}
+  .persona.risk-high{border-left-color:var(--red-fg);}
+  .persona.risk-medium{border-left-color:var(--amber-fg);}
+  .persona.safe{border-left-color:var(--green-fg); opacity:.8;}
+  .p-top{display:flex; align-items:center; gap:9px;}
+  .p-avatar{width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:18px; background:var(--surface-2); flex-shrink:0; line-height:1;}
+  .p-name{font-size:13px; font-weight:800;}
+  .p-top .risk-pill{margin-left:auto;}
+  .p-speech{position:relative; font-size:12px; color:var(--text); margin-top:10px; line-height:1.55;
+    background:var(--surface-2); border-radius:10px; padding:9px 11px;}
+  .p-speech::before{content:""; position:absolute; top:-5px; left:15px; width:10px; height:10px;
+    background:var(--surface-2); transform:rotate(45deg);}
+  .p-mis{font-size:11.5px; color:var(--red-fg); font-weight:600; margin-top:9px; line-height:1.5;
+    background:var(--red-bg); border-radius:8px; padding:8px 10px;}
+  .mis-tag{display:inline-block; font-size:9.5px; font-weight:800; background:var(--red-fg); color:#fff;
+    border-radius:5px; padding:1px 6px; margin-right:6px; vertical-align:1px;}
+  .p-trig{display:block; margin-top:5px; font-weight:700; color:var(--text-2); font-size:11px;}
+  .p-ok{font-size:11.5px; color:var(--green-fg); font-weight:600; margin-top:9px;}
   .risk-pill{font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:999px; white-space:nowrap;}
   .risk-high{background:var(--red-bg); color:var(--red-fg);}
   .risk-medium{background:var(--amber-bg); color:var(--amber-fg);}
@@ -453,17 +472,19 @@
             <div class="gauge"><div id="gaugeFill"></div></div>
           </div>
 
+          <!-- ★ 헤드라인: 소비자 오인 시뮬레이터 (이 제품의 핵심 차별점) -->
+          <section class="hero-sim" id="simSec">
+            <div class="hero-head"><span class="hero-title">👥 소비자는 이렇게 오해합니다</span>
+              <span class="risk-pill risk-low" id="simRisk">—</span></div>
+            <div class="hero-sub">작성 시점에 취약 소비자(고령·금융초보·외국인)가 이 광고를 어떻게 오해하는지 미리 시뮬레이션합니다.</div>
+            <div class="persona-list" id="personaGrid"><div class="empty">초안을 작성하면 페르소나별 오해를 1인칭으로 재현합니다.</div></div>
+          </section>
+
           <div class="rsec">
             <div class="rsec-head">검토 결과 <span class="counts" id="counts"></span></div>
             <div id="findings"><div class="empty">초안을 작성하면 실시간으로 위반·주의 항목이 분류되어 표시됩니다.</div></div>
             <div class="sources" id="sources"></div>
           </div>
-
-          <details class="rsec" id="simSec" open>
-            <summary class="rsec-sum"><span class="chev">▶</span> 소비자 오인 시뮬레이터
-              <span class="risk-pill risk-low" id="simRisk">—</span></summary>
-            <div class="persona-list" id="personaGrid"><div class="empty">심의 시 페르소나별 오해를 분석합니다.</div></div>
-          </details>
         </aside>
       </section>
 
@@ -812,13 +833,16 @@ function render(rep){
     const m = p.misunderstandings[0];
     const risk = p.safe ? "low" : (m ? m.risk : "low");
     const rlabel = p.safe ? "안전" : (m ? (m.risk==="high"?"위험":"주의") : "안전");
+    const cls = p.safe ? "safe" : ("risk-"+risk);
     const click = (m && m.trigger_phrase && rep.text.indexOf(m.trigger_phrase)>=0)
-      ? `onclick="focusSpan(${rep.text.indexOf(m.trigger_phrase)},${rep.text.indexOf(m.trigger_phrase)+m.trigger_phrase.length})" style="cursor:pointer"` : "";
-    return `<div class="persona ${p.safe?'safe':''}" ${click}>
-      <div class="p-h"><span class="p-emoji">${p.emoji}</span><span class="p-name">${esc(p.name)}</span>
+      ? `onclick="focusSpan(${rep.text.indexOf(m.trigger_phrase)},${rep.text.indexOf(m.trigger_phrase)+m.trigger_phrase.length})"` : "";
+    return `<div class="persona ${cls}" ${click}>
+      <div class="p-top"><span class="p-avatar">${p.emoji}</span><span class="p-name">${esc(p.name)}</span>
         <span class="risk-pill risk-${risk}">${rlabel}</span></div>
       <div class="p-speech">"${esc(p.understanding)}"</div>
-      ${m ? `<div class="p-mis">${esc(m.text)}${m.trigger_phrase ? ` <span class="p-trig">⟵ "${esc(m.trigger_phrase)}"</span>` : ""}</div>` : ""}
+      ${m ? `<div class="p-mis"><span class="mis-tag">오해</span>${esc(m.text)}</div>${
+        m.trigger_phrase ? `<div class="p-trig">⟵ 유발 문구: "${esc(m.trigger_phrase)}" (클릭해 본문 이동)</div>` : ""}`
+        : `<div class="p-ok">✓ 이 소비자는 오해하지 않았습니다</div>`}
     </div>`;
   }).join("");
 
