@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import asyncio
 
-from . import llm_reviewer, multilingual, remediator, report, simulator
+from . import llm_client, llm_reviewer, multilingual, remediator, report, simulator
 from .classifier import classify
 from .retriever import retrieve
 from .rules_engine import run_rules
@@ -25,7 +25,9 @@ def set_internal_rules_loader(fn) -> None:
 
 
 async def run_review(text: str, content_type: str | None = None, language: str = "ko",
-                     product_facts: str = "") -> dict:
+                     product_facts: str = "", quick: bool = False) -> dict:
+    """심의 실행. quick=True면 LLM(④⑤)을 생략하고 룰+RAG+결정적 시뮬레이션만 →
+    실시간 타이핑 중 즉시 피드백(밀림 방지). 전체 LLM 심의는 별도 호출로 보강."""
     text = (text or "").strip()
     if len(text) < MIN_TEXT_LEN:
         return {"skipped": True,
@@ -44,16 +46,21 @@ async def run_review(text: str, content_type: str | None = None, language: str =
         asyncio.to_thread(run_rules, text, ctype, language, internal),
     )
 
-    # ④⑤ 병렬: LLM 심의 + 오인 시뮬레이터
-    llm_review, simulation = await asyncio.gather(
-        llm_reviewer.review(text, ctype, retrieval, rule_findings),
-        simulator.simulate(text, product_facts, rule_findings),
-    )
+    # ④⑤ LLM 심의 + 오인 시뮬레이터 (quick 모드면 결정적 폴백으로 즉시 반환)
+    if not quick and await llm_client.is_available():
+        llm_review, simulation = await asyncio.gather(
+            llm_reviewer.review(text, ctype, retrieval, rule_findings),
+            simulator.simulate(text, product_facts, rule_findings),
+        )
+    else:
+        llm_review = llm_reviewer._fallback_issues(rule_findings)
+        simulation = await simulator.simulate(text, product_facts, rule_findings, force_fallback=True)
 
     # ⑥ 리포트 종합
     result = report.compose(text, ctype, language, classification,
                             retrieval, rule_findings, llm_review, simulation)
     result["skipped"] = False
+    result["quick"] = quick
     return result
 
 

@@ -132,10 +132,11 @@ async def _llm_persona(persona: dict, text: str, product_facts: str, rule_findin
     }
 
 
-async def simulate(text: str, product_facts: str, rule_findings: list[dict]) -> dict:
-    """페르소나별 병렬 추론 → 종합 오인 리스크."""
+async def simulate(text: str, product_facts: str, rule_findings: list[dict],
+                   force_fallback: bool = False) -> dict:
+    """페르소나별 병렬 추론 → 종합 오인 리스크. force_fallback=True면 LLM 무시(빠른 검사용)."""
     personas = load_personas()
-    if await llm_client.is_available():
+    if not force_fallback and await llm_client.is_available():
         results = await asyncio.gather(
             *(_llm_persona(p, text, product_facts, rule_findings) for p in personas)
         )

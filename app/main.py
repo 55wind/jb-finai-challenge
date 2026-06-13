@@ -32,6 +32,7 @@ class ReviewRequest(BaseModel):
     content_type: str | None = Field(default=None, description="deposit|investment|loan (없으면 자동분류)")
     language: str = "ko"
     product_facts: str = ""
+    quick: bool = False
 
 
 class ApplyFixesRequest(BaseModel):
@@ -98,7 +99,8 @@ def fixtures():
 
 @app.post("/api/review")
 async def review(req: ReviewRequest):
-    return await orchestrator.run_review(req.text, req.content_type, req.language, req.product_facts)
+    return await orchestrator.run_review(req.text, req.content_type, req.language,
+                                         req.product_facts, req.quick)
 
 
 @app.post("/api/apply-fixes")

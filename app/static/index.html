@@ -557,6 +557,7 @@ async function api(path, opts={}){
 async function checkHealth(){
   try{
     const h = await api("/api/health");
+    state.llm = h.llm_available;
     const b = $("modeBadge");
     if(h.llm_available){ b.textContent = `LLM · ${h.llm_model}`; b.classList.add("llm"); }
     else b.textContent = "폴백 모드 · 룰엔진";
@@ -579,19 +580,19 @@ function useFixture(i){
   runReview();
 }
 
-/* ── 실시간 검사 (F11): 멈춤/붙여넣기 시 자동 ── */
-let debounceTimer = null;
-function scheduleReview(delay=1000){
-  clearTimeout(debounceTimer);
+/* ── 실시간 검사 (F11): 멈춤/붙여넣기 시 자동 (2단계: 빠른 룰검사 → LLM 보강) ── */
+let debounceTimer = null, fullTimer = null;
+function scheduleReview(delay=700){
+  clearTimeout(debounceTimer); clearTimeout(fullTimer);
   $("liveDot").className = "live-dot"; $("liveLabel").textContent = "입력 중…";
-  debounceTimer = setTimeout(runReview, delay);
+  debounceTimer = setTimeout(()=>runReview(true), delay);   // 멈추면 먼저 빠른 검사
 }
 $("editor").addEventListener("input", ()=>{ syncBackdrop(true); scheduleReview(); });
-$("editor").addEventListener("paste", ()=>scheduleReview(300));
+$("editor").addEventListener("paste", ()=>scheduleReview(250));
 $("editor").addEventListener("scroll", ()=>{ $("backdrop").scrollTop = $("editor").scrollTop;
   $("backdrop").scrollLeft = $("editor").scrollLeft; });
-$("selType").addEventListener("change", ()=>runReview());
-$("selLang").addEventListener("change", ()=>runReview());
+$("selType").addEventListener("change", ()=>runReview(false));
+$("selLang").addEventListener("change", ()=>runReview(false));
 
 /* ── 물결 밑줄 오버레이 ── */
 function syncBackdrop(plain=false){
@@ -665,27 +666,38 @@ $("backdrop").addEventListener("click", e=>{ const m = e.target.closest && e.tar
 $("hintPopup").addEventListener("mouseenter", ()=>clearTimeout(hintHideT));
 $("hintPopup").addEventListener("mouseleave", hideHint);
 
-/* ── 심의 실행 ── */
-async function runReview(){
-  clearTimeout(debounceTimer);
+/* ── 심의 실행 (2단계 + 중단·최신만 적용) ── */
+let reviewSeq = 0, reviewAbort = null;
+async function runReview(quick=false){
+  clearTimeout(debounceTimer); clearTimeout(fullTimer);
   const text = $("editor").value;
   if(!text.trim()){ renderEmpty(); return; }
+  if(reviewAbort) reviewAbort.abort();          // 진행 중 요청 중단(밀림·stale 방지)
+  const ac = new AbortController(); reviewAbort = ac;
+  const seq = ++reviewSeq;
   state.busy = true;
-  $("liveDot").className = "live-dot busy"; $("liveLabel").textContent = "AI 심의 중…";
+  $("liveDot").className = "live-dot busy";
+  $("liveLabel").textContent = quick ? "빠른 검사 중…" : "AI 심의 중…";
   try{
-    const rep = await api("/api/review", { method:"POST", body: JSON.stringify({
+    const rep = await api("/api/review", { method:"POST", signal: ac.signal, body: JSON.stringify({
       text, content_type: $("selType").value || null,
-      language: $("selLang").value, product_facts: $("productFacts").value })});
+      language: $("selLang").value, product_facts: $("productFacts").value, quick })});
+    if(seq !== reviewSeq) return;               // 더 최신 요청이 있으면 폐기
     state.report = rep;
     if(rep.skipped){
       $("liveDot").className = "live-dot"; $("liveLabel").textContent = rep.reason;
       renderEmpty(); return;
     }
-    $("liveDot").className = "live-dot ok"; $("liveLabel").textContent = "심의 완료 · 멈추면 자동 재검사";
+    $("liveDot").className = "live-dot ok";
+    $("liveLabel").textContent = (quick && state.llm) ? "빠른 검사 완료 · 잠시 후 AI 심의" : "AI 심의 완료 · 멈추면 자동 재검사";
     render(rep);
+    if(quick && state.llm){                      // 빠른 검사 후 잠깐 idle이면 LLM 전체 심의로 보강
+      fullTimer = setTimeout(()=>{ if(seq === reviewSeq) runReview(false); }, 500);
+    }
   }catch(e){
+    if(e.name === "AbortError") return;          // 중단은 정상(새 입력)
     $("liveDot").className = "live-dot"; $("liveLabel").textContent = "오류: " + e.message;
-  }finally{ state.busy = false; }
+  }finally{ if(seq === reviewSeq) state.busy = false; }
 }
 
 function renderEmpty(){
