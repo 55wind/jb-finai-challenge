@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>준법 오토파일럿 — 설계 문서</title>
+<style>
+  :root{
+    --jb:#00529b; --jb-dark:#003a6e; --jb-light:#e8f1fa;
+    --ink:#1a1d21; --muted:#5b6470; --line:#e1e5ea; --bg:#ffffff;
+    --red:#d6334a; --amber:#e3a008; --green:#1f9d55; --code-bg:#f6f8fa;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; color:var(--ink); background:#f3f5f8;
+    font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    line-height:1.7; font-size:15.5px; -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:980px; margin:32px auto; background:var(--bg); padding:0 0 64px;
+    box-shadow:0 1px 3px rgba(0,0,0,.06),0 8px 30px rgba(0,0,0,.06); border-radius:10px; overflow:hidden;}
+  header.cover{
+    background:linear-gradient(135deg,var(--jb) 0%,var(--jb-dark) 100%);
+    color:#fff; padding:48px 56px 40px;
+  }
+  header.cover .kicker{font-size:13px; letter-spacing:.12em; text-transform:uppercase; opacity:.85; font-weight:600;}
+  header.cover h1{margin:10px 0 6px; font-size:31px; line-height:1.25; font-weight:800; letter-spacing:-.01em;}
+  header.cover .sub{font-size:16px; opacity:.92; font-weight:500;}
+  header.cover .meta{margin-top:24px; display:grid; grid-template-columns:repeat(2,1fr); gap:8px 28px; font-size:13.5px;}
+  header.cover .meta div{display:flex; gap:8px;}
+  header.cover .meta b{opacity:.78; font-weight:600; min-width:78px; display:inline-block;}
+  .tags{margin-top:20px; display:flex; flex-wrap:wrap; gap:8px;}
+  .tag{background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.25); padding:3px 11px; border-radius:999px; font-size:12.5px; font-weight:600;}
+  main{padding:8px 56px 0;}
+  h2{font-size:21px; font-weight:800; color:var(--jb-dark); margin:42px 0 10px; padding-bottom:8px; border-bottom:2px solid var(--jb-light); letter-spacing:-.01em;}
+  h2 .num{display:inline-block; background:var(--jb); color:#fff; font-size:13px; font-weight:700; width:26px; height:26px; line-height:26px; text-align:center; border-radius:7px; margin-right:10px; vertical-align:2px;}
+  h3{font-size:16.5px; font-weight:700; color:var(--ink); margin:24px 0 6px;}
+  p{margin:8px 0;}
+  ul,ol{margin:8px 0; padding-left:22px;}
+  li{margin:4px 0;}
+  strong{font-weight:700; color:#10131a;}
+  a{color:var(--jb); text-decoration:none;} a:hover{text-decoration:underline;}
+  code{background:var(--code-bg); border:1px solid var(--line); border-radius:5px; padding:1px 6px; font-size:13px; font-family:'JetBrains Mono','SFMono-Regular',Consolas,'Liberation Mono',monospace; color:#b1003e;}
+  .lead{font-size:17px; line-height:1.7; background:var(--jb-light); border-left:4px solid var(--jb); padding:16px 20px; border-radius:0 8px 8px 0; margin:14px 0;}
+  pre{background:var(--code-bg); border:1px solid var(--line); border-radius:9px; padding:16px 18px; overflow-x:auto;
+    font-family:'JetBrains Mono','SFMono-Regular',Consolas,'Liberation Mono',monospace; font-size:12.5px; line-height:1.55; color:#222; white-space:pre;}
+  table{border-collapse:collapse; width:100%; margin:14px 0; font-size:14px;}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:left; vertical-align:top;}
+  th{background:var(--jb-light); color:var(--jb-dark); font-weight:700; font-size:13.5px;}
+  tbody tr:nth-child(even){background:#fafbfc;}
+  td code{font-size:12px;}
+  .callout{border-radius:9px; padding:14px 18px; margin:16px 0; font-size:14.5px; border:1px solid;}
+  .callout.tip{background:#eefaf3; border-color:#bfe6cf;}
+  .callout.warn{background:#fff7e6; border-color:#f0d99a;}
+  .callout.bank{background:#eef4fc; border-color:#bcd6f2;}
+  .callout b{display:block; margin-bottom:2px;}
+  .pill{display:inline-block; font-size:11.5px; font-weight:700; padding:2px 9px; border-radius:999px; vertical-align:1px;}
+  .pill.mvp{background:#e7f0fb; color:var(--jb-dark);}
+  .pill.str{background:#f0ecff; color:#5b3bbf;}
+  .pill.red{background:#fde8eb; color:var(--red);}
+  .pill.amber{background:#fdf3df; color:#9a6c00;}
+  .pill.green{background:#e6f6ec; color:var(--green);}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:16px 0;}
+  .card{border:1px solid var(--line); border-radius:10px; padding:14px 16px; background:#fff;}
+  .card h4{margin:0 0 6px; font-size:15px;}
+  .card .why{font-size:13px; color:var(--muted);}
+  hr{border:none; border-top:1px solid var(--line); margin:34px 0;}
+  footer{padding:24px 56px 0; color:var(--muted); font-size:12.5px;}
+  @media print{
+    body{background:#fff; font-size:11pt;}
+    .page{box-shadow:none; margin:0; max-width:none; border-radius:0;}
+    header.cover{padding:32px 0;}
+    main{padding:0;} footer{padding:16px 0 0;}
+    h2{page-break-after:avoid;} pre,table,.card{page-break-inside:avoid;}
+  }
+  @media (max-width:680px){
+    main,header.cover,footer{padding-left:22px; padding-right:22px;}
+    .grid3{grid-template-columns:1fr;} header.cover .meta{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="cover">
+  <div class="kicker">JB금융그룹 Fin:AI Challenge · 지정주제2 Compliance AI</div>
+  <h1>준법 오토파일럿 (Auto-Compliance Loop)</h1>
+  <div class="sub">위반 초안을 준법 통과까지 자율 개선하는 에이전트 — 기능 설계 문서</div>
+  <div class="meta">
+    <div><b>상위 제품</b> JB 준법 코파일럿</div>
+    <div><b>작성일</b> 2026-06-13</div>
+    <div><b>참가</b> 솔로 (개발: Claude 수행)</div>
+    <div><b>예선 마감</b> 2026-06-15 10:00</div>
+    <div><b>제약</b> 무료/오픈소스 모델만 · 온프레미스</div>
+    <div><b>대상 기관</b> JB금융그룹 (전북·광주은행)</div>
+  </div>
+  <div class="tags">
+    <span class="tag">판단·행동·검증/개선 루프</span>
+    <span class="tag">룰엔진=결정적 심판</span>
+    <span class="tag">휴먼인더루프 승인</span>
+    <span class="tag">감사추적</span>
+    <span class="tag">은행 광고심의 자동화</span>
+  </div>
+</header>
+
+<main>
+
+<p class="lead">마케팅팀 초안을 받아 <strong>심의 → 잔여 위반 고쳐쓰기 → 재심의</strong>를 준법 등급 <strong>🟢통과</strong> 또는 종료조건까지 자율 반복하는 목표지향 에이전트. 매 회차 <strong>결정적 룰엔진</strong>이 합격을 검증하므로 LLM이 환각으로 통과를 위장할 수 없으며, 최종 게시는 반드시 <strong>준법관리자 승인</strong>을 거친다. 기존 단발 심의 제품을 "판단·행동·검증/개선" 구조를 갖춘 진짜 AI Agent로 완성한다.</p>
+
+<h2><span class="num">1</span>배경 — 은행 광고심의의 "수정 왕복" 병목</h2>
+<p>은행의 대고객 광고·안내문은 게시 전 내부 준법감시인의 <strong>사전심의</strong>가 의무다(금융소비자보호법 §22, 은행연합회 광고심의규정). 현실의 흐름은 다음과 같다.</p>
+<pre><code>마케팅팀 초안 → 준법심의(지적) → 마케팅팀 수정 → 재심의(또 지적) → 재수정 → … → 승인 → 게시
+                └──────────────── 이 왕복이 수일~수주, 캠페인 적기를 놓치는 핵심 병목 ────────────────┘</code></pre>
+<p>기존 JB 준법 코파일럿은 이 중 <em>한 번의 심의</em>를 자동화했다. 그러나 "수정→재심의" 왕복 자체는 여전히 사람 몫이고, 자동 치환안이 없는 비정형 위반(예: 근거 없는 최상급 "최고 금리")은 수동으로도 통과까지 못 간다(데모상 75·주의에서 정체). <strong>오토파일럿은 이 왕복 전체를 에이전트가 자율 수행</strong>하여 병목을 제거한다.</p>
+
+<h2><span class="num">2</span>기능 개요 &amp; 차별점</h2>
+<table>
+  <thead><tr><th>구분</th><th>기존 (수동 적용)</th><th>준법 오토파일럿 (신규)</th></tr></thead>
+  <tbody>
+    <tr><td>수정 주체</td><td>사람이 버튼 클릭, 룰 자동치환만 1회 적용</td><td>에이전트가 자율로 룰 치환 + LLM 재작성을 <strong>반복</strong></td></tr>
+    <tr><td>비정형 위반</td><td>치환안 없는 위반(최상급 등)은 잔존</td><td>LLM 재작성으로 해소 → <strong>통과까지 도달</strong></td></tr>
+    <tr><td>종료</td><td>1회로 종료(75·주의에서 멈춤)</td><td>🟢통과 / 정체 / 최대회차 등 <strong>종료조건</strong>까지</td></tr>
+    <tr><td>설명</td><td>지적 목록</td><td>회차별 <strong>무엇을·왜(규제근거) 고쳤는지</strong> 추적</td></tr>
+    <tr><td>Agent 구조</td><td>판단·행동(부분)</td><td><strong>판단·행동·검증/개선·종료조건</strong> 완비</td></tr>
+  </tbody>
+</table>
+<div class="callout tip"><b>한 줄 차별점</b>"심의 도구"에서 "통과시켜 주는 에이전트"로. 점수가 🔴27 → 🟢92로 <strong>스스로 차오르는</strong> 데모는 투표자에게 즉시 각인되며, 동시에 평가 루브릭의 AI Agent 정의를 문자 그대로 충족한다.</div>
+
+<h2><span class="num">3</span>은행(JB) 맥락 반영 <span class="pill str">핵심</span></h2>
+<p>본 기능은 일반 카피 교정기가 아니라 <strong>지방은행 지주의 준법 거버넌스</strong>에 맞춰 설계한다.</p>
+<h3>3.1 지방은행 특성 — 다국어·계열 확장</h3>
+<ul>
+  <li>JB금융그룹은 <strong>전북은행·광주은행</strong> 등을 둔 지방은행 지주다. 특히 전북은행은 외국인 고객(베트남·중국 등) 비중이 높아, 오토파일럿은 <strong>다국어 초안도 동일 루프로 개선</strong>(EN·VI·ZH·JA 룰셋 재사용)한다 — 실제 사업 연계성.</li>
+  <li>확장 경로: 동일 엔진을 광주은행·JB우리캐피탈 등 계열, 그리고 채널(앱 푸시·문자·지점 게시물)로 수평 확장.</li>
+</ul>
+<h3>3.2 책임소재 — 자율 수정 ≠ 자율 게시</h3>
+<div class="callout bank"><b>은행 원칙: 최종 책임은 사람</b>오토파일럿은 통과 가능한 초안을 <strong>제안</strong>할 뿐, 결코 자동 게시하지 않는다. 결과물은 <code>pending</code> 상태로 준법관리자 승인 큐에 올라가며, 사람의 <strong>승인(approve)</strong>이 있어야 "배포가능"이 된다. AI가 무엇을 고쳤는지와 사람이 무엇을 승인했는지가 분리·기록된다.</div>
+<h3>3.3 내부통제 — 감사추적 의무</h3>
+<p>은행은 금융감독원 검사 대응을 위해 "누가/언제/어떤 근거로" 광고를 변경·승인했는지 재구성할 수 있어야 한다. 오토파일럿의 <strong>모든 자동 수정 회차</strong>를 감사로그에 적재한다(§8).</p>
+<h3>3.4 환각 리스크 = 은행에 치명적</h3>
+<p>AI가 잘못된 고지를 삽입하거나 위반을 놓치면 <strong>불완전판매·과징금</strong>으로 직결된다. 따라서 루프의 합격 판정은 비결정적 LLM이 아니라 <strong>결정적 룰엔진</strong>이 내린다(§4). 에이전트는 스스로 "통과했다"고 선언할 수 없다.</p>
+
+<h2><span class="num">4</span>에이전트 루프 아키텍처</h2>
+<pre><code>입력: draft₀ (마케팅 초안), content_type, language, product_facts(상품 실제 조건)
+
+for i in range(MAX_ITER = 4):
+    reportᵢ = run_review(draftᵢ)                 # ① 판단  (기존 파이프라인 재사용)
+    if reportᵢ.grade == "pass":  return ✅ 수렴   # ④ 종료조건 (목표 달성)
+
+    # ② 행동 — 2단계 수정 (결정적 우선 → LLM 보강)
+    draft' = apply_rule_fixes(draftᵢ, reportᵢ)    #   (a) 룰 자동치환·고지추가 (무료·결정적)
+    residual = re_review(draft').위반             #       남은 비정형 위반만 추출
+    draftᵢ₊₁ = remediation_agent(draft', residual, retrieval)  # (b) LLM 재작성 (필요시에만)
+
+    # ③ 검증/개선 — 진전 없으면 중단 (무한루프·발산 방지)
+    if draftᵢ₊₁ == draftᵢ:           return ⏹ 수렴실패(텍스트 불변)
+    if scoreᵢ₊₁ ≤ scoreᵢ:           return ⏹ 수렴실패(점수 정체)
+
+return ⏹ 미수렴 → 사람 에스컬레이션 (도달점수 + 잔여위반 N건 핸드오프)
+
+출력: trace = [{iter, draft, report, changes[{quote, fix, basis_id, engine}]}], converged, final_grade</code></pre>
+<p><strong>하이브리드 수정(룰 먼저 → LLM은 잔여만)</strong>의 근거: 정형 위반은 결정적 치환이 빠르고 무료이며 재현 가능하다. LLM은 자동 치환안이 없는 비정형 위반(최상급·맥락 오인 등)에만 호출되어 비용·지연·환각 표면적을 최소화한다.</p>
+
+<h2><span class="num">5</span>수정 에이전트 (remediation_agent) — 멀티에이전트 맛</h2>
+<p>잔여 위반을 고쳐쓰는 주체는 단순 치환기가 아니라 <strong>"마케팅 효과 유지" 제약을 받는 에이전트</strong>다. 마케터 관점(상품 매력 보존)과 준법 관점(위반 제거)을 한 프롬프트에 긴장 관계로 넣는다.</p>
+<pre><code>system: "당신은 은행 마케팅 카피라이터이자 준법 보조자다.
+         아래 [위반]만 규제근거에 맞게 고쳐써라. 제약:
+         · 상품의 핵심 셀링포인트(금리 수치·상품명)는 보존
+         · 새 위반·허위 고지 생성 금지
+         · 필수고지는 본문에 없을 때만 추가
+         JSON: {revised_text, changes:[{before, after, basis_id, rationale}]}"
+user:   [현재 초안] + [잔여 위반(문구·근거·제안)] + [규제 근거(RAG)]</code></pre>
+<ul>
+  <li><strong>인용 제한</strong>: <code>basis_id</code>는 검색된 조항 화이트리스트로 한정(기존 가드 재사용) → 조항 창작 차단.</li>
+  <li><strong>검증은 룰엔진</strong>: 에이전트 출력은 다음 회차 <code>run_review</code>로 재검증된다. 에이전트가 "고쳤다"고 주장해도 룰엔진이 통과를 인정해야만 수렴.</li>
+  <li><strong>폴백</strong>: LLM 불가 시 (b)단계를 건너뛰고 (a) 룰 치환만으로 루프 → 점수는 오르되 비정형 위반은 잔존하여 "사람 에스컬레이션"으로 종료.</li>
+</ul>
+
+<h2><span class="num">6</span>API 명세</h2>
+<table>
+  <thead><tr><th>메서드 · 경로</th><th>요청</th><th>응답</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST /api/autopilot</code></td>
+        <td><code>{text, content_type?, language?, product_facts?, max_iter?}</code></td>
+        <td><code>{iterations:[{iter, report, changes[], score, grade}], initial, final, converged, stop_reason}</code></td></tr>
+  </tbody>
+</table>
+<p>24시간 구현 리스크를 줄이기 위해 <strong>전체 trace를 1회 응답으로 반환</strong>하고, 프론트가 회차를 애니메이션 재생한다(SSE 실시간 스트리밍은 향후 과제). 기존 <code>/api/submissions</code>(제출)·<code>/api/submissions/{id}/decision</code>(승인) 흐름은 그대로 이어붙는다: 오토파일럿 최종 초안을 제출 → 사람 승인.</p>
+
+<h2><span class="num">7</span>프론트 데모 UX <span class="pill amber">wow 포인트</span></h2>
+<ul>
+  <li>신규 버튼 <strong>"🚀 준법 통과까지 자동 개선"</strong> (기존 "수정안 전체 적용"과 병존).</li>
+  <li>클릭 시: 준법 점수 게이지가 <strong>27 → 75 → 92로 스스로 상승</strong>, 위반 리스트가 회차마다 줄어듦, 에디터 본문이 회차별로 다시 써지는 애니메이션.</li>
+  <li>회차 타임라인:<br>
+    <code>1회차 · '확정 연 5%' → '연 5%(세전, 변동 가능)' 〔금소법 §22④〕</code><br>
+    <code>2회차 · 예금자보호 고지 추가 〔은행연합회 광고심의〕</code><br>
+    <code>3회차 · '최고 금리' → '우대조건 충족 시 최대' 〔표시광고법 §3〕 → ✅ 통과</code></li>
+  <li>마무리 카드: before/after 나란히 + <strong>"3회 자동 개선으로 🔴27 → 🟢92 · [준법관리자 검토로 전송]"</strong>.</li>
+  <li>대비 메시지: <em>"수동 적용은 75·주의에서 멈춤 → 오토파일럿은 92·통과"</em> — 차별점을 한 화면에 증명.</li>
+</ul>
+
+<h2><span class="num">8</span>감사추적 &amp; 책임소재 (은행 내부통제)</h2>
+<p>오토파일럿 실행과 각 자동 수정 회차를 <code>audit_log</code>에 적재한다(기존 store.py 확장).</p>
+<pre><code>ts · submission_id · actor="AI-오토파일럿" · action="auto_remediate"
+   · detail="2회차: '원금 보장'→예금자보호 한도 명시 〔FCPA-22-3〕, 점수 75→88"
+… 최종적으로 사람의 action="approve"가 별도 행으로 기록 →
+   "AI가 N회 자동개선, 준법관리자 OOO가 최종 승인"이 완전 재구성됨.</code></pre>
+<div class="callout bank"><b>설명가능성</b>각 변경이 <strong>어떤 조항 때문에</strong> 일어났는지 회차마다 명시되어, 금융감독원 검사 시 "이 문구를 왜 이렇게 바꿨는가"에 규제근거로 답할 수 있다.</div>
+
+<h2><span class="num">9</span>가드레일 · 종료조건 · 에스컬레이션</h2>
+<table>
+  <thead><tr><th>리스크</th><th>방어</th></tr></thead>
+  <tbody>
+    <tr><td>무한루프 · 비용 폭증</td><td><code>MAX_ITER=4</code> 상한 + 점수 정체/텍스트 불변 시 조기 종료</td></tr>
+    <tr><td>발산(고칠수록 나빠짐)</td><td>점수가 오르지 않으면 직전 회차 결과로 롤백 후 종료</td></tr>
+    <tr><td>합격 위장(환각)</td><td>합격 판정은 결정적 룰엔진만 — LLM 자기선언 불가</td></tr>
+    <tr><td>미수렴</td><td>도달 점수 + 잔여 위반 N건을 <strong>사람에게 명시적 핸드오프</strong>("자동으로 X점까지, 나머지는 검토 필요")</td></tr>
+    <tr><td>자동 게시 사고</td><td>결과는 <code>pending</code>일 뿐, 사람 승인 없이는 배포 불가(휴먼인더루프)</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">10</span>평가 루브릭 매핑</h2>
+<table>
+  <thead><tr><th>평가항목(배점)</th><th>오토파일럿의 기여</th></tr></thead>
+  <tbody>
+    <tr><td>③ AI Agent 설계 (20)</td><td>판단·행동·검증/개선·재시도/종료조건을 <strong>문자 그대로</strong> 구현. 룰엔진(결정적)+LLM(생성)+RAG 다층 협업.</td></tr>
+    <tr><td>② 금융 연계성·고객가치 (20)</td><td>은행 광고심의 수정 왕복(수일~수주)을 분 단위로 단축 — 업무효율·캠페인 적기.</td></tr>
+    <tr><td>⑤ 혁신성·리스크관리 (20)</td><td>"통과시켜 주는" 차별성 + 환각/책임소재/설명가능성 정면 대응(룰엔진 심판·휴먼인더루프·감사로그).</td></tr>
+    <tr><td>④ MVP 완성도 (20)</td><td>기존 모듈 재사용으로 실제 동작 + 시연영상 가점 확보(점수 자동 상승 데모).</td></tr>
+    <tr><td>① 문제정의 (20)</td><td>"수정 왕복" 병목을 구체 사용자(마케팅팀·준법감시인)·상황으로 정의.</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">11</span>테스트 (TDD)</h2>
+<ul>
+  <li><strong>수렴</strong>: FX-01(danger) 오토파일럿 → 점수 <strong>단조 증가</strong>, 등급이 danger 밖으로 개선, <code>MAX_ITER</code> 이내.</li>
+  <li><strong>종료 보장</strong>: 어떤 입력도 <code>MAX_ITER</code>를 넘지 않음 · 정체/불변 시 즉시 종료.</li>
+  <li><strong>합격 무결성</strong>: 수렴(<code>converged=true</code>)은 룰엔진 grade==pass일 때만.</li>
+  <li><strong>폴백 모드</strong>: LLM 폴백(결정적)에서도 점수가 개선되고 루프가 종료(미수렴은 에스컬레이션).</li>
+  <li><strong>휴먼인더루프</strong>: 오토파일럿 결과는 자동 승인되지 않음(상태 pending 유지).</li>
+</ul>
+
+<h2><span class="num">12</span>구현 범위 · 파일 변경</h2>
+<table>
+  <thead><tr><th>파일</th><th>변경</th></tr></thead>
+  <tbody>
+    <tr><td><code>app/pipeline/remediator.py</code> (신규)</td><td>remediation_agent(LLM 재작성) + 결정적 폴백</td></tr>
+    <tr><td><code>app/pipeline/orchestrator.py</code></td><td><code>autopilot(text, …)</code> 루프 추가 (run_review·apply_fixes 재사용)</td></tr>
+    <tr><td><code>app/main.py</code></td><td><code>POST /api/autopilot</code> 엔드포인트</td></tr>
+    <tr><td><code>app/store.py</code></td><td>auto_remediate 감사로그 적재 헬퍼</td></tr>
+    <tr><td><code>app/static/index.html</code></td><td>"자동 개선" 버튼 + 회차 애니메이션 + before/after 카드</td></tr>
+    <tr><td><code>tests/test_autopilot.py</code> (신규)</td><td>수렴·종료·무결성·폴백 테스트</td></tr>
+  </tbody>
+</table>
+<p>핵심 로직은 기존 <code>run_review()</code>·<code>apply_fixes()</code>를 재사용하므로 신규 코드 표면적이 작아 <strong>예선 마감(~24h) 내 구현·시연 가능</strong>하다.</p>
+
+<h2><span class="num">13</span>향후 발전</h2>
+<ul>
+  <li>SSE 실시간 스트리밍으로 회차를 서버푸시(진짜 "에이전트가 일하는" 라이브 감).</li>
+  <li>내부 상품약관·내규 PDF 업로드 → 코퍼스 인덱싱하여 기관 맞춤 심의(계열사 확장).</li>
+  <li>마케팅 효과 점수(가독성·소구력)를 별도 모델로 측정해 "준법 통과 + 효과 유지"를 정량 최적화.</li>
+  <li>A/B 후보 다중 생성 후 준법·효과 파레토 최적안 추천.</li>
+</ul>
+
+</main>
+
+<footer>
+  준법 오토파일럿 설계 문서 · 2026-06-13 · JB금융그룹 Fin:AI Challenge 지정주제2 Compliance AI<br>
+  상위 제품 설계: 2026-05-28-jb-compliance-ai-agent-design.html · 브라우저에서 인쇄(Ctrl+P) → "PDF로 저장"으로 제출용 PDF 내보내기.
+</footer>
+
+</div>
+</body>
+</html>
