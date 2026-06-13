@@ -4,5 +4,5 @@ pyyaml>=6.0
 httpx>=0.27
 pytest>=8.0
 
-# 선택 (RAG 임베딩 검색 업그레이드 — 미설치 시 어휘 검색으로 자동 폴백)
+# Optional (RAG embedding search upgrade - falls back to lexical search if not installed)
 # sentence-transformers>=3.0
