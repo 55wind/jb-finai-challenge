@@ -18,7 +18,10 @@ _SYSTEM = """당신은 한국 금융지주의 준법감시인(컴플라이언스
   "suggestion": "수정안 문구", "basis_id": "근거 조항 id"}],
  "overall_comment": "총평(2문장 이내)"}
 중요: basis_id는 아래 [규제 근거] 목록에 있는 id만 사용하세요. 목록에 없는 조항을 인용하지 마세요.
-quote는 반드시 초안 원문에 실제로 존재하는 문구여야 합니다."""
+quote는 반드시 초안 원문에 실제로 존재하는 문구여야 합니다.
+초안이 규제를 준수하면 issues를 빈 배열([])로 두세요. 지적할 것이 없으면 억지로 만들지 마세요.
+'누락·미표시·부재' 지적은 해당 고지·문구가 초안에 실제로 존재하지 않을 때만 하세요.
+초안에 이미 포함된 고지(예: 예금자보호 한도, 기본금리·우대금리 구분, 변동·세전 표기)를 누락으로 지적하지 마세요."""
 
 
 def _fallback_issues(rule_findings: list[dict]) -> dict:
@@ -62,7 +65,8 @@ async def review(text: str, content_type: str, retrieval: dict, rule_findings: l
 [룰엔진 1차 지적]
 {rules_block}
 
-위 초안을 심의하세요. 룰엔진이 잡지 못한 뉘앙스 리스크(맥락상 오인 유발, 조건 축약, 과장 분위기)도 포함하세요."""
+위 초안을 심의하세요. 실제 오인을 유발하는 표현이 있을 때만 룰엔진이 놓친 뉘앙스 리스크(맥락상 오인 유발, 조건 축약, 과장 분위기)를 지적하세요.
+초안이 규제를 준수하고 필수고지가 이미 포함돼 있으면 issues를 빈 배열([])로 답하세요."""
 
     result = await llm_client.chat_json(_SYSTEM, user, retries=1)
     if result is None or not isinstance(result, dict) or "issues" not in result:

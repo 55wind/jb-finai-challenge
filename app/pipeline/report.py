@@ -8,6 +8,7 @@ _RULE_PENALTY = {"high": 12, "medium": 4, "low": 1}
 _LLM_PENALTY = {"high": 5, "medium": 2, "low": 1}
 _SIM_PENALTY = {"high": 4, "medium": 2}
 _SIM_CAP = 12
+_LLM_CAP = 6  # LLM 단독 지적(참고의견)은 점수 영향 상한. 룰엔진을 권위로 둠.
 
 GRADE_LABEL = {"pass": "통과", "caution": "주의", "danger": "위험"}
 GRADE_EMOJI = {"pass": "🟢", "caution": "🟡", "danger": "🔴"}
@@ -32,27 +33,28 @@ def compose(text: str, content_type: str, language: str, classification: dict,
         if i.get("source") == "llm" and (i.get("basis_id"), i.get("quote") or None) not in rule_keys
     ]
 
-    score = 100
-    for f in rule_findings:
-        score -= _RULE_PENALTY.get(f["severity"], 2)
-    for i in llm_only:
-        score -= _LLM_PENALTY.get(i.get("risk", "medium"), 2)
-    sim_penalty = sum(
+    # 룰엔진(결정적·TDD 정답셋)이 준법 등급의 권위. LLM·시뮬레이터는 참고의견으로 점수만 보정.
+    rule_penalty = sum(_RULE_PENALTY.get(f["severity"], 2) for f in rule_findings)
+    llm_penalty = min(
+        sum(_LLM_PENALTY.get(i.get("risk", "medium"), 2) for i in llm_only), _LLM_CAP)
+    sim_penalty = min(sum(
         _SIM_PENALTY.get(m["risk"], 2)
         for p in simulation["personas"] for m in p["misunderstandings"]
-    )
-    score -= min(sim_penalty, _SIM_CAP)
-    score = max(score, 5)
+    ), _SIM_CAP)
+    score = max(100 - rule_penalty - llm_penalty - sim_penalty, 5)
 
-    n_high = sum(1 for f in rule_findings if f["severity"] == "high") \
-        + sum(1 for i in llm_only if i.get("risk") == "high")
-    n_medium = sum(1 for f in rule_findings if f["severity"] == "medium") \
-        + sum(1 for i in llm_only if i.get("risk") == "medium")
+    # 위반·주의 카운트는 룰엔진 기준. LLM 단독 지적은 advisory(참고의견)로 별도 집계.
+    n_high = sum(1 for f in rule_findings if f["severity"] == "high")
+    n_medium = sum(1 for f in rule_findings if f["severity"] == "medium")
+    n_advisory = len(llm_only)
 
-    if score >= 85 and n_high == 0:
-        grade = "pass"
+    # 룰 위반이 없으면(결정적으로 준법) LLM·시뮬레이터 참고의견만으로 위험 강등 불가.
+    if n_high == 0 and rule_penalty == 0:
+        grade = "pass" if score >= 80 else "caution"
     elif score < 60 or (n_high >= 1 and score < 75):
         grade = "danger"
+    elif score >= 85 and n_high == 0:
+        grade = "pass"
     else:
         grade = "caution"
 
@@ -70,7 +72,7 @@ def compose(text: str, content_type: str, language: str, classification: dict,
     highlights.sort(key=lambda h: (h["start"], -h["end"]))
 
     findings_out = [{**f, "citation": _citation(f["basis_id"])} for f in rule_findings]
-    llm_out = [{**i, "citation": _citation(i.get("basis_id"))} for i in llm_only]
+    llm_out = [{**i, "citation": _citation(i.get("basis_id")), "advisory": True} for i in llm_only]
     for p in simulation["personas"]:
         for m in p["misunderstandings"]:
             m["citation"] = _citation(m.get("basis_id"))
@@ -80,7 +82,7 @@ def compose(text: str, content_type: str, language: str, classification: dict,
         "grade": grade,
         "grade_label": GRADE_LABEL[grade],
         "grade_emoji": GRADE_EMOJI[grade],
-        "counts": {"high": n_high, "medium": n_medium,
+        "counts": {"high": n_high, "medium": n_medium, "advisory": n_advisory,
                    "misunderstandings": simulation["total_misunderstandings"]},
         "content_type": content_type,
         "content_type_label": TYPE_LABELS.get(content_type, content_type),
