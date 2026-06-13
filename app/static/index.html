@@ -9,291 +9,312 @@
   href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   :root{
-    /* brand */
     --jb:#0a5bc2; --jb-dark:#073f87; --jb-light:#eaf2fd;
     --brand:#0a5bc2; --brand-600:#0950ab; --brand-700:#08407f;
     --brand-50:#eef4fd; --brand-100:#d7e6fb;
-    /* neutrals */
-    --bg:#f5f6f8; --surface:#ffffff; --surface-2:#fafbfc;
-    --line:#e9ebef; --border:#e9ebef; --border-strong:#d8dce1;
-    --ink:#0f1419; --text:#0f1419; --text-2:#586173; --text-3:#8b94a3; --muted:#586173;
-    /* semantic */
-    --red:#e5484d; --red-fg:#c4292f; --red-bg:#fdecec;
-    --amber:#e0900a; --amber-fg:#9a6300; --amber-bg:#fbf3e0;
-    --green:#1f9d55; --green-fg:#13803f; --green-bg:#e7f6ed;
+    --bg:#f4f5f7; --surface:#ffffff; --surface-2:#fafbfc; --surface-3:#f4f6f8;
+    --line:#e7e9ee; --border:#e7e9ee; --border-strong:#d6dae1;
+    --ink:#0f1419; --text:#0f1419; --text-2:#525c6b; --text-3:#8a93a1; --muted:#525c6b;
+    --red:#e5484d; --red-fg:#c2272d; --red-bg:#fdecec;
+    --amber:#e0900a; --amber-fg:#8f5c00; --amber-bg:#fbf3df;
+    --green:#1f9d55; --green-fg:#137a3e; --green-bg:#e7f6ed;
     --violet:#6d4bd8; --violet-bg:#efeafe;
-    --code-bg:#f5f7f9;
-    /* fx */
+    --mono:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;
     --ring:rgba(10,91,194,.16);
-    --shadow-xs:0 1px 2px rgba(15,23,42,.04);
-    --shadow-sm:0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.06);
-    --shadow-md:0 2px 6px rgba(15,23,42,.05), 0 8px 24px rgba(15,23,42,.08);
+    --shadow-xs:0 1px 1px rgba(15,23,42,.04);
+    --shadow-sm:0 1px 2px rgba(15,23,42,.05),0 1px 3px rgba(15,23,42,.06);
+    --shadow-md:0 4px 14px rgba(15,23,42,.10);
     --shadow-lg:0 16px 40px rgba(15,23,42,.16);
-    --r-sm:8px; --r:12px; --r-lg:14px; --r-xl:18px;
+    --sbw:248px; --sbar:30px;
+    --r:10px;
   }
   *{box-sizing:border-box;}
-  html{-webkit-text-size-adjust:100%;}
-  body{margin:0; background:var(--bg); color:var(--text); font-size:14px; line-height:1.6;
+  body{margin:0; background:var(--bg); color:var(--text); font-size:13.5px; line-height:1.55;
     letter-spacing:-.003em;
     font-family:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Segoe UI',Roboto,'Malgun Gothic',sans-serif;
-    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;}
+    -webkit-font-smoothing:antialiased;}
   button{font-family:inherit; cursor:pointer;}
   a{color:var(--brand-700); text-decoration:none;} a:hover{text-decoration:underline;}
-  ::selection{background:var(--brand-100);}
+  code{font-family:var(--mono);}
+  ::selection{background:rgba(10,91,194,.18);}
   .hidden{display:none !important;}
 
-  /* ───── App shell ───── */
+  /* ───── Shell ───── */
   .app{display:flex; min-height:100vh;}
-  .sidebar{width:248px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--border);
-    display:flex; flex-direction:column; padding:18px 14px; position:sticky; top:0; height:100vh;}
-  .brand{display:flex; align-items:center; gap:11px; padding:6px 8px 18px;}
-  .brand-mark{width:38px; height:38px; border-radius:11px; flex-shrink:0;
-    background:linear-gradient(140deg,#1466d8,#073f87); color:#fff; font-size:19px;
-    display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(10,91,194,.32);}
+  .sidebar{width:var(--sbw); flex-shrink:0; background:var(--surface); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; padding:16px 12px; position:sticky; top:0; height:100vh;}
+  .brand{display:flex; align-items:center; gap:11px; padding:6px 8px 16px;}
+  .brand-mark{width:36px; height:36px; border-radius:10px; flex-shrink:0;
+    background:linear-gradient(140deg,#1466d8,#073f87); color:#fff; font-size:18px;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(10,91,194,.3);}
   .brand-text{display:flex; flex-direction:column; line-height:1.25;}
-  .brand-text b{font-size:14.5px; font-weight:800; letter-spacing:-.02em;}
-  .brand-text span{font-size:11px; color:var(--text-3); font-weight:500;}
-
-  .side-nav{display:flex; flex-direction:column; gap:3px; margin-top:6px;}
-  .side-cap{font-size:10.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
-    color:var(--text-3); padding:6px 10px 4px;}
-  .nav-item{display:flex; align-items:center; gap:10px; width:100%; text-align:left;
-    border:none; background:transparent; color:var(--text-2); font-size:13.5px; font-weight:600;
-    padding:9px 11px; border-radius:10px; transition:background .14s,color .14s;}
-  .nav-item svg{width:17px; height:17px; flex-shrink:0; stroke:currentColor;}
-  .nav-item:hover{background:var(--surface-2); color:var(--text);}
+  .brand-text b{font-size:14px; font-weight:800; letter-spacing:-.02em;}
+  .brand-text span{font-size:10.5px; color:var(--text-3); font-weight:500; letter-spacing:.02em;}
+  .side-cap{font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--text-3); padding:8px 10px 5px;}
+  .side-nav{display:flex; flex-direction:column; gap:2px;}
+  .nav-item{display:flex; align-items:center; gap:10px; width:100%; text-align:left; border:none;
+    background:transparent; color:var(--text-2); font-size:13px; font-weight:600; padding:9px 11px;
+    border-radius:8px; transition:background .14s,color .14s;}
+  .nav-item svg{width:16px; height:16px; flex-shrink:0; stroke:currentColor; fill:none;}
+  .nav-item:hover{background:var(--surface-3); color:var(--text);}
   .nav-item.active{background:var(--brand-50); color:var(--brand-700);}
-  .nav-badge{margin-left:auto; font-size:11px; font-weight:700; color:var(--amber-fg);
+  .nav-badge{margin-left:auto; font-size:10.5px; font-weight:700; color:var(--amber-fg);
     background:var(--amber-bg); padding:1px 7px; border-radius:999px;}
   .nav-badge:empty{display:none;}
-  .side-foot{margin-top:auto; padding:10px 8px 2px; font-size:11px; color:var(--text-3);}
-  .side-foot .ver{font-weight:600; color:var(--text-2);}
+  .side-foot{margin-top:auto; padding:10px; font-size:10.5px; color:var(--text-3); line-height:1.7;}
+  .side-foot .ver{font-weight:700; color:var(--text-2); font-size:11px;}
 
-  /* ───── Content ───── */
   .content{flex:1; min-width:0; display:flex; flex-direction:column;}
-  .topbar{height:60px; display:flex; align-items:center; gap:14px; padding:0 30px;
-    background:rgba(255,255,255,.82); backdrop-filter:saturate(1.4) blur(8px);
-    border-bottom:1px solid var(--border); position:sticky; top:0; z-index:20;}
-  .topbar .tt{display:flex; flex-direction:column; line-height:1.3;}
-  .topbar .tt b{font-size:15px; font-weight:800; letter-spacing:-.02em;}
-  .topbar .tt span{font-size:11.5px; color:var(--text-3);}
-  .mode-badge{margin-left:auto; display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600;
-    color:var(--text-2); background:var(--surface-2); border:1px solid var(--border);
-    padding:6px 13px; border-radius:999px;}
-  .mode-badge::before{content:""; width:7px; height:7px; border-radius:50%; background:var(--amber);
-    box-shadow:0 0 0 3px var(--amber-bg);}
-  .mode-badge.llm{color:var(--green-fg); background:var(--green-bg); border-color:#bfe6cd;}
-  .mode-badge.llm::before{background:var(--green); box-shadow:0 0 0 3px rgba(31,157,85,.18);}
 
-  main{padding:24px 30px 56px; max-width:1320px; width:100%;}
+  /* ───── Topbar = document title bar + actions ───── */
+  .topbar{height:52px; display:flex; align-items:center; gap:14px; padding:0 18px 0 22px;
+    background:var(--surface); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:20;}
+  .view-name{font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--text-3); white-space:nowrap;}
+  .topbar .sep{width:1px; height:20px; background:var(--border);}
+  .doc-title{display:flex; align-items:center; gap:8px; flex:1; min-width:0;}
+  .doc-title .ico{color:var(--text-3); font-size:15px;}
+  .doc-title input{flex:1; min-width:0; border:none; background:transparent; font-size:15px; font-weight:700;
+    color:var(--text); padding:6px 4px; letter-spacing:-.01em;}
+  .doc-title input::placeholder{color:var(--text-3); font-weight:600;}
+  .doc-title input:focus{outline:none;}
+  .ws-actions{display:flex; gap:8px; align-items:center;}
+  body.on-approve .doc-title, body.on-approve .ws-actions{display:none;}
 
-  /* ───── Inputs / buttons ───── */
-  select{appearance:none; -webkit-appearance:none; border:1px solid var(--border); border-radius:9px;
-    padding:7px 30px 7px 12px; font-size:12.5px; font-weight:600; color:var(--text);
-    background:var(--surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23586173' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") no-repeat right 9px center;
-    cursor:pointer; transition:border-color .14s,box-shadow .14s;}
-  select:hover{border-color:var(--border-strong);}
+  main{flex:1;}
+
+  /* ───── Buttons / inputs ───── */
+  .btn{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text); border-radius:8px; padding:7px 13px; font-size:12.5px;
+    font-weight:600; line-height:1; box-shadow:var(--shadow-xs);
+    transition:background .14s,border-color .14s,transform .06s;}
+  .btn:hover{background:var(--surface-3); border-color:var(--border-strong);}
+  .btn:active{transform:translateY(.5px);}
+  .btn.small{padding:6px 10px; font-size:12px;}
+  .btn.primary{background:var(--brand); border-color:var(--brand); color:#fff; box-shadow:0 1px 2px rgba(10,91,194,.3);}
+  .btn.primary:hover{background:var(--brand-600);}
+  .btn.green{background:#1b9550; border-color:#1b9550; color:#fff;}
+  .btn.green:hover{filter:brightness(1.05);}
+  .btn.red{background:#e0474d; border-color:#e0474d; color:#fff;}
+  .btn.red:hover{filter:brightness(1.05);}
+  .btn:disabled{opacity:.42; cursor:default; box-shadow:none; transform:none; filter:none;}
+  select{appearance:none; -webkit-appearance:none; border:1px solid var(--border); border-radius:8px;
+    padding:6px 28px 6px 11px; font-size:12px; font-weight:600; color:var(--text);
+    background:var(--surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23525c6b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") no-repeat right 8px center;
+    cursor:pointer;}
   select:focus{outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--ring);}
-  input[type=text]{border:1px solid var(--border); border-radius:9px; padding:9px 13px; font-size:13.5px;
-    font-family:inherit; color:var(--text); background:var(--surface); transition:border-color .14s,box-shadow .14s;}
+  input[type=text]{border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px;
+    font-family:inherit; color:var(--text); background:var(--surface);}
   input[type=text]::placeholder{color:var(--text-3);}
   input[type=text]:focus{outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--ring);}
 
-  .btn{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border);
-    background:var(--surface); color:var(--text); border-radius:9px; padding:8px 14px;
-    font-size:13px; font-weight:600; line-height:1; box-shadow:var(--shadow-xs);
-    transition:background .14s,border-color .14s,transform .06s,box-shadow .14s;}
-  .btn:hover{background:var(--surface-2); border-color:var(--border-strong);}
-  .btn:active{transform:translateY(.5px);}
-  .btn.small{padding:6px 11px; font-size:12px; border-radius:8px;}
-  .btn.primary{background:linear-gradient(180deg,#1a6ad9,#0a5bc2); border-color:#0a5bc2; color:#fff;
-    box-shadow:0 1px 2px rgba(10,91,194,.35);}
-  .btn.primary:hover{background:linear-gradient(180deg,#2273e0,#0950ab);}
-  .btn.green{background:linear-gradient(180deg,#27a85c,#178a48); border-color:#178a48; color:#fff;
-    box-shadow:0 1px 2px rgba(23,138,72,.32);}
-  .btn.green:hover{filter:brightness(1.04);}
-  .btn.red{background:linear-gradient(180deg,#ec5c61,#d83a40); border-color:#d83a40; color:#fff;
-    box-shadow:0 1px 2px rgba(216,58,64,.3);}
-  .btn.red:hover{filter:brightness(1.04);}
-  .btn:disabled{opacity:.45; cursor:default; box-shadow:none; transform:none; filter:none;}
+  /* ═══════ Workspace: editor + review split ═══════ */
+  .ws{display:flex; align-items:stretch; gap:0; min-height:calc(100vh - 52px - var(--sbar));}
+  .ws-editor{flex:1; min-width:0; display:flex; flex-direction:column; padding:18px 20px;}
+  .ws-toolbar{display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;}
+  .ws-toolbar .tb-right{margin-left:auto; display:flex; gap:8px; align-items:center;}
+  .fixture-row{display:flex; gap:7px; flex-wrap:wrap;}
+  .fixture-row .btn{background:var(--surface-3); border-color:var(--border); color:var(--text-2);
+    box-shadow:none; font-weight:600; font-size:11.5px; padding:5px 10px;}
+  .fixture-row .btn:hover{background:var(--brand-50); color:var(--brand-700); border-color:var(--brand-100);}
 
-  /* ───── Cards / panels ───── */
-  .panel{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
-    padding:18px 20px; box-shadow:var(--shadow-sm);}
-  .panel h2{margin:0 0 14px; font-size:13.5px; font-weight:800; color:var(--text);
-    letter-spacing:-.01em; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
-  .panel h2 .right{margin-left:auto; display:flex; gap:8px; align-items:center; font-weight:500;}
-
-  .cols{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
-  @media (max-width:1080px){.cols{grid-template-columns:1fr;}}
-
-  /* ───── Score card ───── */
-  .scorebar{display:flex; align-items:center; gap:20px; background:var(--surface);
-    border:1px solid var(--border); border-radius:var(--r-lg); padding:18px 24px;
-    margin-bottom:16px; box-shadow:var(--shadow-sm);}
-  .scorebar .label{font-size:12px; font-weight:700; color:var(--text-3); letter-spacing:.02em;
-    text-transform:uppercase; white-space:nowrap;}
-  .gauge{flex:1; height:9px; background:#eef0f3; border-radius:999px; overflow:hidden; min-width:80px;}
-  .gauge>div{height:100%; width:0; border-radius:999px;
-    transition:width .6s cubic-bezier(.4,0,.2,1), background .4s;}
-  .scoreval{font-weight:800; font-size:22px; min-width:160px; text-align:right;
-    letter-spacing:-.02em; color:var(--text-3);}
-  .grade-pass{color:var(--green-fg);} .grade-caution{color:var(--amber-fg);} .grade-danger{color:var(--red-fg);}
-
-  /* ───── Fixtures ───── */
-  .fixture-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
-  .fixture-row .btn{background:var(--brand-50); border-color:var(--brand-100); color:var(--brand-700);
-    box-shadow:none; font-weight:600;}
-  .fixture-row .btn:hover{background:var(--brand-100); border-color:#c2dafa;}
-
-  /* ───── Editor (highlight overlay) ───── */
-  .editor-wrap{position:relative; border:1px solid var(--border); border-radius:var(--r);
-    overflow:hidden; background:var(--surface); transition:border-color .14s,box-shadow .14s;}
+  /* editor: real text on top, squiggle overlay beneath */
+  .editor-wrap{position:relative; flex:1; border:1px solid var(--border); border-radius:var(--r);
+    overflow:hidden; background:var(--surface); box-shadow:var(--shadow-sm);
+    transition:border-color .14s,box-shadow .14s; min-height:340px;}
   .editor-wrap:focus-within{border-color:var(--brand); box-shadow:0 0 0 3px var(--ring);}
-  .backdrop, textarea.editor{margin:0; padding:15px 17px; font:inherit; font-size:15.5px; line-height:1.8;
-    width:100%; height:262px; white-space:pre-wrap; word-wrap:break-word; overflow-y:auto;}
-  .backdrop{position:absolute; inset:0; color:var(--text); pointer-events:none; z-index:0;}
-  textarea.editor{position:relative; z-index:1; background:transparent; color:transparent;
-    caret-color:var(--brand); border:none; outline:none; resize:vertical; display:block;}
-  textarea.editor::placeholder{color:var(--text-3);}
-  mark{background:transparent; border-radius:2px; padding:0;}
-  mark.high{background:rgba(229,72,77,.14); border-bottom:2px solid var(--red);}
-  mark.medium{background:rgba(224,144,10,.18); border-bottom:2px solid var(--amber);}
-  .editor-foot{display:flex; align-items:center; gap:9px; margin-top:11px; font-size:12.5px;
+  .backdrop, textarea.editor{margin:0; padding:20px 24px; font-family:inherit; font-size:16px; line-height:1.9;
+    width:100%; height:100%; white-space:pre-wrap; word-wrap:break-word; overflow-y:auto; letter-spacing:-.003em;}
+  .backdrop{position:absolute; inset:0; color:transparent; pointer-events:none; z-index:1;}
+  textarea.editor{position:relative; z-index:2; background:transparent; color:var(--text);
+    caret-color:var(--brand); border:none; outline:none; resize:none; display:block;}
+  textarea.editor::placeholder{color:var(--text-3); letter-spacing:0;}
+  mark{background:transparent; color:transparent;
+    text-decoration-line:underline; text-decoration-style:wavy; text-decoration-thickness:1.6px;
+    text-underline-offset:3px;}
+  mark.high{text-decoration-color:var(--red);}
+  mark.medium{text-decoration-color:var(--amber);}
+  .editor-foot{display:flex; align-items:center; gap:9px; margin-top:11px; font-size:12px;
     color:var(--text-2); flex-wrap:wrap;}
-  .live-dot{width:8px; height:8px; border-radius:50%; background:#c2cad4; display:inline-block; flex-shrink:0;}
+  .live-dot{width:8px; height:8px; border-radius:50%; background:#c4ccd6; display:inline-block; flex-shrink:0;}
   .live-dot.busy{background:var(--amber); box-shadow:0 0 0 3px var(--amber-bg); animation:pulse 1s infinite;}
   .live-dot.ok{background:var(--green); box-shadow:0 0 0 3px var(--green-bg);}
   @keyframes pulse{50%{opacity:.35;}}
-  #typeInfo{color:var(--text-3); font-size:12px;}
-
-  details.facts{margin-top:13px; font-size:13px;}
-  details.facts summary{cursor:pointer; color:var(--brand-700); font-weight:600; font-size:12.5px;
-    list-style:none; display:inline-flex; align-items:center; gap:6px;}
+  #typeInfo{color:var(--text-3);}
+  details.facts{margin-top:12px; font-size:12.5px;}
+  details.facts summary{cursor:pointer; color:var(--brand-700); font-weight:600; list-style:none;
+    display:inline-flex; align-items:center; gap:6px;}
   details.facts summary::-webkit-details-marker{display:none;}
-  details.facts summary::before{content:"+"; font-weight:700; color:var(--brand);}
+  details.facts summary::before{content:"+"; font-weight:700;}
   details.facts[open] summary::before{content:"−";}
-  details.facts textarea{width:100%; height:78px; margin-top:9px; border:1px solid var(--border);
-    border-radius:10px; padding:10px 12px; font:inherit; font-size:13px; resize:vertical; background:var(--surface-2);}
+  details.facts textarea{width:100%; height:74px; margin-top:8px; border:1px solid var(--border);
+    border-radius:8px; padding:9px 11px; font:inherit; font-size:12.5px; resize:vertical; background:var(--surface-2);}
   details.facts textarea:focus{outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--ring);}
 
-  /* ───── Findings ───── */
-  .counts{display:flex; gap:14px; font-size:13px; font-weight:700; align-items:center;
-    padding-bottom:12px; margin-bottom:6px; border-bottom:1px solid var(--border); flex-wrap:wrap;}
+  /* ───── Review sidebar ───── */
+  .ws-review{width:392px; flex-shrink:0; border-left:1px solid var(--border); background:var(--surface);
+    display:flex; flex-direction:column; overflow-y:auto;}
+  .review-score{padding:16px 18px 14px; border-bottom:1px solid var(--border);}
+  .rs-top{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:9px;}
+  .rs-label{font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-3);}
+  .scoreval{font-weight:800; font-size:19px; letter-spacing:-.02em; color:var(--text-3);}
+  .grade-pass{color:var(--green-fg);} .grade-caution{color:var(--amber-fg);} .grade-danger{color:var(--red-fg);}
+  .gauge{height:7px; background:#eef0f3; border-radius:999px; overflow:hidden;}
+  .gauge>div{height:100%; width:0; border-radius:999px; transition:width .55s cubic-bezier(.4,0,.2,1),background .4s;}
+
+  .rsec{padding:14px 18px; border-bottom:1px solid var(--border);}
+  .rsec-head{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:800; color:var(--text);
+    letter-spacing:.01em; margin-bottom:4px;}
+  .rsec-head .counts{margin-left:auto; display:flex; gap:8px; font-size:11.5px; font-weight:700;}
+  .counts .cnt{display:inline-flex; align-items:center; gap:3px;}
+  .counts .err{color:var(--red-fg);} .counts .warn{color:var(--amber-fg);} .counts .ok{color:var(--green-fg);}
+
+  /* issue rows (linter / Grammarly style) */
   #findings{display:flex; flex-direction:column;}
-  .finding{border:1px solid var(--border); border-left:3px solid var(--border); border-radius:11px;
-    padding:13px 15px; margin:9px 0 0; background:var(--surface-2);}
-  .finding.high{border-left-color:var(--red);}
-  .finding.medium{border-left-color:var(--amber);}
-  .finding .head{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
-  .finding .head b{font-size:13.5px; font-weight:700;}
-  .finding .msg{font-size:12.5px; color:var(--text-2); margin-top:6px; line-height:1.6;}
-  .finding .basis{font-size:11.5px; color:var(--brand-700); margin-top:9px; background:var(--brand-50);
-    border:1px solid var(--brand-100); display:inline-block; padding:4px 10px; border-radius:8px; line-height:1.45;}
-  .finding .basis a{color:var(--brand-700); font-weight:600;}
-  .finding .fixrow{margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
-    font-size:12.5px; color:var(--text-2);}
-  .finding .fixrow .sg{background:var(--surface); border:1px solid var(--border); border-radius:8px;
-    padding:4px 10px; font-size:12px; color:var(--text);}
-  .sev{font-size:11px; font-weight:700; padding:2.5px 9px; border-radius:7px; letter-spacing:.01em; white-space:nowrap;}
-  .sev.high{background:var(--red-bg); color:var(--red-fg);}
-  .sev.medium{background:var(--amber-bg); color:var(--amber-fg);}
-  .sev.llm{background:var(--violet-bg); color:var(--violet);}
+  .issue{display:flex; gap:9px; text-align:left; width:100%; border:none; background:transparent;
+    border-radius:8px; padding:10px 9px; margin-top:2px; cursor:default; transition:background .12s;}
+  .issue[onclick]{cursor:pointer;}
+  .issue[onclick]:hover{background:var(--surface-3);}
+  .issue .dot{width:9px; height:9px; border-radius:50%; margin-top:5px; flex-shrink:0;}
+  .issue .dot.high{background:var(--red);} .issue .dot.medium{background:var(--amber);}
+  .issue-body{min-width:0; flex:1;}
+  .issue-h{display:flex; align-items:center; gap:6px; flex-wrap:wrap; line-height:1.4;}
+  .issue-h .rule{font-size:12px; font-weight:700; color:var(--text);}
+  .issue-h .rule.llm{font-size:10.5px; font-weight:700; color:var(--violet); background:var(--violet-bg);
+    padding:1.5px 7px; border-radius:5px;}
+  .issue-h .q{font-family:var(--mono); font-size:11.5px; color:var(--red-fg); background:var(--red-bg);
+    padding:1px 6px; border-radius:5px; word-break:break-all;}
+  .issue.medium .q{color:var(--amber-fg); background:var(--amber-bg);}
+  .issue-h .missing{font-size:11.5px; color:var(--text-3); font-style:italic;}
+  .issue-m{font-size:12px; color:var(--text-2); margin-top:4px; line-height:1.55;}
+  .issue-cite{font-size:11px; color:var(--brand-700); margin-top:5px;}
+  .issue-f{margin-top:7px; font-size:11.5px; color:var(--text-2); display:flex; align-items:center;
+    gap:7px; flex-wrap:wrap; line-height:1.5;}
+  .issue-f code{font-size:11px; background:var(--surface-3); border:1px solid var(--border);
+    border-radius:5px; padding:1px 5px;}
+  .apply{border:1px solid var(--brand); background:var(--brand); color:#fff; font-size:11px; font-weight:700;
+    border-radius:6px; padding:3px 10px; cursor:pointer;}
+  .apply:hover{background:var(--brand-600);}
+  .empty{color:var(--text-3); font-size:12.5px; padding:18px 4px; text-align:center;}
+  .empty.ok{color:var(--green-fg); font-weight:600;}
+  .sources{margin-top:10px; padding-top:9px; border-top:1px dashed var(--border);}
+  .sources b{font-size:11px; color:var(--text-2);}
+  .sources .src{font-size:11px; color:var(--text-3); margin:3px 0; line-height:1.5;}
 
-  .sources{margin-top:14px; border-top:1px dashed var(--border); padding-top:12px;}
-  .sources b{font-size:12px; color:var(--text-2);}
-  .sources .src{font-size:11.5px; color:var(--text-3); margin:4px 0; line-height:1.5;}
-  .empty{color:var(--text-3); font-size:13px; padding:22px 0; text-align:center;}
-
-  /* ───── Persona simulator ───── */
-  .sim-panel{margin-top:16px;}
-  .persona-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
-  @media (max-width:1080px){.persona-grid{grid-template-columns:1fr;}}
-  .persona{border:1px solid var(--border); border-radius:var(--r-lg); padding:16px 17px;
-    background:var(--surface); box-shadow:var(--shadow-xs); transition:transform .16s,box-shadow .16s;}
-  .persona:hover{transform:translateY(-2px); box-shadow:var(--shadow-md);}
-  .persona h3{margin:0 0 4px; font-size:14px; font-weight:700; display:flex; align-items:center;
-    gap:8px; flex-wrap:wrap;}
-  .persona .speech{position:relative; background:var(--brand-50); border:1px solid var(--brand-100);
-    border-radius:12px; border-top-left-radius:3px; padding:10px 13px; font-size:12.5px;
-    color:var(--text); margin:10px 0 8px; line-height:1.55;}
-  .persona .act{font-size:12px; color:var(--text-3); line-height:1.5;}
-  .persona .mis{margin-top:11px; border-top:1px dashed var(--border); padding-top:10px; font-size:12.5px;}
-  .persona .mis .m{margin:7px 0; line-height:1.55;}
-  .persona .mis .m b{font-weight:700;}
-  .persona .trigger{font-size:11.5px; color:var(--red-fg); font-weight:600; margin-top:4px;}
-  .risk-pill{font-size:11.5px; font-weight:700; padding:3px 11px; border-radius:999px; white-space:nowrap;}
+  /* persona section (compact, stacked) */
+  details.rsec[open] > summary .chev{transform:rotate(90deg);}
+  summary.rsec-sum{list-style:none; cursor:pointer; display:flex; align-items:center; gap:8px;
+    font-size:12px; font-weight:800; color:var(--text);}
+  summary.rsec-sum::-webkit-details-marker{display:none;}
+  summary.rsec-sum .chev{transition:transform .15s; color:var(--text-3); font-size:11px;}
+  summary.rsec-sum .risk-pill{margin-left:auto;}
+  .persona-list{display:flex; flex-direction:column; gap:9px; margin-top:11px;}
+  .persona{border:1px solid var(--border); border-radius:9px; padding:11px 12px; background:var(--surface-2);}
+  .persona.safe{opacity:.72;}
+  .p-h{display:flex; align-items:center; gap:7px;}
+  .p-emoji{font-size:16px;}
+  .p-name{font-size:12.5px; font-weight:700;}
+  .p-h .risk-pill{margin-left:auto;}
+  .p-speech{font-size:11.5px; color:var(--text-2); margin-top:7px; line-height:1.5; font-style:italic;}
+  .p-mis{font-size:11.5px; color:var(--red-fg); font-weight:600; margin-top:7px; line-height:1.5;
+    background:var(--red-bg); border-radius:7px; padding:7px 9px;}
+  .p-trig{font-weight:600; color:var(--text-2); font-style:normal;}
+  .risk-pill{font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:999px; white-space:nowrap;}
   .risk-high{background:var(--red-bg); color:var(--red-fg);}
   .risk-medium{background:var(--amber-bg); color:var(--amber-fg);}
   .risk-low{background:var(--green-bg); color:var(--green-fg);}
 
-  /* ───── Send row ───── */
-  .send-row{margin:18px 0 4px; display:flex; justify-content:flex-end; align-items:center; gap:11px; flex-wrap:wrap;}
+  /* ───── Status bar (VS Code-like) ───── */
+  .statusbar{position:fixed; left:var(--sbw); right:0; bottom:0; height:var(--sbar); z-index:40;
+    display:flex; align-items:center; gap:0; padding:0 6px; background:var(--surface);
+    border-top:1px solid var(--border); font-size:11.5px; color:var(--text-2);}
+  .statusbar .sb{display:inline-flex; align-items:center; gap:5px; padding:0 11px; height:100%; white-space:nowrap;}
+  .statusbar .sb + .sb{border-left:1px solid var(--border);}
+  .statusbar .sb-spacer{flex:1;}
+  .statusbar .seg{font-weight:700; color:#fff; background:var(--text-3); padding:0 12px;}
+  .statusbar.g-pass .seg{background:var(--green);}
+  .statusbar.g-caution .seg{background:var(--amber);}
+  .statusbar.g-danger .seg{background:var(--red);}
+  .statusbar .err{color:var(--red-fg); font-weight:700;}
+  .statusbar .warn{color:var(--amber-fg); font-weight:700;}
+  .statusbar .info{color:var(--brand-700); font-weight:700;}
+  .mode-badge{display:inline-flex; align-items:center; gap:6px; color:var(--text-2);}
+  .mode-badge::before{content:""; width:7px; height:7px; border-radius:50%; background:var(--amber);}
+  .mode-badge.llm{color:var(--green-fg);} .mode-badge.llm::before{background:var(--green);}
 
-  /* ───── Approve view ───── */
+  /* ═══════ Approve view ═══════ */
+  .approve{padding:20px 22px;}
   .approve-cols{display:grid; grid-template-columns:312px 1fr; gap:16px; align-items:start;}
-  @media (max-width:1080px){.approve-cols{grid-template-columns:1fr;}}
+  .panel{background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:16px 18px; box-shadow:var(--shadow-sm);}
+  .panel h2{margin:0 0 13px; font-size:13px; font-weight:800; color:var(--text); display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .panel h2 .right{margin-left:auto; display:flex; gap:8px; align-items:center; font-weight:500;}
   #subList{display:flex; flex-direction:column; gap:9px;}
-  .sub-item{border:1px solid var(--border); border-radius:var(--r); padding:13px 15px; cursor:pointer;
-    background:var(--surface); transition:border-color .14s,box-shadow .14s,background .14s;}
+  .sub-item{border:1px solid var(--border); border-radius:9px; padding:12px 14px; cursor:pointer; background:var(--surface); transition:border-color .14s,box-shadow .14s,background .14s;}
   .sub-item:hover{border-color:var(--border-strong); box-shadow:var(--shadow-sm);}
-  .sub-item.sel{border-color:var(--brand); background:var(--brand-50); box-shadow:0 0 0 1px var(--brand) inset;}
-  .sub-item .t{font-weight:700; font-size:13px; display:flex; align-items:center; gap:7px; flex-wrap:wrap;}
-  .sub-item .m{font-size:11.5px; color:var(--text-3); margin-top:6px;}
-  .status-pill{font-size:10.5px; font-weight:700; padding:2.5px 9px; border-radius:7px; white-space:nowrap;}
+  .sub-item.sel{border-color:var(--brand); background:var(--brand-50);}
+  .sub-item .t{font-weight:700; font-size:12.5px; display:flex; align-items:center; gap:7px; flex-wrap:wrap;}
+  .sub-item .m{font-size:11px; color:var(--text-3); margin-top:6px;}
+  .status-pill{font-size:10px; font-weight:700; padding:2.5px 8px; border-radius:6px; white-space:nowrap;}
   .st-pending{background:var(--amber-bg); color:var(--amber-fg);}
   .st-approved{background:var(--green-bg); color:var(--green-fg);}
   .st-rejected{background:var(--red-bg); color:var(--red-fg);}
-  .doc-text{background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r);
-    padding:15px 17px; font-size:14px; line-height:1.75; white-space:pre-wrap;}
-  .decision-row{display:flex; gap:9px; margin:16px 0; flex-wrap:wrap; align-items:center;}
-  .decision-row input{flex:1; min-width:180px;}
-  .audit{margin-top:18px;}
-  .audit .entry{font-size:12px; border-left:2px solid var(--border); padding:5px 0 5px 13px; margin:8px 0;
-    color:var(--text-2); line-height:1.55;}
+  .doc-text{background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:14px 16px; font-size:13.5px; line-height:1.75; white-space:pre-wrap;}
+  /* approve-view findings reuse compact card */
+  .finding{border:1px solid var(--border); border-left:3px solid var(--border); border-radius:9px; padding:11px 13px; margin-top:8px; background:var(--surface-2);}
+  .finding.high{border-left-color:var(--red);} .finding.medium{border-left-color:var(--amber);}
+  .finding .head{display:flex; gap:7px; align-items:center; flex-wrap:wrap;}
+  .finding .head b{font-size:12.5px;}
+  .finding .msg{font-size:12px; color:var(--text-2); margin-top:5px; line-height:1.55;}
+  .finding .basis{font-size:11px; color:var(--brand-700); margin-top:7px; background:var(--brand-50); border:1px solid var(--brand-100); display:inline-block; padding:3px 9px; border-radius:7px;}
+  .sev{font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:6px; white-space:nowrap;}
+  .sev.high{background:var(--red-bg); color:var(--red-fg);} .sev.medium{background:var(--amber-bg); color:var(--amber-fg);} .sev.llm{background:var(--violet-bg); color:var(--violet);}
+  .decision-row{display:flex; gap:9px; margin:15px 0; flex-wrap:wrap; align-items:center;}
+  .decision-row input{flex:1; min-width:170px;}
+  .audit{margin-top:16px;}
+  .audit .entry{font-size:11.5px; border-left:2px solid var(--border); padding:5px 0 5px 12px; margin:7px 0; color:var(--text-2); line-height:1.55;}
   .audit .entry .ts{color:var(--text-3); font-size:11px;}
-  .tr-block{border:1px solid var(--border); border-radius:var(--r); padding:15px 17px; margin-top:13px;
-    background:var(--surface-2);}
+  .tr-block{border:1px solid var(--border); border-radius:9px; padding:14px 16px; margin-top:12px; background:var(--surface-2);}
 
   /* ───── Toast ───── */
-  .toast{position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(10px);
-    background:#11161d; color:#fff; padding:12px 22px; border-radius:11px; font-size:13px; font-weight:500;
+  .toast{position:fixed; bottom:46px; left:calc(50% + var(--sbw)/2); transform:translateX(-50%) translateY(10px);
+    background:#11161d; color:#fff; padding:11px 20px; border-radius:10px; font-size:12.5px; font-weight:500;
     opacity:0; transition:opacity .25s,transform .25s; pointer-events:none; z-index:100; box-shadow:var(--shadow-lg);}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
-  /* ───── Responsive shell ───── */
+  @media (max-width:980px){
+    .ws{flex-direction:column;}
+    .ws-review{width:auto; border-left:none; border-top:1px solid var(--border);}
+    .persona-list{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+    .approve-cols{grid-template-columns:1fr;}
+  }
   @media (max-width:860px){
+    :root{--sbw:0px;}
     .app{flex-direction:column;}
-    .sidebar{width:auto; height:auto; position:sticky; top:0; flex-direction:row; align-items:center;
-      padding:10px 14px; gap:6px; z-index:30;}
-    .brand{padding:0 10px 0 2px;}
-    .brand-text{display:none;}
-    .side-cap{display:none;}
-    .side-nav{flex-direction:row; margin-top:0; gap:4px;}
-    .nav-item{padding:8px 12px;}
-    .side-foot{display:none;}
-    .topbar{padding:0 18px;}
-    main{padding:18px 16px 48px;}
+    .sidebar{width:auto; height:auto; position:sticky; top:0; flex-direction:row; align-items:center; padding:9px 12px; gap:6px; z-index:30; border-right:none; border-bottom:1px solid var(--border);}
+    .brand{padding:0 8px 0 2px;} .brand-text,.side-cap,.side-foot{display:none;}
+    .side-nav{flex-direction:row; gap:4px;}
+    .persona-list{grid-template-columns:1fr;}
+    .toast{left:50%;}
   }
 </style>
 </head>
 <body>
 
 <div class="app">
-  <!-- ───── Sidebar ───── -->
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-mark">⚖</div>
       <div class="brand-text"><b>JB 준법 코파일럿</b><span>Compliance Copilot</span></div>
     </div>
+    <div class="side-cap">메뉴</div>
     <nav class="side-nav">
-      <div class="side-cap">메뉴</div>
       <button id="tabWork" class="nav-item active" onclick="switchTab('work')">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
         심의 워크스페이스
       </button>
       <button id="tabApprove" class="nav-item" onclick="switchTab('approve')">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         준법관리자 검토 <span id="pendingBadge" class="nav-badge"></span>
       </button>
     </nav>
@@ -303,84 +324,80 @@
     </div>
   </aside>
 
-  <!-- ───── Content ───── -->
   <div class="content">
     <header class="topbar">
-      <div class="tt">
-        <b>AI 준법 심의 콘솔</b>
-        <span>소비자 오인 방지 중심 준법자문 Agent</span>
+      <span class="view-name" id="viewName">심의 워크스페이스</span>
+      <span class="sep"></span>
+      <div class="doc-title">
+        <span class="ico">▦</span>
+        <input type="text" id="subTitle" placeholder="제목 없는 콘텐츠">
       </div>
-      <div class="mode-badge" id="modeBadge">엔진 확인 중…</div>
+      <div class="ws-actions">
+        <button class="btn small" id="btnApplyAll" onclick="applyAllFixes()" disabled>수정안 전체 적용</button>
+        <button class="btn small primary" id="btnSend" onclick="sendForApproval()" disabled>검토 전송 →</button>
+      </div>
     </header>
 
     <main>
-      <!-- ════════ 워크스페이스 ════════ -->
-      <section id="viewWork">
-        <div class="scorebar">
-          <span class="label">준법 점수</span>
-          <div class="gauge"><div id="gaugeFill"></div></div>
-          <span class="scoreval" id="scoreVal">— / 100</span>
-        </div>
-
-        <div class="cols">
-          <div class="panel">
-            <h2>콘텐츠 초안
-              <span class="right">
-                <select id="selType">
-                  <option value="">유형: 자동분류</option>
-                  <option value="deposit">유형: 예금·적금</option>
-                  <option value="investment">유형: 투자(펀드)</option>
-                  <option value="loan">유형: 대출</option>
-                </select>
-                <select id="selLang">
-                  <option value="ko">언어: 한국어</option>
-                  <option value="en">언어: English</option>
-                </select>
-              </span>
-            </h2>
+      <!-- ════════ 워크스페이스 (에디터 + 검토) ════════ -->
+      <section id="viewWork" class="ws">
+        <div class="ws-editor">
+          <div class="ws-toolbar">
             <div class="fixture-row" id="fixtureRow"></div>
-            <div class="editor-wrap">
-              <div class="backdrop" id="backdrop"></div>
-              <textarea class="editor" id="editor" spellcheck="false"
-                placeholder="대고객 광고/콘텐츠 초안을 입력하거나 붙여넣으세요. 입력을 멈추면 자동으로 심의합니다."></textarea>
+            <div class="tb-right">
+              <select id="selType">
+                <option value="">유형: 자동분류</option>
+                <option value="deposit">유형: 예금·적금</option>
+                <option value="investment">유형: 투자(펀드)</option>
+                <option value="loan">유형: 대출</option>
+              </select>
+              <select id="selLang">
+                <option value="ko">한국어</option>
+                <option value="en">English</option>
+              </select>
+              <button class="btn small" onclick="runReview()">재심의</button>
             </div>
-            <div class="editor-foot">
-              <span class="live-dot" id="liveDot"></span>
-              <span id="liveLabel">멈춤 시 자동검사</span>
-              <span id="typeInfo"></span>
-              <button class="btn small" style="margin-left:auto" onclick="runReview()">지금 재심의</button>
-            </div>
-            <details class="facts">
-              <summary>상품 실제 조건 (오인 판정 대조용 — 선택)</summary>
+          </div>
+          <div class="editor-wrap">
+            <div class="backdrop" id="backdrop"></div>
+            <textarea class="editor" id="editor" spellcheck="false"
+              placeholder="대고객 광고·안내 콘텐츠 초안을 여기에 작성하거나 붙여넣으세요.
+
+입력을 멈추면 자동으로 준법 심의가 실행되고, 위험 표현에는 물결 밑줄이 표시됩니다. 우측 검토 패널의 항목을 클릭하면 해당 문구로 이동합니다."></textarea>
+          </div>
+          <div class="editor-foot">
+            <span class="live-dot" id="liveDot"></span>
+            <span id="liveLabel">멈춤 시 자동검사</span>
+            <span id="typeInfo"></span>
+            <details class="facts" style="margin-left:auto; margin-top:0;">
+              <summary>상품 실제 조건 (선택)</summary>
               <textarea id="productFacts" placeholder="예: 기본금리 연 3.0%(세전), 우대 시 최대 연 5.0%. 중도해지 시 중도해지이율 적용. 예금자보호 5천만원."></textarea>
             </details>
           </div>
+        </div>
 
-          <div class="panel">
-            <h2>심의 결과
-              <span class="right"><button class="btn small" id="btnApplyAll" onclick="applyAllFixes()" disabled>수정안 전체 적용</button></span>
-            </h2>
-            <div class="counts" id="counts"></div>
-            <div id="findings"><div class="empty">초안을 입력하면 심의 결과가 표시됩니다.</div></div>
+        <aside class="ws-review">
+          <div class="review-score">
+            <div class="rs-top"><span class="rs-label">준법 점수</span><span class="scoreval" id="scoreVal">— / 100</span></div>
+            <div class="gauge"><div id="gaugeFill"></div></div>
+          </div>
+
+          <div class="rsec">
+            <div class="rsec-head">검토 결과 <span class="counts" id="counts"></span></div>
+            <div id="findings"><div class="empty">초안을 작성하면 실시간으로 위반·주의 항목이 분류되어 표시됩니다.</div></div>
             <div class="sources" id="sources"></div>
           </div>
-        </div>
 
-        <div class="panel sim-panel">
-          <h2>소비자 오인 시뮬레이터
-            <span class="right">오인 위험 <span class="risk-pill risk-low" id="simRisk">—</span></span>
-          </h2>
-          <div class="persona-grid" id="personaGrid"><div class="empty">심의 실행 시 페르소나별 오해 시뮬레이션이 표시됩니다.</div></div>
-        </div>
-
-        <div class="send-row">
-          <input type="text" id="subTitle" placeholder="콘텐츠 제목 (예: 6월 안심예금 SNS 광고)" style="width:320px; max-width:60vw;">
-          <button class="btn primary" id="btnSend" onclick="sendForApproval()" disabled>준법관리자 검토로 전송 →</button>
-        </div>
+          <details class="rsec" id="simSec" open>
+            <summary class="rsec-sum"><span class="chev">▶</span> 소비자 오인 시뮬레이터
+              <span class="risk-pill risk-low" id="simRisk">—</span></summary>
+            <div class="persona-list" id="personaGrid"><div class="empty">심의 시 페르소나별 오해를 분석합니다.</div></div>
+          </details>
+        </aside>
       </section>
 
       <!-- ════════ 승인 뷰 ════════ -->
-      <section id="viewApprove" class="hidden">
+      <section id="viewApprove" class="approve hidden">
         <div class="approve-cols">
           <div class="panel">
             <h2>검토 대기열 <span class="right"><button class="btn small" onclick="loadSubmissions()">새로고침</button></span></h2>
@@ -390,6 +407,15 @@
         </div>
       </section>
     </main>
+
+    <div class="statusbar" id="statusbar">
+      <span class="sb seg" id="sbScore">준법 점수 —</span>
+      <span class="sb" id="sbCounts">—</span>
+      <span class="sb" id="sbType">유형 —</span>
+      <span class="sb-spacer"></span>
+      <span class="sb mode-badge" id="modeBadge">엔진 확인 중…</span>
+      <span class="sb">한국어 규제 · RAG+Rule+LLM</span>
+    </div>
   </div>
 </div>
 
@@ -409,21 +435,21 @@ async function api(path, opts={}){
   return r.json();
 }
 
-/* ── 헬스체크 (엔진 모드 표시) ── */
+/* ── 헬스체크 (엔진 모드 → 상태바) ── */
 async function checkHealth(){
   try{
     const h = await api("/api/health");
     const b = $("modeBadge");
-    if(h.llm_available){ b.textContent = `LLM 연결됨 · ${h.llm_model}`; b.classList.add("llm"); }
-    else b.textContent = "폴백 모드 · 룰엔진+결정적 시뮬레이션";
+    if(h.llm_available){ b.textContent = `LLM · ${h.llm_model}`; b.classList.add("llm"); }
+    else b.textContent = "폴백 모드 · 룰엔진";
   }catch{ $("modeBadge").textContent = "서버 연결 실패"; }
 }
 
 /* ── 픽스처 (데모 입력) ── */
 async function loadFixtures(){
   state.fixtures = await api("/api/fixtures");
-  $("fixtureRow").innerHTML = state.fixtures.map((f,i)=>
-    `<button class="btn small" onclick="useFixture(${i})">📋 ${esc(f.name)}</button>`).join("");
+  $("fixtureRow").innerHTML = `<span style="font-size:11px;color:var(--text-3);font-weight:600;align-self:center;margin-right:2px">예시 불러오기</span>` +
+    state.fixtures.map((f,i)=>`<button class="btn small" onclick="useFixture(${i})">${esc(f.name)}</button>`).join("");
 }
 function useFixture(i){
   const f = state.fixtures[i];
@@ -431,29 +457,32 @@ function useFixture(i){
   $("selType").value = f.content_type;
   $("selLang").value = f.language;
   $("productFacts").value = f.product_facts || "";
+  $("subTitle").value = f.name || "";
   runReview();
 }
 
 /* ── 실시간 검사 (F11): 멈춤/붙여넣기 시 자동 ── */
 let debounceTimer = null;
-function scheduleReview(delay=1200){
+function scheduleReview(delay=1000){
   clearTimeout(debounceTimer);
-  $("liveDot").className = "live-dot"; $("liveLabel").textContent = "입력 중… 멈추면 자동검사";
+  $("liveDot").className = "live-dot"; $("liveLabel").textContent = "입력 중…";
   debounceTimer = setTimeout(runReview, delay);
 }
 $("editor").addEventListener("input", ()=>{ syncBackdrop(true); scheduleReview(); });
-$("editor").addEventListener("paste", ()=>scheduleReview(350));
-$("editor").addEventListener("scroll", ()=>{ $("backdrop").scrollTop = $("editor").scrollTop; });
+$("editor").addEventListener("paste", ()=>scheduleReview(300));
+$("editor").addEventListener("scroll", ()=>{ $("backdrop").scrollTop = $("editor").scrollTop;
+  $("backdrop").scrollLeft = $("editor").scrollLeft; });
 $("selType").addEventListener("change", ()=>runReview());
 $("selLang").addEventListener("change", ()=>runReview());
 
-/* ── 하이라이트 오버레이 ── */
+/* ── 물결 밑줄 오버레이 ── */
 function syncBackdrop(plain=false){
   const text = $("editor").value;
   if(plain || !state.report || state.report.skipped || state.report.text !== text){
-    $("backdrop").innerHTML = esc(text); return;
+    $("backdrop").innerHTML = esc(text);
+    $("backdrop").scrollTop = $("editor").scrollTop; return;
   }
-  const hl = []; let last = -1;           // 겹침 제거(앞선 span 우선)
+  const hl = []; let last = -1;
   for(const h of state.report.highlights){ if(h.start >= last){ hl.push(h); last = h.end; } }
   let out = "", pos = 0;
   for(const h of hl){
@@ -463,6 +492,18 @@ function syncBackdrop(plain=false){
   }
   out += esc(text.slice(pos));
   $("backdrop").innerHTML = out;
+  $("backdrop").scrollTop = $("editor").scrollTop;
+}
+
+/* ── 에디터에서 해당 문구로 점프 + 선택 ── */
+function focusSpan(s, e){
+  const ed = $("editor");
+  ed.focus();
+  try{ ed.setSelectionRange(s, e); }catch(_){}
+  const lh = parseFloat(getComputedStyle(ed).lineHeight) || 30;
+  const before = ed.value.slice(0, s).split("\n").length - 1;
+  ed.scrollTop = Math.max(0, before*lh - ed.clientHeight/2);
+  $("backdrop").scrollTop = ed.scrollTop;
 }
 
 /* ── 심의 실행 ── */
@@ -481,7 +522,7 @@ async function runReview(){
       $("liveDot").className = "live-dot"; $("liveLabel").textContent = rep.reason;
       renderEmpty(); return;
     }
-    $("liveDot").className = "live-dot ok"; $("liveLabel").textContent = "심의 완료 — 멈춤 시 자동 재검사";
+    $("liveDot").className = "live-dot ok"; $("liveLabel").textContent = "심의 완료 · 멈추면 자동 재검사";
     render(rep);
   }catch(e){
     $("liveDot").className = "live-dot"; $("liveLabel").textContent = "오류: " + e.message;
@@ -492,10 +533,11 @@ function renderEmpty(){
   $("scoreVal").textContent = "— / 100"; $("scoreVal").className = "scoreval";
   $("gaugeFill").style.width = "0%";
   $("counts").innerHTML = "";
-  $("findings").innerHTML = '<div class="empty">초안을 입력하면 심의 결과가 표시됩니다.</div>';
+  $("findings").innerHTML = '<div class="empty">초안을 작성하면 실시간으로 위반·주의 항목이 분류되어 표시됩니다.</div>';
   $("sources").innerHTML = ""; $("personaGrid").innerHTML = '<div class="empty">—</div>';
   $("simRisk").textContent = "—"; $("simRisk").className = "risk-pill risk-low";
   $("btnSend").disabled = true; $("btnApplyAll").disabled = true;
+  updateStatusbar(null);
   syncBackdrop(true);
 }
 
@@ -507,76 +549,107 @@ function citationHtml(c){
     ? ` <a href="${esc(c.source_url)}" target="_blank" rel="noopener">출처↗</a>` : "";
   return `<div class="basis">📖 ${esc(c.law)} ${esc(c.article)} — ${esc(c.title)}${link}</div>`;
 }
+function citeShort(c){
+  if(!c) return "";
+  const link = c.source_url && c.source_url.startsWith("http")
+    ? ` <a href="${esc(c.source_url)}" target="_blank" rel="noopener">↗</a>` : "";
+  return `근거 · ${esc(c.law)} ${esc(c.article)}${link}`;
+}
+
+function updateStatusbar(rep){
+  const sb = $("statusbar");
+  sb.classList.remove("g-pass","g-caution","g-danger");
+  if(rep){
+    sb.classList.add("g-"+rep.grade);
+    $("sbScore").textContent = `준법 점수 ${rep.score} · ${rep.grade_label}`;
+    $("sbCounts").innerHTML = `<span class="err">● 위반 ${rep.counts.high}</span>&nbsp;&nbsp;`+
+      `<span class="warn">▲ 주의 ${rep.counts.medium}</span>&nbsp;&nbsp;`+
+      `<span class="info">◆ 오인 ${rep.counts.misunderstandings}</span>`;
+    $("sbType").textContent = `유형 ${rep.content_type_label}`;
+  }else{
+    $("sbScore").textContent = "준법 점수 —"; $("sbCounts").innerHTML = "—"; $("sbType").textContent = "유형 —";
+  }
+}
 
 function render(rep){
   /* 점수 */
-  $("scoreVal").textContent = `${rep.grade_emoji} ${rep.score} / 100 ${rep.grade_label}`;
+  $("scoreVal").textContent = `${rep.score} / 100 · ${rep.grade_label}`;
   $("scoreVal").className = "scoreval grade-" + rep.grade;
   $("gaugeFill").style.width = rep.score + "%";
   $("gaugeFill").style.background = gradeColor(rep.grade);
-  $("typeInfo").textContent = `자동분류: ${rep.classification ? rep.content_type_label : ""} (신뢰도 ${(rep.classification.confidence*100).toFixed(0)}%)`;
+  $("typeInfo").textContent = `자동분류 ${rep.content_type_label} (${(rep.classification.confidence*100).toFixed(0)}%)`;
 
-  /* 카운트 */
+  /* 카운트 (linter 스타일) */
+  const ok = rep.counts.high+rep.counts.medium===0 ? `<span class="cnt ok">✓ 통과</span>` : "";
   $("counts").innerHTML =
-    `<span style="color:var(--red)">🔴 위반 ${rep.counts.high}</span>` +
-    `<span style="color:#9a6c00">🟡 주의 ${rep.counts.medium}</span>` +
-    `<span style="color:var(--green)">🟢 ${rep.counts.high+rep.counts.medium===0 ? "통과" : ""}</span>` +
-    `<span style="margin-left:auto;color:var(--muted);font-weight:500">엔진: ${esc(rep.review_engine)}</span>`;
+    `<span class="cnt err">● ${rep.counts.high}</span>`+
+    `<span class="cnt warn">▲ ${rep.counts.medium}</span>`+ ok;
 
-  /* 지적 목록 */
+  /* 검토 항목 — 클릭 시 에디터의 해당 문구로 점프 */
   let html = "";
   rep.rule_findings.forEach((f, i)=>{
-    const fixBtn = f.fix ? (f.fix.type === "replace"
-        ? `<span class="sg">"${esc(f.fix.original)}" → "${esc(f.fix.replacement)}"</span>
-           <button class="btn small primary" onclick="applyFix(${i})">적용</button>`
-        : `<span class="sg">고지문 추가: ${esc(f.fix.text.slice(0,42))}…</span>
-           <button class="btn small primary" onclick="applyFix(${i})">적용</button>`)
-      : (f.suggestion ? `<span class="sg">${esc(f.suggestion)}</span>` : "");
-    html += `<div class="finding ${f.severity}">
-      <div class="head"><span class="sev ${f.severity}">${f.severity_label}</span>
-        <b>[${esc(f.rule_name)}]</b> ${f.matched_text ? `"${esc(f.matched_text)}"` : "(누락)"}</div>
-      <div class="msg">${esc(f.message)}</div>
-      ${citationHtml(f.citation)}
-      ${fixBtn ? `<div class="fixrow">수정안: ${fixBtn}</div>` : ""}
-    </div>`;
+    const sp = f.spans && f.spans.length ? f.spans[0] : null;
+    const click = sp ? `onclick="focusSpan(${sp.start},${sp.end})"` : "";
+    let fixUi = "";
+    if(f.fix && f.fix.type==="replace")
+      fixUi = `<code>"${esc(f.fix.original)}"</code> → <code>"${esc(f.fix.replacement)}"</code>
+               <button class="apply" onclick="event.stopPropagation();applyFix(${i})">적용</button>`;
+    else if(f.fix && f.fix.type==="append")
+      fixUi = `<span>고지문 추가</span><button class="apply" onclick="event.stopPropagation();applyFix(${i})">적용</button>`;
+    else if(f.suggestion) fixUi = `<span>${esc(f.suggestion)}</span>`;
+    html += `<div class="issue ${f.severity}" ${click}>
+      <span class="dot ${f.severity}"></span>
+      <div class="issue-body">
+        <div class="issue-h"><span class="rule">${esc(f.rule_name)}</span>${
+          f.matched_text ? `<code class="q">"${esc(f.matched_text)}"</code>` : `<span class="missing">필수항목 누락</span>`}</div>
+        <div class="issue-m">${esc(f.message)}</div>
+        ${f.citation ? `<div class="issue-cite">${citeShort(f.citation)}</div>` : ""}
+        ${fixUi ? `<div class="issue-f">${fixUi}</div>` : ""}
+      </div></div>`;
   });
-  for(const i of rep.llm_issues){
-    html += `<div class="finding ${i.risk}">
-      <div class="head"><span class="sev llm">LLM 심의</span><span class="sev ${i.risk}">${i.risk==="high"?"위반":"주의"}</span>
-        <b>${esc(i.title || "")}</b> ${i.quote ? `"${esc(i.quote)}"` : ""}</div>
-      <div class="msg">${esc(i.explanation || "")}</div>
-      ${citationHtml(i.citation)}
-      ${i.suggestion ? `<div class="fixrow">수정안: <span class="sg">${esc(i.suggestion)}</span></div>` : ""}
-    </div>`;
+  for(const it of rep.llm_issues){
+    let sp = null;
+    if(it.quote && rep.text.indexOf(it.quote) >= 0){ const s = rep.text.indexOf(it.quote); sp = {start:s, end:s+it.quote.length}; }
+    const click = sp ? `onclick="focusSpan(${sp.start},${sp.end})"` : "";
+    html += `<div class="issue ${it.risk}" ${click}>
+      <span class="dot ${it.risk}"></span>
+      <div class="issue-body">
+        <div class="issue-h"><span class="rule llm">AI 심의</span>${
+          it.quote ? `<code class="q">"${esc(it.quote)}"</code>` : `<span class="rule">${esc(it.title||"")}</span>`}</div>
+        <div class="issue-m">${esc(it.explanation || "")}</div>
+        ${it.citation ? `<div class="issue-cite">${citeShort(it.citation)}</div>` : ""}
+        ${it.suggestion ? `<div class="issue-f"><span>${esc(it.suggestion)}</span></div>` : ""}
+      </div></div>`;
   }
-  if(!html) html = '<div class="empty">🟢 지적 사항이 없습니다. 준법 기준을 충족합니다.</div>';
-  if(rep.llm_overall_comment) html += `<div class="msg" style="margin-top:9px;color:var(--muted)">💬 ${esc(rep.llm_overall_comment)}</div>`;
+  if(!html) html = '<div class="empty ok">✓ 지적 사항이 없습니다. 준법 기준을 충족합니다.</div>';
+  if(rep.llm_overall_comment) html += `<div class="issue-m" style="margin-top:10px;padding:0 9px">💬 ${esc(rep.llm_overall_comment)}</div>`;
   $("findings").innerHTML = html;
 
   /* 근거 출처 */
   $("sources").innerHTML = rep.retrieval.articles.length
-    ? `<b style="font-size:12.5px">검색된 규제 근거 (${rep.retrieval.backend})</b>` +
-      rep.retrieval.articles.map(a=>`<div class="src">· ${esc(a.law)} ${esc(a.article)} — ${esc(a.title)} <span style="opacity:.6">(유사도 ${a.score})</span></div>`).join("")
-    : `<div class="src">근거 불충분 — 코퍼스에서 관련 조항을 찾지 못했습니다 (허위 인용 방지를 위해 인용 생략).</div>`;
+    ? `<b>검색된 규제 근거 (${rep.retrieval.backend})</b>` +
+      rep.retrieval.articles.map(a=>`<div class="src">· ${esc(a.law)} ${esc(a.article)} — ${esc(a.title)} <span style="opacity:.6">(${a.score})</span></div>`).join("")
+    : `<div class="src">근거 불충분 — 관련 조항을 찾지 못해 인용을 생략했습니다(허위 인용 방지).</div>`;
 
-  /* 시뮬레이터 */
+  /* 시뮬레이터 (compact) */
   const sim = rep.simulation;
-  $("simRisk").textContent = sim.misreading_risk_label + (sim.high_risk_count ? ` (위험 오해 ${sim.high_risk_count}건)` : "");
+  $("simRisk").textContent = "오인 " + sim.misreading_risk_label + (sim.high_risk_count ? ` (${sim.high_risk_count})` : "");
   $("simRisk").className = "risk-pill risk-" + sim.misreading_risk;
   $("personaGrid").innerHTML = sim.personas.map(p=>{
-    const mis = p.misunderstandings.map(m=>`
-      <div class="m">🔴 <b>${esc(m.text)}</b>
-        ${m.trigger_phrase ? `<div class="trigger">⟵ 유발 문구: "${esc(m.trigger_phrase)}"</div>` : ""}
-        ${citationHtml(m.citation)}
-      </div>`).join("");
-    return `<div class="persona">
-      <h3>${p.emoji} ${esc(p.name)} ${p.safe ? '<span class="risk-pill risk-low">🟢 안전</span>' : ''}</h3>
-      <div class="speech">"${esc(p.understanding)}"</div>
-      <div class="act">→ ${esc(p.action)}</div>
-      ${mis ? `<div class="mis">${mis}</div>` : ""}
+    const m = p.misunderstandings[0];
+    const risk = p.safe ? "low" : (m ? m.risk : "low");
+    const rlabel = p.safe ? "안전" : (m ? (m.risk==="high"?"위험":"주의") : "안전");
+    const click = (m && m.trigger_phrase && rep.text.indexOf(m.trigger_phrase)>=0)
+      ? `onclick="focusSpan(${rep.text.indexOf(m.trigger_phrase)},${rep.text.indexOf(m.trigger_phrase)+m.trigger_phrase.length})" style="cursor:pointer"` : "";
+    return `<div class="persona ${p.safe?'safe':''}" ${click}>
+      <div class="p-h"><span class="p-emoji">${p.emoji}</span><span class="p-name">${esc(p.name)}</span>
+        <span class="risk-pill risk-${risk}">${rlabel}</span></div>
+      <div class="p-speech">"${esc(p.understanding)}"</div>
+      ${m ? `<div class="p-mis">${esc(m.text)}${m.trigger_phrase ? ` <span class="p-trig">⟵ "${esc(m.trigger_phrase)}"</span>` : ""}</div>` : ""}
     </div>`;
   }).join("");
 
+  updateStatusbar(rep);
   $("btnSend").disabled = false;
   $("btnApplyAll").disabled = !rep.rule_findings.some(f=>f.fix);
   syncBackdrop();
@@ -589,7 +662,7 @@ async function applyFix(idx){
   const r = await api("/api/apply-fixes", { method:"POST",
     body: JSON.stringify({ text: $("editor").value, fixes: [f.fix] })});
   $("editor").value = r.text; syncBackdrop(true);
-  toast("수정안을 적용했습니다 — 재심의 중");
+  toast("수정안을 적용했습니다 · 재심의 중");
   runReview();
 }
 async function applyAllFixes(){
@@ -597,7 +670,7 @@ async function applyAllFixes(){
   const r = await api("/api/apply-fixes", { method:"POST",
     body: JSON.stringify({ text: $("editor").value, fixes })});
   $("editor").value = r.text; syncBackdrop(true);
-  toast(`수정안 ${fixes.length}건 적용 — 재심의 중`);
+  toast(`수정안 ${fixes.length}건 적용 · 재심의 중`);
   runReview();
 }
 
@@ -619,6 +692,8 @@ function switchTab(tab){
   $("viewApprove").classList.toggle("hidden", tab!=="approve");
   $("tabWork").classList.toggle("active", tab==="work");
   $("tabApprove").classList.toggle("active", tab==="approve");
+  document.body.classList.toggle("on-approve", tab==="approve");
+  $("viewName").textContent = tab==="approve" ? "준법관리자 검토" : "심의 워크스페이스";
   if(tab==="approve") loadSubmissions();
 }
 
@@ -662,7 +737,7 @@ function renderSubDetail(s){
     </div>` : `
     <div class="decision-row"><span class="status-pill st-${s.status}">${
       s.status==="approved"?"✓ 승인 — 배포가능":"✗ 반려"}</span>
-      <span style="font-size:12.5px;color:var(--muted)">${esc(s.decided_by||"")} · ${esc(s.decided_at||"")}
+      <span style="font-size:12px;color:var(--muted)">${esc(s.decided_by||"")} · ${esc(s.decided_at||"")}
       ${s.decision_comment?` · "${esc(s.decision_comment)}"`:""}</span>
       ${s.status==="approved" ? `<button class="btn primary" style="margin-left:auto" onclick="translateSub(${s.id})">🌏 영문 버전 생성 + 재심의</button>` : ""}
     </div>`;
@@ -688,8 +763,8 @@ function renderSubDetail(s){
 
   $("subDetail").innerHTML = `
     <h2>#A-${s.id} ${esc(s.title)}
-      <span class="right" style="font-size:13px;font-weight:600">AI 1차심의: ${rep.grade_emoji} ${rep.score}/100 ${rep.grade_label}</span></h2>
-    <div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">
+      <span class="right" style="font-size:12.5px;font-weight:600">AI 1차심의: ${rep.grade_emoji} ${rep.score}/100 ${rep.grade_label}</span></h2>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">
       유형 ${esc(rep.content_type_label)} · 제출 ${esc(s.submitter)} · ${esc(s.created_at)}</div>
     <div class="doc-text">${esc(s.text)}</div>
     <h2 style="margin-top:14px">AI 지적 사항</h2>
