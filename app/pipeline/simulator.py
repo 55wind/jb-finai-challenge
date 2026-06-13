@@ -76,38 +76,29 @@ def _fallback_persona(persona: dict, rule_findings: list[dict]) -> dict:
     }
 
 
-_SYSTEM_ROLEPLAY = """당신은 아래 프로필의 실제 한국 금융소비자입니다. 금융 전문가가 아닙니다.
-광고가 외국어로 되어 있으면 그 언어를 이해하는 소비자로서 읽으세요(이해/오해 서술은 한국어로).
-주어진 광고를 그 사람의 눈으로 읽고, 반드시 JSON으로만 답하세요. 스키마:
+# 역할극 + 오해 판정을 1콜로 병합 (지연 절반). 페르소나가 1인칭으로 읽으면서
+# 자신의 믿음 중 실제 조건·규제상 암시 금지에 어긋나는 '오해'를 스스로 식별한다.
+_SYSTEM_PERSONA = """당신은 아래 프로필의 실제 한국 금융소비자입니다. 금융 전문가가 아닙니다.
+광고가 외국어면 그 언어를 이해하는 소비자로서 읽으세요(서술은 한국어로).
+광고를 1인칭으로 읽고, 당신이 믿게 된 것 중 ⓐ상품의 실제 조건 또는
+ⓑ규제상 암시 금지 항목(원금보장·확정수익·무심사 대출 등)과 어긋나는 '오해'를 스스로 식별하세요.
+실제 조건과 일치하는 올바른 이해는 misunderstandings에 넣지 마세요. 오해가 없으면 빈 배열.
+프로필의 금융이해도를 벗어난 전문적 해석을 하지 마세요.
+반드시 JSON으로만 답하세요. 스키마:
 {"understanding": "광고에서 이해한 내용(1인칭, 2문장 이내)",
  "action": "이 광고를 보고 할 행동(1인칭, 1문장)",
- "expectations": ["기대하거나 믿게 된 것들(각 1문장)"]}
-프로필의 금융이해도를 벗어난 전문적 해석을 하지 마세요."""
-
-_SYSTEM_JUDGE = """당신은 금융소비자보호 심의역입니다. 소비자의 '이해'를 ⓐ상품의 실제 조건과
-ⓑ규제상 암시 금지 항목(원금보장·확정수익·무심사 대출 등)과 대조하여 '오해'를 판정합니다.
-반드시 JSON으로만 답하세요. 스키마:
-{"misunderstandings": [{"text": "오해 내용", "risk": "high|medium",
-  "trigger_phrase": "오해를 유발한 광고 원문 문구", "category": "guarantee|assertive|rate|notice|superlative"}]}
-실제 조건과 일치하는 올바른 이해는 포함하지 마세요. 오해가 없으면 빈 배열."""
+ "misunderstandings": [{"text": "오해 내용", "risk": "high|medium",
+   "trigger_phrase": "오해를 유발한 광고 원문 문구", "category": "guarantee|assertive|rate|notice|superlative"}]}"""
 
 
 async def _llm_persona(persona: dict, text: str, product_facts: str, rule_findings: list[dict]) -> dict:
-    reading = await llm_client.chat_json(
-        _SYSTEM_ROLEPLAY,
-        f"[당신의 프로필]\n{persona['profile']}\n\n[광고]\n{text}",
-    )
-    if not isinstance(reading, dict) or "understanding" not in reading:
+    user = (f"[당신의 프로필]\n{persona['profile']}\n\n[광고]\n{text}\n\n"
+            f"[상품의 실제 조건] {product_facts or '(미입력 — 규제상 암시 금지 항목 기준으로만 판정)'}")
+    out = await llm_client.chat_json(_SYSTEM_PERSONA, user)
+    if not isinstance(out, dict) or "understanding" not in out:
         return _fallback_persona(persona, rule_findings)
 
-    judge_user = f"""[소비자 프로필] {persona['profile']}
-[소비자의 이해] {reading.get('understanding','')}
-[소비자의 기대] {json.dumps(reading.get('expectations', []), ensure_ascii=False)}
-[광고 원문] {text}
-[상품의 실제 조건] {product_facts or '(미입력 — 규제상 암시 금지 항목 기준으로만 판정)'}"""
-    judged = await llm_client.chat_json(_SYSTEM_JUDGE, judge_user)
-    mis = judged.get("misunderstandings", []) if isinstance(judged, dict) else []
-
+    mis = out.get("misunderstandings") if isinstance(out.get("misunderstandings"), list) else []
     cleaned = []
     for m in mis:
         if not isinstance(m, dict) or not m.get("text"):
@@ -124,8 +115,8 @@ async def _llm_persona(persona: dict, text: str, product_facts: str, rule_findin
         "persona_id": persona["id"],
         "emoji": persona["emoji"],
         "name": persona["name"],
-        "understanding": reading.get("understanding", ""),
-        "action": reading.get("action", ""),
+        "understanding": out.get("understanding", ""),
+        "action": out.get("action", ""),
         "misunderstandings": cleaned,
         "safe": len(cleaned) == 0,
         "engine": "llm",
