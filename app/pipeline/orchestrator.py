@@ -13,6 +13,9 @@ from .rules_engine import run_rules
 
 MIN_TEXT_LEN = 8
 AUTOPILOT_MAX_ITER = 4
+# 7B 로컬 모델이 한국어·영어 대비 신뢰도가 낮은 저자원 언어 — LLM 출력을 참고로만,
+# 룰엔진(언어별 룰셋)을 권위로 두고 사람 검토를 권장한다.
+LOW_CONFIDENCE_LANGS = {"vi", "zh", "ja"}
 
 # 내부 심의기준(내규) 로더 — 앱 기동 시 store에서 활성 내규를 읽도록 주입(main.py).
 # 기본은 빈 리스트라 파이프라인이 저장소와 분리되고 테스트가 결정적으로 유지된다.
@@ -61,6 +64,16 @@ async def run_review(text: str, content_type: str | None = None, language: str =
                             retrieval, rule_findings, llm_review, simulation)
     result["skipped"] = False
     result["quick"] = quick
+    # 다국어 신뢰도 방어: 저자원 언어는 LLM 출력을 참고로 표기하고 사람 검토 권장.
+    # 결정적 룰엔진(언어별 룰셋)이 판정 권위를 가지므로 환각이 등급을 좌우하지 못한다.
+    if language in LOW_CONFIDENCE_LANGS:
+        result["language_confidence"] = "low"
+        result["language_note"] = (
+            "다국어 베타 — 비-한/영 언어는 로컬 7B 모델의 뉘앙스 판정 신뢰도가 낮을 수 있어 "
+            "AI 심의·시뮬레이터는 참고용입니다. 룰엔진(언어별 룰셋)이 판정 권위를 가지며, "
+            "게시 전 사람 검토 또는 한국어 원본 대조(KO 피벗)를 권장합니다.")
+    else:
+        result["language_confidence"] = "high"
     return result
 
 

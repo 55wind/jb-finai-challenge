@@ -128,6 +128,12 @@ def add_comment(sid: int, actor: str, comment: str) -> None:
         log(conn, sid, actor, "comment", comment)
 
 
+def log_distribution(sid: int, results: list[dict]) -> None:
+    labels = ", ".join(r["label"] for r in results)
+    with _conn() as conn:
+        log(conn, sid, "배포시스템", "distribute", f"마케팅 채널 자동 배포: {labels or '(없음)'}")
+
+
 def save_translation(sid: int, target_lang: str, text: str, engine: str, report: dict, actor: str) -> None:
     with _conn() as conn:
         conn.execute(
@@ -176,6 +182,18 @@ def set_internal_rule_active(rule_id: int, active: bool) -> None:
 def delete_internal_rule(rule_id: int) -> None:
     with _conn() as conn:
         conn.execute("DELETE FROM internal_rules WHERE id=?", (rule_id,))
+
+
+def count_submissions_by_types(types: list[str]) -> int:
+    """규제 영향분석 — 해당 콘텐츠 유형의 제출 건수 (common이면 전체)."""
+    if not types:
+        return 0
+    with _conn() as conn:
+        if "common" in types:
+            return conn.execute("SELECT COUNT(*) FROM submissions").fetchone()[0]
+        marks = ",".join("?" * len(types))
+        return conn.execute(f"SELECT COUNT(*) FROM submissions WHERE content_type IN ({marks})",
+                            types).fetchone()[0]
 
 
 def audit_trail(submission_id: int | None = None) -> list[dict]:

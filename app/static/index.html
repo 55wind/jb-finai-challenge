@@ -382,6 +382,8 @@
   .ir-chip button{border:none; background:none; color:#9a8fc4; cursor:pointer; font-size:13px; line-height:1; padding:0;}
   .btn.internal{background:#fff; border:1px solid #c9bdf0; color:#5b3bbf; font-weight:700;}
   .btn.internal:hover{background:#f6f2ff;}
+  .lang-banner{font-size:11.5px; line-height:1.5; color:#9a6c00; background:#fff7e6; border:1px solid #f0d99a;
+    border-radius:9px; padding:9px 11px; margin-bottom:12px;}
 </style>
 </head>
 <body>
@@ -445,6 +447,7 @@
                 <option value="ja">日本語</option>
               </select>
               <button class="btn small internal" onclick="openInternalRules()">📋 내부 심의기준</button>
+              <button class="btn small internal" onclick="openRegwatch()">🛰 규제 모니터</button>
               <button class="btn small" onclick="runReview()">재심의</button>
             </div>
           </div>
@@ -461,6 +464,11 @@
             <span id="typeInfo"></span>
             <details class="facts" style="margin-left:auto; margin-top:0;">
               <summary>상품 실제 조건 (선택)</summary>
+              <div style="margin:6px 0">
+                <select id="prodSelect" onchange="loadProduct(this.value)" style="font-size:11.5px">
+                  <option value="">📦 상품 DB에서 불러오기 (코어뱅킹 연동)…</option>
+                </select>
+              </div>
               <textarea id="productFacts" placeholder="예: 기본금리 연 3.0%(세전), 우대 시 최대 연 5.0%. 중도해지 시 중도해지이율 적용. 예금자보호 5천만원."></textarea>
             </details>
           </div>
@@ -471,6 +479,8 @@
             <div class="rs-top"><span class="rs-label">준법 점수</span><span class="scoreval" id="scoreVal">— / 100</span></div>
             <div class="gauge"><div id="gaugeFill"></div></div>
           </div>
+
+          <div class="lang-banner" id="langBanner" style="display:none"></div>
 
           <!-- ★ 헤드라인: 소비자 오인 시뮬레이터 (이 제품의 핵심 차별점) -->
           <section class="hero-sim" id="simSec">
@@ -560,6 +570,20 @@
   </div>
 </div>
 
+<div class="ap-overlay" id="rwOverlay">
+  <div class="ap-card">
+    <h3>🛰 규제 모니터 — 자동 추적</h3>
+    <div class="ap-sub">외부 규제 피드(법제처·금융위)에서 신규·개정 고시를 감지해 <b>영향 콘텐츠</b>를 분석하고 <b>룰을 자동 제안</b>합니다. 적용은 사람이 승인합니다.</div>
+    <div class="ap-actions" style="justify-content:flex-start">
+      <button class="btn small autopilot" id="rwScanBtn" onclick="scanRegwatch()">🔍 규제 변경 감지</button>
+    </div>
+    <ul class="ir-preview" id="rwResult" style="max-height:46vh"></ul>
+    <div class="ap-actions" style="margin-top:14px">
+      <button class="btn small" onclick="$('rwOverlay').classList.remove('show')">닫기</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => (s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -600,6 +624,24 @@ function useFixture(i){
   $("subTitle").value = f.name || "";
   syncBackdrop(true);
   runReview(true);   // 빠른 검사 즉시 → LLM 보강
+}
+
+/* ── 상품 DB 조회 (코어뱅킹 연동) ── */
+async function loadProducts(){
+  try{
+    const r = await api("/api/products");
+    $("prodSelect").innerHTML = `<option value="">📦 상품 DB에서 불러오기 (코어뱅킹 연동)…</option>` +
+      (r.products||[]).map(p=>`<option value="${p.code}">${esc(p.code)} · ${esc(p.name)}</option>`).join("");
+  }catch{}
+}
+async function loadProduct(code){
+  if(!code) return;
+  const p = await api("/api/products/"+code);
+  $("productFacts").value = p.facts;
+  if(p.content_type) $("selType").value = p.content_type;
+  $("productFacts").closest("details").open = true;
+  toast(`상품조건 자동 주입: ${p.name}`);
+  runReview(false);
 }
 
 /* 첫 로드 시 메인 데모를 자동으로 띄워 헤드라인 시뮬레이터 첫인상 강화 */
@@ -773,6 +815,9 @@ function updateStatusbar(rep){
 }
 
 function render(rep){
+  /* 다국어 신뢰도 배너 */
+  if(rep.language_confidence === "low"){ $("langBanner").style.display=""; $("langBanner").textContent = "⚠ " + rep.language_note; }
+  else $("langBanner").style.display="none";
   /* 점수 */
   $("scoreVal").textContent = `${rep.score} / 100 · ${rep.grade_label}`;
   $("scoreVal").className = "scoreval grade-" + rep.grade;
@@ -1014,6 +1059,39 @@ async function deleteInternalRule(id){
   if(state.report && !state.report.skipped) runReview();
 }
 
+/* ── 규제 자동 추적 ── */
+function openRegwatch(){ $("rwOverlay").classList.add("show"); $("rwResult").innerHTML=""; }
+async function scanRegwatch(){
+  $("rwScanBtn").disabled=true; $("rwScanBtn").textContent="감지 중…";
+  try{
+    const r = await api("/api/regwatch/scan", { method:"POST" });
+    const changes = r.changes || [];
+    $("rwResult").innerHTML = changes.map((c,ci)=>{
+      const reg = c.regulation;
+      const rules = c.proposed_rules.map((rl,ri)=>`
+        <div class="ir-row" style="margin-top:6px">
+          <span class="k ${rl.kind}">${rl.kind==="forbidden"?"금지":"필수"}</span>
+          <div style="flex:1"><div class="nm">${esc(rl.name)}</div><div class="ms">${esc(rl.message)}</div></div>
+          <button class="btn small primary" onclick='applyRegRule(${JSON.stringify(rl).replace(/'/g,"&#39;")})'>룰 적용</button>
+        </div>`).join("");
+      return `<li class="ir-row" style="flex-direction:column;align-items:stretch">
+        <div><span class="src-internal" style="background:#0a66c2">${esc(c.status)}</span>
+          <b>${esc(reg.law)} ${esc(reg.article)}</b></div>
+        <div class="ms" style="margin-top:3px">${esc(reg.title)} · 시행 ${esc(reg.effective_date)}</div>
+        <div class="ms" style="margin-top:3px;color:#b1003e">⚠ 영향 콘텐츠 ${c.affected_count}건 (${c.impact_types.join(", ")})</div>
+        <div style="font-size:11.5px;font-weight:700;margin-top:7px">제안 룰</div>
+        ${rules}
+      </li>`;
+    }).join("") || `<li class="ir-row">감지된 규제 변경이 없습니다.</li>`;
+  }catch(e){ toast("오류: "+e.message); }
+  finally{ $("rwScanBtn").disabled=false; $("rwScanBtn").textContent="🔍 규제 변경 감지"; }
+}
+async function applyRegRule(rule){
+  await api("/api/internal-rules", { method:"POST", body: JSON.stringify({ rules:[rule], source_text:"규제 자동추적 제안" })});
+  toast("제안 룰을 적용했습니다 · 이후 심의에 반영");
+  if(state.report && !state.report.skipped) runReview();
+}
+
 /* ── 검토 전송 (F8 진입) ── */
 async function sendForApproval(){
   if(!state.report || state.report.skipped) return;
@@ -1082,7 +1160,16 @@ function renderSubDetail(s){
       <span style="font-size:12px;color:var(--muted)">${esc(s.decided_by||"")} · ${esc(s.decided_at||"")}
       ${s.decision_comment?` · "${esc(s.decision_comment)}"`:""}</span>
       ${s.status==="approved" ? `<button class="btn primary" style="margin-left:auto" onclick="translateSub(${s.id})">🌏 영문 버전 생성 + 재심의</button>` : ""}
-    </div>`;
+    </div>` + (s.status==="approved" ? `
+    <div class="decision-row" style="flex-wrap:wrap; gap:10px; font-size:12.5px; margin-top:8px">
+      <span style="font-weight:700">📤 마케팅 채널 자동 연계:</span>
+      <label><input type="checkbox" class="dist-ch" value="push" checked> 앱푸시</label>
+      <label><input type="checkbox" class="dist-ch" value="sms" checked> SMS</label>
+      <label><input type="checkbox" class="dist-ch" value="email" checked> 이메일</label>
+      <label><input type="checkbox" class="dist-ch" value="sns"> SNS</label>
+      <label><input type="checkbox" class="dist-ch" value="crm"> CRM</label>
+      <button class="btn primary" style="margin-left:auto" onclick="distributeSub(${s.id})">채널로 자동 배포 →</button>
+    </div>` : "");
 
   const translations = (s.translations||[]).map(t=>{
     const tr = t.report;
@@ -1138,6 +1225,16 @@ async function decide(sid, action){
   }catch(e){ toast("오류: " + e.message); }
 }
 
+async function distributeSub(sid){
+  const channels = [...document.querySelectorAll(".dist-ch:checked")].map(c=>c.value);
+  if(!channels.length){ toast("배포할 채널을 선택하세요"); return; }
+  try{
+    const r = await api(`/api/submissions/${sid}/distribute`, { method:"POST", body: JSON.stringify({ channels })});
+    toast("마케팅 채널로 자동 배포: " + r.results.map(x=>x.label).join(", "));
+    loadSubmissions();
+  }catch(e){ toast("오류: " + e.message); }
+}
+
 async function translateSub(sid){
   toast("영문 버전 생성 + 재심의 중…");
   try{
@@ -1152,6 +1249,7 @@ async function translateSub(sid){
 (async function init(){
   await checkHealth();          // 엔진 모드 먼저 (LLM 보강 여부 판단)
   await loadFixtures();
+  loadProducts();
   loadSubmissions();
   autoLoadDemo();               // 메인 데모 자동 로드 → 첫인상
 })();

@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import store
-from .pipeline import internal_rules, llm_client, orchestrator
+from .pipeline import distribution, internal_rules, llm_client, orchestrator, product_db, regwatch
 
 app = FastAPI(title="JB 준법 코파일럿", version="0.1.0")
 
@@ -72,6 +72,10 @@ class DecisionRequest(BaseModel):
     action: str = Field(pattern="^(approve|reject|comment)$")
     actor: str = "준법관리자"
     comment: str = ""
+
+
+class DistributeRequest(BaseModel):
+    channels: list[str] = ["push", "sms", "email"]
 
 
 class TranslateRequest(BaseModel):
@@ -144,6 +148,48 @@ def internal_toggle(rule_id: int, active: bool = True):
 def internal_delete(rule_id: int):
     store.delete_internal_rule(rule_id)
     return {"rules": store.list_internal_rules()}
+
+
+# ── 규제 자동 추적 (F14) ───────────────────────────────────
+
+@app.post("/api/regwatch/scan")
+async def regwatch_scan():
+    """규제 피드 스캔 → 변경 감지 + 영향분석 + 룰 제안."""
+    return {"changes": await regwatch.scan(store.count_submissions_by_types)}
+
+
+# ── 마케팅 배포 Last-Mile (F15) ────────────────────────────
+
+@app.get("/api/dist/channels")
+def dist_channels():
+    return {"channels": [{"id": k, "label": v} for k, v in distribution.CHANNELS.items()]}
+
+
+@app.post("/api/submissions/{sid}/distribute")
+def distribute(sid: int, req: DistributeRequest):
+    sub = store.get_submission(sid)
+    if not sub:
+        raise HTTPException(404, "submission not found")
+    if sub["status"] != "approved":
+        raise HTTPException(409, "승인된 콘텐츠만 마케팅 채널로 배포할 수 있습니다 (휴먼인더루프).")
+    results = distribution.dispatch(req.channels, sub["title"], sub["text"])
+    store.log_distribution(sid, results)
+    return {"results": results, "submission": store.get_submission(sid)}
+
+
+# ── 상품 DB 조회 (F16) ─────────────────────────────────────
+
+@app.get("/api/products")
+def products():
+    return {"products": [{k: p[k] for k in ("code", "name", "content_type")} for p in product_db.load()]}
+
+
+@app.get("/api/products/{code}")
+def product_detail(code: str):
+    p = product_db.get(code)
+    if not p:
+        raise HTTPException(404, "product not found")
+    return p
 
 
 @app.post("/api/submissions")
