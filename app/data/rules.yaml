@@ -161,3 +161,204 @@ rules:
     message: 영문 버전에 예금자보호 안내 문구가 누락되었습니다.
     fix_append: "* Protected by the Depositor Protection Act (up to KRW 50 million per person including principal and interest, via KDIC)."
     suggestion: 예금자보호 안내 문구의 영문 번역을 추가하세요.
+
+  # ════════ 다국어 직접 심의 룰 (외국어 콘텐츠 이해·리스크 분류) ════════
+  # 외국어 광고를 한국 규제 기준으로 직접 심의. category→규제 매핑은 한국 조항과 동일.
+
+  # ── 영어(en) 추가 ──
+  - id: R-103
+    name: 단정·확정 표현 (EN)
+    kind: forbidden
+    types: [deposit, investment, loan]
+    languages: [en]
+    patterns:
+      - "(?i)fixed\\s+[0-9.]+\\s*%"
+      - "(?i)\\b(?:definitely|absolutely)\\b"
+      - "(?i)100\\s*%\\s*(?:return|profit|safe)"
+    severity: high
+    category: assertive
+    basis: FCPA-22-4
+    message: 단정적·확정적 표현(영문)으로 이익보장 오인을 유발합니다.
+    suggestion: "단정 표현을 조건부 표현('up to', 'before tax, subject to change')으로 수정하세요."
+
+  - id: R-104
+    name: 근거 없는 최상급 (EN)
+    kind: forbidden
+    types: [deposit, investment, loan]
+    languages: [en]
+    patterns:
+      - "(?i)\\b(?:best|highest|lowest|top)\\s+(?:rate|return|interest|yield)"
+      - "(?i)\\b(?:no\\.?\\s*1|number\\s*one)\\b"
+      - "(?i)industry'?s?\\s+(?:best|first|leading)"
+    severity: medium
+    category: superlative
+    basis: FAIRAD-3
+    message: 객관적 근거 없는 최상급 표현(영문)은 거짓·과장 광고 소지가 있습니다.
+    suggestion: 최상급 표현을 삭제하거나 객관적 근거를 병기하세요.
+
+  - id: R-105
+    name: 필수고지 누락 — 원금손실 (EN, 투자)
+    kind: required
+    types: [investment]
+    languages: [en]
+    requires_any:
+      - "(?i)(?:principal|capital)\\s+loss"
+      - "(?i)loss\\s+(?:may|can|could)\\s+occur"
+      - "(?i)not\\s+(?:FDIC|deposit)\\s+insured"
+    severity: high
+    category: notice
+    basis: CMA-57
+    message: 투자상품 영문 광고에 원금손실 가능성 고지가 누락되었습니다.
+    fix_append: "* Not a deposit-insured product; the value of investments may fall and any loss is borne by the investor."
+    suggestion: 원금손실 가능성 고지문(영문)을 추가하세요.
+
+  # ── 베트남어(vi) ──
+  - id: R-201
+    name: 보장성·단정 표현 (VI)
+    kind: forbidden
+    types: [deposit, investment, loan]
+    languages: [vi]
+    patterns:
+      - "(?i)đảm\\s*bảo"
+      - "(?i)bảo\\s*toàn\\s*vốn"
+      - "(?i)không\\s*(?:có\\s*)?rủi\\s*ro"
+      - "(?i)an\\s*toàn\\s*tuyệt\\s*đối"
+      - "(?i)cam\\s*kết\\s*(?:lợi\\s*nhuận|sinh\\s*lời)"
+      - "(?i)lãi\\s*suất\\s*cố\\s*định"
+    severity: high
+    category: guarantee
+    basis: FCPA-22-3
+    message: 보장성·단정 표현(베트남어)으로 원금보장·이익보장 오인을 유발합니다.
+    suggestion: "보장성 표현(đảm bảo, cam kết, bảo toàn vốn 등)을 제거하고 조건부 표현으로 수정하세요."
+
+  - id: R-202
+    name: 근거 없는 최상급 (VI)
+    kind: forbidden
+    types: [deposit, investment, loan]
+    languages: [vi]
+    patterns:
+      - "(?i)tốt\\s*nhất"
+      - "(?i)số\\s*1"
+      - "(?i)(?:thấp|cao)\\s*nhất"
+    severity: medium
+    category: superlative
+    basis: FAIRAD-3
+    message: 객관적 근거 없는 최상급 표현(베트남어)입니다.
+    suggestion: 최상급 표현을 삭제하거나 근거를 병기하세요.
+
+  - id: R-203
+    name: 필수고지 누락 — 예금자보호 (VI, 예금)
+    kind: required
+    types: [deposit]
+    languages: [vi]
+    requires_any:
+      - "(?i)bảo\\s*hiểm\\s*tiền\\s*gửi"
+    severity: medium
+    category: notice
+    basis: KFB-AD-DEP
+    message: 예금 광고(베트남어)에 예금자보호 안내가 누락되었습니다.
+    fix_append: "* Được bảo vệ theo Luật Bảo vệ Người gửi tiền (tối đa 50 triệu KRW mỗi người, gồm gốc và lãi)."
+    suggestion: 예금자보호 안내 문구(베트남어)를 추가하세요.
+
+  # ── 중국어(zh) ──
+  - id: R-301
+    name: 보장성·단정 표현 (ZH)
+    kind: forbidden
+    types: [deposit, investment, loan]
+    languages: [zh]
+    patterns:
+      - "保证"
+      - "保本"
+      - "确定收益"
+      - "无风险"
+      - "零风险"
+      - "100\\s*%\\s*安全"
+      - "稳赚"
+      - "必定"
+    severity: high
+    category: guarantee
+    basis: FCPA-22-3
+    message: 보장성·단정 표현(중국어)으로 원금보장·이익보장 오인을 유발합니다.
+    suggestion: "보장성 표현(保证, 保本, 无风险 등)을 제거하고 조건부 표현으로 수정하세요."
+
+  - id: R-302
+    name: 근거 없는 최상급 (ZH)
+    kind: forbidden
+    types: [deposit, investment, loan]
+    languages: [zh]
+    patterns:
+      - "最高"
+      - "最低利率"
+      - "业界第一"
+      - "第一"
+      - "唯一"
+    severity: medium
+    category: superlative
+    basis: FAIRAD-3
+    message: 객관적 근거 없는 최상급 표현(중국어)입니다.
+    suggestion: 최상급 표현을 삭제하거나 근거를 병기하세요.
+
+  - id: R-303
+    name: 필수고지 누락 — 예금자보호 (ZH, 예금)
+    kind: required
+    types: [deposit]
+    languages: [zh]
+    requires_any:
+      - "存款保险"
+      - "存款保护"
+    severity: medium
+    category: notice
+    basis: KFB-AD-DEP
+    message: 예금 광고(중국어)에 예금자보호 안내가 누락되었습니다.
+    fix_append: "* 根据《存款人保护法》，每人最高保护5千万韩元（含本金及利息）。"
+    suggestion: 예금자보호 안내 문구(중국어)를 추가하세요.
+
+  # ── 일본어(ja) ──
+  - id: R-401
+    name: 보장성·단정 표현 (JA)
+    kind: forbidden
+    types: [deposit, investment, loan]
+    languages: [ja]
+    patterns:
+      - "元本保証"
+      - "保証"
+      - "リスク(?:なし|ゼロ)"
+      - "絶対(?:安全|安心)"
+      - "確実"
+      - "必ず(?:儲か|得|増)"
+    severity: high
+    category: guarantee
+    basis: FCPA-22-3
+    message: 보장성·단정 표현(일본어)으로 원금보장·이익보장 오인을 유발합니다.
+    suggestion: "보장성 표현(元本保証, 確実 등)을 제거하고 조건부 표현으로 수정하세요."
+
+  - id: R-402
+    name: 근거 없는 최상급 (JA)
+    kind: forbidden
+    types: [deposit, investment, loan]
+    languages: [ja]
+    patterns:
+      - "業界(?:最高|一|No\\.?\\s*1)"
+      - "最高金利"
+      - "最低金利"
+      - "唯一"
+    severity: medium
+    category: superlative
+    basis: FAIRAD-3
+    message: 객관적 근거 없는 최상급 표현(일본어)입니다.
+    suggestion: 최상급 표현을 삭제하거나 근거를 병기하세요.
+
+  - id: R-403
+    name: 필수고지 누락 — 예금자보호 (JA, 예금)
+    kind: required
+    types: [deposit]
+    languages: [ja]
+    requires_any:
+      - "預金保険"
+      - "預金者保護"
+    severity: medium
+    category: notice
+    basis: KFB-AD-DEP
+    message: 예금 광고(일본어)에 예금자보호 안내가 누락되었습니다.
+    fix_append: "※ 預金者保護法により、1人あたり元本と利息を合わせて最高5千万ウォンまで保護されます。"
+    suggestion: 예금자보호 안내 문구(일본어)를 추가하세요.

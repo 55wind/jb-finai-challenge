@@ -77,6 +77,7 @@ def _fallback_persona(persona: dict, rule_findings: list[dict]) -> dict:
 
 
 _SYSTEM_ROLEPLAY = """당신은 아래 프로필의 실제 한국 금융소비자입니다. 금융 전문가가 아닙니다.
+광고가 외국어로 되어 있으면 그 언어를 이해하는 소비자로서 읽으세요(이해/오해 서술은 한국어로).
 주어진 광고를 그 사람의 눈으로 읽고, 반드시 JSON으로만 답하세요. 스키마:
 {"understanding": "광고에서 이해한 내용(1인칭, 2문장 이내)",
  "action": "이 광고를 보고 할 행동(1인칭, 1문장)",

@@ -53,5 +53,38 @@
     "expected_rule_ids": ["R-101", "R-102"],
     "expected_type": "deposit",
     "expected_grade": "danger"
+  },
+  {
+    "id": "FX-06",
+    "name": "베트남어 — 예금 보장성 (다국어)",
+    "language": "vi",
+    "content_type": "deposit",
+    "text": "Gửi tiết kiệm JB — lãi suất 5%/năm, đảm bảo bảo toàn vốn, an toàn tuyệt đối cho tương lai của bạn!",
+    "product_facts": "JB 안심정기예금 베트남어 버전. 기본 3.0%(세전), 우대 시 최대 5.0%(세전). 예금자보호 5천만원.",
+    "expected_rule_ids": ["R-201", "R-203"],
+    "expected_type": "deposit",
+    "expected_grade": "danger"
+  },
+  {
+    "id": "FX-07",
+    "name": "중국어 — 예금 보장성 (다국어)",
+    "language": "zh",
+    "content_type": "deposit",
+    "text": "JB存款 — 年利率5%，保证保本，无风险，安心存款！",
+    "product_facts": "JB 안심정기예금 중국어 버전. 기본 3.0%(세전), 우대 시 최대 5.0%(세전). 예금자보호 5천만원.",
+    "expected_rule_ids": ["R-301", "R-303"],
+    "expected_type": "deposit",
+    "expected_grade": "danger"
+  },
+  {
+    "id": "FX-08",
+    "name": "일본어 — 예금 보장성 (다국어)",
+    "language": "ja",
+    "content_type": "deposit",
+    "text": "JB預金 — 年利5%、元本保証、リスクなしで安心の預金！",
+    "product_facts": "JB 안심정기예금 일본어 버전. 기본 3.0%(세전), 우대 시 최대 5.0%(세전). 예금자보호 5천만원.",
+    "expected_rule_ids": ["R-401", "R-403"],
+    "expected_type": "deposit",
+    "expected_grade": "danger"
   }
 ]
