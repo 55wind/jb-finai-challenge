@@ -130,6 +130,32 @@ def _strip_residual_high(text: str, rule_findings: list[dict]) -> tuple[str, lis
     return text, changes
 
 
+def _dedup_disclosures(text: str) -> str:
+    """중복된 예금자보호/예금손실 고지문을 하나로 정리 (룰 append + LLM 추가 중복 방지).
+
+    같은 종류의 고지가 둘 이상이면 가장 완전한(긴) 것 하나만 남긴다.
+    """
+    lines = text.split("\n")
+    kept_disc: dict[str, int] = {}   # 종류 → out 인덱스
+    out: list[str] = []
+    for ln in lines:
+        kind = None
+        if ("예금보험공사" in ln or "예금자보호" in ln) and "보호" in ln:
+            kind = "deposit_protection"
+        elif "원금" in ln and ("손실" in ln or "귀속" in ln):
+            kind = "principal_loss"
+        if kind:
+            if kind in kept_disc:
+                # 더 완전한(긴) 고지면 교체, 아니면 버림
+                idx = kept_disc[kind]
+                if len(ln.strip()) > len(out[idx].strip()):
+                    out[idx] = ln
+                continue
+            kept_disc[kind] = len(out)
+        out.append(ln)
+    return "\n".join(out)
+
+
 def _summary(report_: dict, text: str) -> dict:
     return {"score": report_["score"], "grade": report_["grade"],
             "grade_label": report_["grade_label"], "grade_emoji": report_["grade_emoji"],
@@ -179,7 +205,7 @@ async def autopilot(text: str, content_type: str | None = None, language: str = 
 
         iterations[-1]["changes"] = _rule_fix_changes(report_["rule_findings"]) + strip_changes + rem["changes"]
 
-        nxt = rem["text"].strip()
+        nxt = _dedup_disclosures(rem["text"].strip())   # 중복 고지 정리
         if nxt == current:                       # 텍스트 불변 — 더 개선 불가
             stop_reason = "no_change"
             break

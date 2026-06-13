@@ -67,6 +67,24 @@ async def test_autopilot_clean_fixture_converges_immediately():
     assert len(res["iterations"]) == 1
 
 
+def test_dedup_disclosures_keeps_one():
+    txt = ("연 5% 안심예금.\n"
+           "※ 이 예금은 예금보험공사가 1인당 최고 5천만원까지 보호합니다.\n"
+           "※ 이 예금은 예금자보호법에 따라 예금보험공사가 1인당(원금과 이자를 합하여) 최고 5천만원까지 보호합니다.")
+    out = orchestrator._dedup_disclosures(txt)
+    assert out.count("5천만원") == 1, "예금자보호 고지는 하나만 남아야 함"
+    assert "예금자보호법에 따라" in out, "더 완전한 고지가 유지되어야 함"
+
+
+@pytest.mark.anyio
+async def test_autopilot_no_duplicate_disclosure():
+    fx = FIXTURES["FX-01"]
+    res = await orchestrator.autopilot(fx["text"], fx["content_type"], product_facts=fx["product_facts"])
+    final = res["final"]["text"]
+    # 예금자보호 고지문(예금보험공사+5천만원)이 두 번 이상 들어가면 안 됨
+    assert final.count("예금보험공사") <= 1, f"중복 고지: {final}"
+
+
 @pytest.mark.anyio
 async def test_autopilot_trace_has_changes_and_basis():
     """회차 trace는 무엇을·왜 고쳤는지(근거) 담아야 함 — 설명가능성."""
