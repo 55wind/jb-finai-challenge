@@ -127,6 +127,9 @@ ollama serve          # http://localhost:11434 에서 대기</code></pre>
     <tr><td>콘텐츠 초안 (좌)</td><td>초안 입력 에디터. 위험 문구가 자동 밑줄 표시됩니다(빨강=위반, 노랑=주의). 유형(자동분류/예금/투자/대출)과 언어(한국어/English)를 선택할 수 있습니다.</td></tr>
     <tr><td>📋 픽스처 버튼</td><td>데모용 샘플 광고 5종을 원클릭 입력 (위반 4종 + 통과 1종)</td></tr>
     <tr><td>📋 내부 심의기준 버튼</td><td>자연어 내규를 AI가 룰로 변환해 법규와 함께 적용 (비개발자용 · 〔내규〕 배지로 구분)</td></tr>
+    <tr><td>🛰 규제 모니터 버튼</td><td>규제 피드 변경 감지 → 영향 콘텐츠 분석 → 룰 자동 제안 → [룰 적용](사람 승인)</td></tr>
+    <tr><td>📦 상품 DB 불러오기</td><td>'상품 실제 조건' 패널에서 상품코드 선택 → 전체 상품조건 자동 주입 (코어뱅킹 연동 슬롯)</td></tr>
+    <tr><td>📤 마케팅 배포 (승인 뷰)</td><td>승인된 콘텐츠 → 채널(푸시·SMS·이메일·SNS·CRM) 선택 후 자동 연계 + 감사로그. 미승인은 차단</td></tr>
     <tr><td>상품 실제 조건</td><td>(선택) 접이식 입력란. 오인 시뮬레이터가 소비자의 '이해'를 실제 조건과 대조할 때 사용</td></tr>
     <tr><td>⚖ 검토 결과 (우, 시뮬레이터 아래)</td><td>위반/주의 건수, 지적별 [룰명] + 문제 문구 + 설명 + 📖 규제 근거(출처 링크) + 수정안 [적용] 버튼. 하단에 RAG가 검색한 규제 근거 목록</td></tr>
     <tr><td>🚀 준법 통과까지 자동 개선</td><td>(자율 에이전트) 위반 초안을 심의→고쳐쓰기→재심의로 🟢통과/종료조건까지 자동 반복. 점수가 차오르는 회차별 수정 내역과 규제 근거가 오버레이로 표시되며, 결과는 사람 승인을 위해 바로 검토로 전송할 수 있습니다.</td></tr>
@@ -175,7 +178,7 @@ ollama serve          # http://localhost:11434 에서 대기</code></pre>
     <tr><td><code>tests/test_autopilot.py</code></td><td>준법 오토파일럿 — 위반 초안 점수 단조 개선·종료조건 보장(무한루프 방지)·합격 무결성(룰엔진 기준만 통과)·폴백 모드 동작</td></tr>
   </tbody>
 </table>
-<p style="font-size:13px;color:var(--muted,#5b6470)">총 38개 테스트 통과 (LLM 폴백 모드로 고정해 결정적).</p>
+<p style="font-size:13px;color:var(--muted,#5b6470)">총 52개 테스트 통과 (LLM 폴백 모드로 고정해 결정적). 내규 변환·규제 추적·배포·상품DB·다국어 신뢰도 포함.</p>
 
 <h2><span class="num">7</span>API 레퍼런스</h2>
 <p>모든 응답은 JSON이며, 자동 문서는 <code>http://localhost:8000/docs</code> (Swagger UI)에서 확인할 수 있습니다.</p>
@@ -192,6 +195,10 @@ ollama serve          # http://localhost:11434 에서 대기</code></pre>
     <tr><td><code>POST /api/submissions/{id}/decision</code></td><td><code>{action: approve|reject|comment, actor, comment}</code></td></tr>
     <tr><td><code>POST /api/submissions/{id}/translate</code></td><td>승인본의 타깃언어 생성 + 재심의 (승인 상태에서만 허용)</td></tr>
     <tr><td><code>GET /api/audit?submission_id=</code></td><td>감사로그 조회</td></tr>
+    <tr><td><code>POST /api/internal-rules/extract · POST/GET /api/internal-rules</code></td><td>내규 자연어→룰 변환·저장·조회 (F13)</td></tr>
+    <tr><td><code>POST /api/regwatch/scan</code></td><td>규제 변경 감지 + 영향분석 + 룰 제안 (F14)</td></tr>
+    <tr><td><code>POST /api/submissions/{id}/distribute</code></td><td>승인 콘텐츠 마케팅 채널 배포 (F15, 미승인 409)</td></tr>
+    <tr><td><code>GET /api/products[/{code}]</code></td><td>상품 카탈로그/상세(조건) 조회 (F16)</td></tr>
   </tbody>
 </table>
 
