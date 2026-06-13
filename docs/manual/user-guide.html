@@ -65,7 +65,7 @@
   <div class="kicker">JB금융그룹 Fin:AI Challenge · Compliance AI · 사용자 문서</div>
   <h1>JB 준법 코파일럿 — 사용 설명서</h1>
   <div class="sub">소비자 오인 방지 중심 준법자문 AI Agent · 설치 / 화면 / 사용 시나리오</div>
-  <div class="meta">버전 0.1.0 (MVP) · 2026-06-11 · 함께 보기: 로직 설명서, 설계 문서</div>
+  <div class="meta">버전 0.1.1 (MVP) · 2026-06-13 · 함께 보기: 로직 설명서, 설계 문서</div>
 </header>
 
 <main>
@@ -128,6 +128,7 @@ ollama serve          # http://localhost:11434 에서 대기</code></pre>
     <tr><td>상품 실제 조건</td><td>(선택) 접이식 입력란. 오인 시뮬레이터가 소비자의 '이해'를 실제 조건과 대조할 때 사용</td></tr>
     <tr><td>⚖ 심의 결과 (우)</td><td>위반/주의 건수, 지적별 [룰명] + 문제 문구 + 설명 + 📖 규제 근거(출처 링크) + 수정안 [적용] 버튼. 하단에 RAG가 검색한 규제 근거 목록</td></tr>
     <tr><td>👥 오인 시뮬레이터 (하)</td><td>페르소나 3종 카드: 1인칭 이해("…안전한 예금이네") → 행동 → 🔴 위험 오해 + ⟵ 유발 문구 + 근거 조항. 우측 상단에 종합 오인 위험도</td></tr>
+    <tr><td>🚀 준법 통과까지 자동 개선</td><td>(자율 에이전트) 위반 초안을 심의→고쳐쓰기→재심의로 🟢통과/종료조건까지 자동 반복. 점수가 차오르는 회차별 수정 내역과 규제 근거가 오버레이로 표시되며, 결과는 사람 승인을 위해 바로 검토로 전송할 수 있습니다.</td></tr>
     <tr><td>검토로 전송</td><td>제목 입력 후 [준법관리자 검토로 전송 ▸] → 검토 대기열에 등록</td></tr>
   </tbody>
 </table>
@@ -153,7 +154,8 @@ ollama serve          # http://localhost:11434 에서 대기</code></pre>
   <li>결과 확인: 🔴 위험(52점), "확정 연 5%"·"원금 보장" 밑줄, 금소법 §22 등 근거 인용</li>
   <li>하단 오인 시뮬레이터: 👵 "원금 보장되는 안전한 예금이네" 등 페르소나별 위험 오해 + 유발 문구 확인</li>
   <li>우측 상단 <b>[수정안 전체 적용]</b> → 자동 재심의 → 🟢 통과(94점), before/after 효과 확인</li>
-  <li>제목 입력 → <b>[준법관리자 검토로 전송 ▸]</b> → 검토 탭에서 코멘트와 함께 <b>✓ 승인</b></li>
+  <li><b>(대안·헤드라인) [🚀 준법 통과까지 자동 개선]</b> → 점수 게이지가 🔴46→🟡82→🟢88로 자율 상승, 회차별 수정 내역(규제 근거 인용)이 쌓이며 통과까지 자동 진행 → 오버레이에서 바로 검토 전송. <i>수동 적용은 75에서 멈추지만 오토파일럿은 통과까지 갑니다.</i></li>
+  <li>제목 입력 → <b>[준법관리자 검토로 전송 ▸]</b> → 검토 탭에서 코멘트와 함께 <b>✓ 승인</b> (감사로그에 AI 자동개선과 사람 승인이 분리 기록됨)</li>
   <li>승인된 항목에서 <b>[🌏 영문 버전 생성 + 재심의]</b> → 직역에서 생긴 <code>guaranteed</code> 등 보장성 오역·예금자보호 고지 누락을 영문 룰셋이 검출하는 것 확인</li>
 </ol>
 <figure>
@@ -169,8 +171,10 @@ ollama serve          # http://localhost:11434 에서 대기</code></pre>
     <tr><td><code>tests/test_rules.py</code></td><td>TDD 정답셋 — 픽스처(알려진 위반) → 기대 룰 플래그 일치, span/수정안 구조</td></tr>
     <tr><td><code>tests/test_classifier.py</code></td><td>픽스처별 유형 분류 정확도</td></tr>
     <tr><td><code>tests/test_pipeline.py</code></td><td>통합 시나리오 — 등급 판정, 수정안 적용 후 점수 상승, 페르소나 오해 검출, 영문 오역 검출, 인용 제한, 초단문 스킵 (LLM 폴백 모드로 고정해 결정적)</td></tr>
+    <tr><td><code>tests/test_autopilot.py</code></td><td>준법 오토파일럿 — 위반 초안 점수 단조 개선·종료조건 보장(무한루프 방지)·합격 무결성(룰엔진 기준만 통과)·폴백 모드 동작</td></tr>
   </tbody>
 </table>
+<p style="font-size:13px;color:var(--muted,#5b6470)">총 38개 테스트 통과 (LLM 폴백 모드로 고정해 결정적).</p>
 
 <h2><span class="num">7</span>API 레퍼런스</h2>
 <p>모든 응답은 JSON이며, 자동 문서는 <code>http://localhost:8000/docs</code> (Swagger UI)에서 확인할 수 있습니다.</p>
@@ -181,6 +185,7 @@ ollama serve          # http://localhost:11434 에서 대기</code></pre>
     <tr><td><code>GET /api/fixtures</code></td><td>데모 픽스처 5종</td></tr>
     <tr><td><code>POST /api/review</code></td><td>심의 실행. body: <code>{text, content_type?, language?, product_facts?}</code> → 통합 리포트(점수·지적·시뮬레이션·근거·하이라이트)</td></tr>
     <tr><td><code>POST /api/apply-fixes</code></td><td>수정안 적용. body: <code>{text, fixes[]}</code> → 치환/고지문 추가된 텍스트</td></tr>
+    <tr><td><code>POST /api/autopilot</code></td><td>준법 오토파일럿 — 통과/종료조건까지 자율 개선. body: <code>{text, content_type?, language?, product_facts?, max_iter?}</code> → 회차별 trace(점수·등급·수정내역) + 수렴 여부·종료사유</td></tr>
     <tr><td><code>POST /api/submissions</code></td><td>검토 제출 (제목·제출자·본문·리포트)</td></tr>
     <tr><td><code>GET /api/submissions[/{id}]</code></td><td>제출 목록 / 상세(번역 포함)</td></tr>
     <tr><td><code>POST /api/submissions/{id}/decision</code></td><td><code>{action: approve|reject|comment, actor, comment}</code></td></tr>
@@ -205,7 +210,7 @@ ollama serve          # http://localhost:11434 에서 대기</code></pre>
 규제 코퍼스는 MVP용 큐레이션 서브셋이며, "JB 내부 심의 체크리스트"는 시연용 가상 데이터입니다. 실제 운영 적용 전 전체 규제·내규 코퍼스 구축과 준법부서 검증이 필요합니다.</div>
 
 </main>
-<footer>JB 준법 코파일럿 사용 설명서 v0.1.0 · 2026-06-11 · 함께 보기: 로직 설명서(logic-spec), 설계 문서(docs/superpowers/specs)</footer>
+<footer>JB 준법 코파일럿 사용 설명서 v0.1.1 · 2026-06-13 · 함께 보기: 로직 설명서(logic-spec), 설계 문서(docs/superpowers/specs)</footer>
 </div>
 </body>
 </html>
