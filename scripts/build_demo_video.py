@@ -96,9 +96,17 @@ def fit_canvas(path, crop=None, bg=(244, 246, 248)):
     return canvas
 
 
-def fit_top(pil, bg=(247, 249, 251)):
-    """이미지를 자막바 위 영역(1280x644)에 통째로 맞춰 배치 (다이어그램 안 가림)."""
-    im = pil.convert('RGB'); cw, ch = im.size
+def fit_top(pil, bg=(255, 255, 255)):
+    """이미지를 자막바 위 영역(1280x644)에 통째로 맞춰 배치 (다이어그램 안 가림).
+    투명 PNG는 흰색 배경에 합성한다(검정 합성 방지)."""
+    if pil.mode in ('RGBA', 'LA', 'P'):
+        pil = pil.convert('RGBA')
+        base = Image.new('RGB', pil.size, bg)
+        base.paste(pil, mask=pil.split()[-1])
+        im = base
+    else:
+        im = pil.convert('RGB')
+    cw, ch = im.size
     scale = min(W / cw, (H - 76) / ch)
     nw, nh = int(cw * scale), int(ch * scale)
     im = im.resize((nw, nh))
@@ -165,7 +173,7 @@ for kicker, big, desc, demo_img, sub in S:
 # ===== 마무리: AI Agent 구조 → 감사합니다 =====
 add(title_card('아키텍처', 'AI Agent 구조',
                '판단·행동·검증을 스스로 수행하는 온프레미스 AI Agent 파이프라인'), 4.5)
-add(sub_bar(fit_top(D('v_arch')),
+add(sub_bar(fit_top(Image.open(f'{R}/v_arch.png')),   # 알파 보존 → 흰색 배경 합성
             '사용자의 입력이 프론트엔드와 백엔드를 거쳐 AI Agent로 처리되고 그 결과가 DB와 외부 연동으로 이어지며, 모든 추론은 온프레미스의 Qwen2.5-7B로 수행되어 데이터가 내부망 밖으로 나가지 않습니다.',
             tag='● 시스템 아키텍처'), 8.0)
 add(title_card('Thank you', '감사합니다',
