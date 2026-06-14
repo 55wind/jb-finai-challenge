@@ -196,11 +196,25 @@ user:   [콘텐츠 유형] + [광고 초안]
     <tr><td>retries</td><td>1</td><td>고정 상수</td><td>JSON 파싱 실패는 드물어 1회 재시도로 회복 충분. 무한 재시도는 지연·자원 낭비 → 1회 실패 시 즉시 룰엔진 폴백이 더 안전.</td></tr>
     <tr><td>호출 타임아웃</td><td>120초</td><td><code>LLM_TIMEOUT</code></td><td>7B는 CPU 추론 시 수십 초 가능 → 넉넉히 120초. GPU면 훨씬 빠름. 초과 시 폴백으로 강등.</td></tr>
     <tr><td>헬스체크 타임아웃</td><td>2.0초</td><td>고정 상수</td><td>Ollama 생존 확인(<code>/api/tags</code>)은 즉답이어야 UX가 안 막힘 → 짧게. 미응답이면 폴백 모드로 판단.</td></tr>
+    <tr><td>num_ctx</td><td>모델 기본(4K)</td><td>미지정</td><td>한 콜의 입력 = 광고 본문 + RAG 4개 조항 + 룰 결과로 통상 1~2K 토큰 → 4K로 충분. 별도 지정 없이 모델 기본을 사용해 VRAM 예측을 단순화. 초장문 광고는 본선에서 상향 검토.</td></tr>
   </tbody>
 </table>
 
+<h3>5.5 Ollama 서빙·동시성 설정 — 값·근거 (운영 환경변수)</h3>
+<p>한 건의 정밀 심의에서 <b>④ LLM 심의와 ⑤ 오인 시뮬레이터가 <code>asyncio.gather</code>로 동시 호출</b>됩니다(시뮬레이터는 3개 페르소나를 1콜로 통합 — 과거 3콜에서 축소). 즉 <b>심의당 Ollama 동시 요청 ≈ 2건</b>. Ollama 기본값(<code>OLLAMA_NUM_PARALLEL</code> 자동=1~4, 환경 따라 1)에서는 두 콜이 직렬화되어 체감 지연이 2배가 될 수 있어, 아래를 <b>Ollama 서버 측</b>에 명시 권장합니다(앱이 아니라 <code>ollama serve</code> 프로세스의 환경변수).</p>
+<table>
+  <thead><tr><th>설정</th><th>권장값</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td><code>OLLAMA_NUM_PARALLEL</code></td><td>2 (여유 시 4)</td><td>심의당 동시 2콜(④∥⑤)을 직렬 대기 없이 처리하려면 최소 2. 4면 두 심의가 겹쳐도 흡수. 값↑ 만큼 KV캐시 VRAM이 슬롯 수에 비례해 증가하므로 무한정 올리지 않고 동시성 실측(2)에 맞춤.</td></tr>
+    <tr><td><code>OLLAMA_KEEP_ALIVE</code></td><td>-1 (업무시간 상주)</td><td>심의 사이 모델 언로드→재로드는 수 초 지연을 만듦. 준법 데스크는 업무시간 내내 호출되므로 상주(-1)가 유리. 야간 자원 회수가 필요하면 <code>30m</code>로 절충.</td></tr>
+    <tr><td><code>OLLAMA_MAX_LOADED_MODELS</code></td><td>1</td><td>본 서비스는 단일 모델(qwen2.5-7B)만 사용 → 1로 고정하면 VRAM 사용이 예측 가능하고 모델 스왑 지연이 사라짐.</td></tr>
+    <tr><td>GPU / VRAM 사이징</td><td>8GB 이상(권장 12GB)</td><td>qwen2.5-7B-Q4_K_M 가중치 ≈ 4.7GB + KV캐시(num_ctx·NUM_PARALLEL 비례). num_ctx 4K·parallel 2 기준 <b>8GB에서 쾌적</b>, parallel 4·동시 심의 여유는 12GB. CPU-only도 동작하나 콜당 수십 초 → 120초 타임아웃이 이를 흡수하고 미초과 시 결과 반영, 초과 시 폴백.</td></tr>
+  </tbody>
+</table>
+<p><b>설계상 완충</b>: 위 튜닝이 없어도 서비스는 멈추지 않습니다 — ① 작성 중에는 룰엔진(결정적·즉시)만 돌고 LLM은 멈춤 700ms·심층 2.5s 디바운스로만 호출되어 동시성 압력이 낮고, ② LLM 지연·실패는 폴백 모드로 강등되어 데모/운영 플로우가 유지됩니다. 위 설정은 <b>지연 최적화</b>이지 동작 전제 조건이 아닙니다.</p>
+
 <h2><span class="num">6</span>⑤ 소비자 오인 시뮬레이터 <span class="file">app/pipeline/simulator.py · app/data/personas.json</span></h2>
-<p class="lead">헤드라인 기능. <b>2단계 구조</b>: (1) 페르소나 역할극 — 광고를 1인칭으로 읽기, (2) 오해 판정기(judge) — '이해'를 사실과 대조해 오해만 추출. 페르소나 3종은 병렬(<code>asyncio.gather</code>)로 추론됩니다.</p>
+<p class="lead">헤드라인 기능. <b>2단계 구조</b>: (1) 페르소나 역할극 — 광고를 1인칭으로 읽기, (2) 오해 판정기(judge) — '이해'를 사실과 대조해 오해만 추출. 페르소나 3종은 <b>1콜로 통합</b> 추론합니다(<code>_llm_simulate_all</code> — 1요청에 3인격을 함께 생성). 과거 페르소나당 1콜(3콜)에서 줄여 7B 로컬 추론의 동시성·지연을 낮췄습니다.</p>
 <h3>6.1 페르소나 정의</h3>
 <table>
   <thead><tr><th>페르소나</th><th>프로필 요지</th><th>취약 카테고리</th></tr></thead>
@@ -352,7 +366,7 @@ audit_log    : ts · submission_id · actor(누가) · action(무엇을) · deta
 </ul>
 
 </main>
-<footer>JB 준법 코파일럿 로직 설명서 v0.1.2 · 2026-06-13 · 소스: app/pipeline/* · 데이터: app/data/* · 변경: 엔터프라이즈 연동(§14: 내규·규제추적·배포·상품DB·다국어 신뢰도), 준법 오토파일럿(8.1), 세팅값 근거표(3.4·5.4) 반영</footer>
+<footer>JB 준법 코파일럿 로직 설명서 v0.1.2 · 2026-06-13 · 소스: app/pipeline/* · 데이터: app/data/* · 변경: 엔터프라이즈 연동(§14: 내규·규제추적·배포·상품DB·다국어 신뢰도), 준법 오토파일럿(8.1), 세팅값 근거표(3.4·5.4·5.5 Ollama 서빙·동시성) 반영</footer>
 </div>
 </body>
 </html>

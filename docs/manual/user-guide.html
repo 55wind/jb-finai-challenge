@@ -110,6 +110,8 @@ ollama serve          # http://localhost:11434 에서 대기</code></pre>
     <tr><td><code>JB_DB_PATH</code></td><td>app/data/app.db</td><td>SQLite 저장 경로</td></tr>
   </tbody>
 </table>
+<div class="callout tip"><b>⚡ 지연 최적화 (Ollama 서버 측, 선택)</b>
+정밀 심의는 LLM 심의·오인 시뮬레이터를 <b>동시 2콜</b>로 호출합니다. <code>ollama serve</code> 프로세스에 <code>OLLAMA_NUM_PARALLEL=2</code>(여유 시 4)·<code>OLLAMA_KEEP_ALIVE=-1</code>(모델 상주)을 주면 직렬 대기·재로드 지연이 사라집니다. GPU 8GB 이상 권장. 설정하지 않아도 동작하며, 값·근거 상세는 로직 설명서 §5.5 참조.</div>
 <h3>2.4 RAG 임베딩 검색 업그레이드 (선택)</h3>
 <pre><code>pip install sentence-transformers   # 최초 실행 시 BGE-m3 모델(~2GB) 다운로드</code></pre>
 <p>설치만 하면 재시작 후 어휘 검색 → BGE-m3 임베딩 코사인 검색으로 자동 전환됩니다. 심의 결과의 "검색된 규제 근거" 항목에서 현재 백엔드(<code>lexical</code> / <code>bge-m3</code>)를 확인할 수 있습니다.</p>
