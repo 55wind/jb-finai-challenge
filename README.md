@@ -68,7 +68,7 @@ python -m pytest tests/ -v
 - `tests/test_autopilot.py` — 준법 오토파일럿(자율 개선) 수렴·종료보장·합격무결성·폴백
 - `tests/test_internal_rules.py` · `test_regwatch.py` · `test_enterprise.py` — 내규 변환·규제 추적·배포·상품DB·다국어 신뢰도
 
-> 총 **52개 테스트** 전체 통과 (LLM 폴백 모드로 고정해 결정적).
+> 총 **57개 테스트** 전체 통과 (LLM 폴백 모드로 고정해 결정적).
 
 ---
 
@@ -131,5 +131,5 @@ app/
     reg_feed.json         규제 변경 피드 (시연용 · 운영: 법제처 OpenAPI)
     products.json         상품 카탈로그 (시연용 · 운영: 코어뱅킹 API)
   static/index.html       프론트 (헤드라인 시뮬레이터 + 워크스페이스 + 승인 뷰)
-tests/                    52개 테스트 (룰·분류·통합·오토파일럿·엔터프라이즈)
+tests/                    57개 테스트 (룰·분류·통합·오토파일럿·엔터프라이즈)
 ```
