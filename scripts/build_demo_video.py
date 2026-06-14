@@ -101,6 +101,9 @@ def fit_top(pil, bg=(255, 255, 255)):
     투명 PNG는 흰색 배경에 합성한다(검정 합성 방지)."""
     if pil.mode in ('RGBA', 'LA', 'P'):
         pil = pil.convert('RGBA')
+        bbox = pil.getbbox()        # 투명 여백 제거 → 내용 기준 가운데 정렬
+        if bbox:
+            pil = pil.crop(bbox)
         base = Image.new('RGB', pil.size, bg)
         base.paste(pil, mask=pil.split()[-1])
         im = base
