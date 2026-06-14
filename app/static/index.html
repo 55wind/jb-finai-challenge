@@ -627,7 +627,8 @@ function useFixture(i){
   $("productFacts").value = f.product_facts || "";
   $("subTitle").value = f.name || "";
   syncBackdrop(true);
-  runReview(true);   // 빠른 검사 즉시 → LLM 보강
+  runReview(true);          // 빠른 룰 검사 즉시
+  scheduleDeep(1200);       // 예시 로드는 의도적 행동 → 소비자 반응 곧 분석
 }
 
 /* ── 상품 DB 조회 (코어뱅킹 연동) ── */
@@ -656,19 +657,25 @@ function autoLoadDemo(){
   useFixture(i < 0 ? 0 : i);
 }
 
-/* ── 실시간 검사 (F11): 멈춤/붙여넣기 시 자동 (2단계: 빠른 룰검사 → LLM 보강) ── */
-let debounceTimer = null, fullTimer = null;
-function scheduleReview(delay=700){
-  clearTimeout(debounceTimer); clearTimeout(fullTimer);
+/* ── 실시간 검사 (F11) ──
+   작성 중에는 룰 검사·점수만 즉시(0.03초) — 페르소나/LLM은 자동 발화하지 않음(작성 흐름 보호).
+   소비자 반응(LLM 3종 시뮬)은 충분히 멈췄을 때(2.5초)나 [지금 분석] 버튼으로만 실행. */
+let quickTimer = null, deepTimer = null;
+const DEEP_IDLE = 2500;   // 깊은 분석 자동 발화 전 멈춤 시간
+function scheduleReview(quickDelay = 700, deepDelay = DEEP_IDLE){
+  clearTimeout(quickTimer); clearTimeout(deepTimer);
   $("liveDot").className = "live-dot"; $("liveLabel").textContent = "입력 중…";
-  debounceTimer = setTimeout(()=>runReview(true), delay);   // 멈추면 먼저 빠른 검사
+  quickTimer = setTimeout(()=>runReview(true), quickDelay);     // 빠른 룰 검사
+  deepTimer = setTimeout(()=>runReview(false), deepDelay);      // 깊은 분석(LLM심의+소비자 반응)
 }
+function scheduleDeep(delay = 1200){ clearTimeout(deepTimer); deepTimer = setTimeout(()=>runReview(false), delay); }
+function analyzeNow(){ clearTimeout(quickTimer); clearTimeout(deepTimer); runReview(false); }   // [지금 분석]
 $("editor").addEventListener("input", ()=>{ syncBackdrop(true); scheduleReview(); });
-$("editor").addEventListener("paste", ()=>scheduleReview(250));
+$("editor").addEventListener("paste", ()=>scheduleReview(250, 1500));
 $("editor").addEventListener("scroll", ()=>{ $("backdrop").scrollTop = $("editor").scrollTop;
   $("backdrop").scrollLeft = $("editor").scrollLeft; });
-$("selType").addEventListener("change", ()=>runReview(false));
-$("selLang").addEventListener("change", ()=>runReview(false));
+$("selType").addEventListener("change", ()=>{ runReview(true); scheduleDeep(800); });
+$("selLang").addEventListener("change", ()=>{ runReview(true); scheduleDeep(800); });
 
 /* ── 물결 밑줄 오버레이 ── */
 function syncBackdrop(plain=false){
@@ -745,7 +752,7 @@ $("hintPopup").addEventListener("mouseleave", hideHint);
 /* ── 심의 실행 (2단계 + 중단·최신만 적용) ── */
 let reviewSeq = 0, reviewAbort = null;
 async function runReview(quick=false){
-  clearTimeout(debounceTimer); clearTimeout(fullTimer);
+  if(!quick){ clearTimeout(quickTimer); clearTimeout(deepTimer); }   // 깊은분석은 대기 타이머 정리(quick은 deep 예약 보존)
   const text = $("editor").value;
   if(!text.trim()){ renderEmpty(); return; }
   if(reviewAbort) reviewAbort.abort();          // 진행 중 요청 중단(밀림·stale 방지)
@@ -753,7 +760,8 @@ async function runReview(quick=false){
   const seq = ++reviewSeq;
   state.busy = true;
   $("liveDot").className = "live-dot busy";
-  $("liveLabel").textContent = quick ? "빠른 검사 중…" : "AI 심의 중…";
+  $("liveLabel").textContent = quick ? "빠른 검사 중…" : "AI 심의·소비자 반응 분석 중…";
+  if(!quick) $("personaGrid").innerHTML = '<div class="empty">🔍 소비자 반응 분석 중…</div>';
   try{
     const rep = await api("/api/review", { method:"POST", signal: ac.signal, body: JSON.stringify({
       text, content_type: $("selType").value || null,
@@ -765,11 +773,8 @@ async function runReview(quick=false){
       renderEmpty(); return;
     }
     $("liveDot").className = "live-dot ok";
-    $("liveLabel").textContent = (quick && state.llm) ? "빠른 검사 완료 · 잠시 후 AI 심의" : "AI 심의 완료 · 멈추면 자동 재검사";
+    $("liveLabel").textContent = quick ? "빠른 검사 완료 · 멈추면 소비자 반응 분석" : "심의·소비자 반응 분석 완료";
     render(rep);
-    if(quick && state.llm){                      // 빠른 검사 후 잠깐 idle이면 LLM 전체 심의로 보강
-      fullTimer = setTimeout(()=>{ if(seq === reviewSeq) runReview(false); }, 500);
-    }
   }catch(e){
     if(e.name === "AbortError") return;          // 중단은 정상(새 입력)
     $("liveDot").className = "live-dot"; $("liveLabel").textContent = "오류: " + e.message;
@@ -883,26 +888,32 @@ function render(rep){
       rep.retrieval.articles.map(a=>`<div class="src">· ${esc(a.law)} ${esc(a.article)} — ${esc(a.title)} <span style="opacity:.6">(${a.score})</span></div>`).join("")
     : `<div class="src">근거 불충분 — 관련 조항을 찾지 못해 인용을 생략했습니다(허위 인용 방지).</div>`;
 
-  /* 시뮬레이터 (compact) */
+  /* 시뮬레이터 — 작성 중(빠른 검사)에는 차분한 대기, 멈추면 소비자 반응 분석 */
   const sim = rep.simulation;
-  $("simRisk").textContent = "오인 " + sim.misreading_risk_label + (sim.high_risk_count ? ` (${sim.high_risk_count})` : "");
-  $("simRisk").className = "risk-pill risk-" + sim.misreading_risk;
-  $("personaGrid").innerHTML = sim.personas.map(p=>{
-    const m = p.misunderstandings[0];
-    const risk = p.safe ? "low" : (m ? m.risk : "low");
-    const rlabel = p.safe ? "안전" : (m ? (m.risk==="high"?"위험":"주의") : "안전");
-    const cls = p.safe ? "safe" : ("risk-"+risk);
-    const click = (m && m.trigger_phrase && rep.text.indexOf(m.trigger_phrase)>=0)
-      ? `onclick="focusSpan(${rep.text.indexOf(m.trigger_phrase)},${rep.text.indexOf(m.trigger_phrase)+m.trigger_phrase.length})"` : "";
-    return `<div class="persona ${cls}" ${click}>
-      <div class="p-top"><span class="p-avatar">${p.emoji}</span><span class="p-name">${esc(p.name)}</span>
-        <span class="risk-pill risk-${risk}">${rlabel}</span></div>
-      <div class="p-speech">"${esc(p.understanding)}"</div>
-      ${m ? `<div class="p-mis"><span class="mis-tag">오해</span>${esc(m.text)}</div>${
-        m.trigger_phrase ? `<div class="p-trig">⟵ 유발 문구: "${esc(m.trigger_phrase)}" (클릭해 본문 이동)</div>` : ""}`
-        : `<div class="p-ok">✓ 이 소비자는 오해하지 않았습니다</div>`}
-    </div>`;
-  }).join("");
+  if(rep.quick){
+    $("simRisk").textContent = "—"; $("simRisk").className = "risk-pill risk-low";
+    $("personaGrid").innerHTML = '<div class="empty">✍️ 작성 중 — 잠시 멈추면 소비자 반응을 분석합니다 · '
+      + '<a onclick="analyzeNow()" style="cursor:pointer;color:var(--jb,#00529b);font-weight:700">지금 분석 ▸</a></div>';
+  } else {
+    $("simRisk").textContent = "오인 " + sim.misreading_risk_label + (sim.high_risk_count ? ` (${sim.high_risk_count})` : "");
+    $("simRisk").className = "risk-pill risk-" + sim.misreading_risk;
+    $("personaGrid").innerHTML = sim.personas.map(p=>{
+      const m = p.misunderstandings[0];
+      const risk = p.safe ? "low" : (m ? m.risk : "low");
+      const rlabel = p.safe ? "안전" : (m ? (m.risk==="high"?"위험":"주의") : "안전");
+      const cls = p.safe ? "safe" : ("risk-"+risk);
+      const click = (m && m.trigger_phrase && rep.text.indexOf(m.trigger_phrase)>=0)
+        ? `onclick="focusSpan(${rep.text.indexOf(m.trigger_phrase)},${rep.text.indexOf(m.trigger_phrase)+m.trigger_phrase.length})"` : "";
+      return `<div class="persona ${cls}" ${click}>
+        <div class="p-top"><span class="p-avatar">${p.emoji}</span><span class="p-name">${esc(p.name)}</span>
+          <span class="risk-pill risk-${risk}">${rlabel}</span></div>
+        <div class="p-speech">"${esc(p.understanding)}"</div>
+        ${m ? `<div class="p-mis"><span class="mis-tag">오해</span>${esc(m.text)}</div>${
+          m.trigger_phrase ? `<div class="p-trig">⟵ 유발 문구: "${esc(m.trigger_phrase)}" (클릭해 본문 이동)</div>` : ""}`
+          : `<div class="p-ok">✓ 이 소비자는 오해하지 않았습니다</div>`}
+      </div>`;
+    }).join("");
+  }
 
   /* 물결 밑줄 호버 말풍선용 매핑 (start_end → 지적 정보) */
   state.hintMap = {};

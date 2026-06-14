@@ -76,29 +76,23 @@ def _fallback_persona(persona: dict, rule_findings: list[dict]) -> dict:
     }
 
 
-# 역할극 + 오해 판정을 1콜로 병합 (지연 절반). 페르소나가 1인칭으로 읽으면서
-# 자신의 믿음 중 실제 조건·규제상 암시 금지에 어긋나는 '오해'를 스스로 식별한다.
-_SYSTEM_PERSONA = """당신은 아래 프로필의 실제 한국 금융소비자입니다. 금융 전문가가 아닙니다.
-광고가 외국어면 그 언어를 이해하는 소비자로서 읽으세요(서술은 한국어로).
-광고를 1인칭으로 읽고, 당신이 믿게 된 것 중 ⓐ상품의 실제 조건 또는
-ⓑ규제상 암시 금지 항목(원금보장·확정수익·무심사 대출 등)과 어긋나는 '오해'를 스스로 식별하세요.
+# 3 페르소나의 역할극+오해 판정을 단 1콜로 생성 (로컬 7B 큐 적체·레이턴시 방지).
+# 각 소비자가 1인칭으로 읽고, 실제 조건·규제상 암시 금지에 어긋나는 '오해'를 스스로 식별한다.
+_SYSTEM_MULTI = """당신은 금융소비자 오인 시뮬레이터입니다. 아래 [소비자 프로필] 3인이 각자
+자신의 프로필로 광고를 1인칭으로 읽고, 자신이 믿게 된 것 중 ⓐ상품의 실제 조건 또는
+ⓑ규제상 암시 금지 항목(원금보장·확정수익·무심사 대출 등)과 어긋나는 '오해'를 스스로 식별합니다.
+각 소비자는 프로필의 금융이해도를 벗어난 전문적 해석을 하지 않습니다.
 실제 조건과 일치하는 올바른 이해는 misunderstandings에 넣지 마세요. 오해가 없으면 빈 배열.
-프로필의 금융이해도를 벗어난 전문적 해석을 하지 마세요.
+광고가 외국어면 그 언어를 이해하는 소비자로서 읽되 서술은 한국어로 합니다.
 반드시 JSON으로만 답하세요. 스키마:
-{"understanding": "광고에서 이해한 내용(1인칭, 2문장 이내)",
- "action": "이 광고를 보고 할 행동(1인칭, 1문장)",
- "misunderstandings": [{"text": "오해 내용", "risk": "high|medium",
-   "trigger_phrase": "오해를 유발한 광고 원문 문구", "category": "guarantee|assertive|rate|notice|superlative"}]}"""
+{"personas": [{"id": "<프로필 id 그대로>", "understanding": "1인칭 이해(2문장 이내)",
+  "action": "할 행동(1문장)",
+  "misunderstandings": [{"text": "오해 내용", "risk": "high|medium",
+    "trigger_phrase": "오해를 유발한 광고 원문 문구", "category": "guarantee|assertive|rate|notice|superlative"}]}]}"""
 
 
-async def _llm_persona(persona: dict, text: str, product_facts: str, rule_findings: list[dict]) -> dict:
-    user = (f"[당신의 프로필]\n{persona['profile']}\n\n[광고]\n{text}\n\n"
-            f"[상품의 실제 조건] {product_facts or '(미입력 — 규제상 암시 금지 항목 기준으로만 판정)'}")
-    out = await llm_client.chat_json(_SYSTEM_PERSONA, user)
-    if not isinstance(out, dict) or "understanding" not in out:
-        return _fallback_persona(persona, rule_findings)
-
-    mis = out.get("misunderstandings") if isinstance(out.get("misunderstandings"), list) else []
+def _persona_result(persona: dict, pr: dict, text: str) -> dict:
+    mis = pr.get("misunderstandings") if isinstance(pr.get("misunderstandings"), list) else []
     cleaned = []
     for m in mis:
         if not isinstance(m, dict) or not m.get("text"):
@@ -112,25 +106,40 @@ async def _llm_persona(persona: dict, text: str, product_facts: str, rule_findin
             "basis_id": _CATEGORY_BASIS.get(m.get("category", ""), "FCPA-22-1"),
         })
     return {
-        "persona_id": persona["id"],
-        "emoji": persona["emoji"],
-        "name": persona["name"],
-        "understanding": out.get("understanding", ""),
-        "action": out.get("action", ""),
-        "misunderstandings": cleaned,
-        "safe": len(cleaned) == 0,
-        "engine": "llm",
+        "persona_id": persona["id"], "emoji": persona["emoji"], "name": persona["name"],
+        "understanding": pr.get("understanding", ""), "action": pr.get("action", ""),
+        "misunderstandings": cleaned, "safe": len(cleaned) == 0, "engine": "llm",
     }
+
+
+async def _llm_simulate_all(personas: list[dict], text: str, product_facts: str,
+                            rule_findings: list[dict]) -> list[dict]:
+    """3 페르소나 반응을 단일 LLM 호출로 생성. 누락·실패한 페르소나는 폴백 템플릿."""
+    profiles = "\n".join(f"- id={p['id']} ({p['name']}): {p['profile']}" for p in personas)
+    user = (f"[소비자 프로필 3인]\n{profiles}\n\n[광고]\n{text}\n\n"
+            f"[상품의 실제 조건] {product_facts or '(미입력 — 규제상 암시 금지 항목 기준으로만 판정)'}")
+    out = await llm_client.chat_json(_SYSTEM_MULTI, user)
+    by_id = {}
+    if isinstance(out, dict) and isinstance(out.get("personas"), list):
+        for pr in out["personas"]:
+            if isinstance(pr, dict) and pr.get("id") is not None:
+                by_id[str(pr["id"])] = pr
+    results = []
+    for p in personas:
+        pr = by_id.get(str(p["id"]))
+        if isinstance(pr, dict) and "understanding" in pr:
+            results.append(_persona_result(p, pr, text))
+        else:
+            results.append(_fallback_persona(p, rule_findings))
+    return results
 
 
 async def simulate(text: str, product_facts: str, rule_findings: list[dict],
                    force_fallback: bool = False) -> dict:
-    """페르소나별 병렬 추론 → 종합 오인 리스크. force_fallback=True면 LLM 무시(빠른 검사용)."""
+    """3 페르소나 → 종합 오인 리스크. force_fallback=True면 LLM 무시(빠른 검사용 결정적 폴백)."""
     personas = load_personas()
     if not force_fallback and await llm_client.is_available():
-        results = await asyncio.gather(
-            *(_llm_persona(p, text, product_facts, rule_findings) for p in personas)
-        )
+        results = await _llm_simulate_all(personas, text, product_facts, rule_findings)
     else:
         results = [_fallback_persona(p, rule_findings) for p in personas]
 
