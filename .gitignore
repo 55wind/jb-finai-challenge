@@ -11,3 +11,6 @@ venv/
 make_reel.py
 fill_docx.py
 fill_pptx.py
+
+# Office 임시 잠금파일
+~$*
