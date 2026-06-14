@@ -101,10 +101,10 @@ S = [
      '취약 소비자가 광고를 어떻게 오해하는지 작성 시점에 재현합니다',
      fit_canvas(WS, (430, 95, 1280, 1175)),
      '고령자·금융초보·외국인이 1인칭으로 오해 → 유발 문구 + 규제 조항 연결'),
-    ('비교', '안전 초안에선 오해가 줄어듭니다',
-     '같은 시뮬레이터로 안전(준법) 초안을 보면 페르소나 오해가 완화됩니다',
-     fit_canvas(f'{R}/s_safe.png', (430, 95, 1280, 1175)),
-     '안전(준법) 초안 — 페르소나 3종 오해 "위험→주의" 완화 · 준법 통과(94) · 룰 위반 0'),
+    ('비교', '안전 초안에선 오해가 사라집니다',
+     '같은 시뮬레이터로 안전(준법) 초안을 보면 페르소나가 오해하지 않습니다',
+     fit_canvas(f'{R}/s_safe.png', (430, 95, 1280, 1010)),
+     '안전(준법) 초안 — 페르소나 3종 모두 "안전" · 오해 0 · 준법 통과 · 룰 위반 0'),
     ('기능 ③', '준법 오토파일럿',
      '위반 초안을 준법 통과 등급까지 스스로 고쳐 씁니다',
      fit_canvas(f'{R}/s_autopilot.png', (0, 0, 1280, 740)),
@@ -147,11 +147,7 @@ def fade(a, b):
         vw.write(cv2.addWeighted(a, 1 - al, b, al, 0))
 
 
-prev = None
 for img, sec in clips:
-    if prev is not None:
-        fade(prev, img)
-    hold(img, sec)
-    prev = img
+    hold(img, sec)          # 하드컷 (크로스페이드 제거 — 겹침 방지)
 vw.release()
 print('saved', OUT, os.path.getsize(OUT), 'bytes', len(clips), 'clips')
