@@ -5,3 +5,7 @@ app/data/app.db
 .venv/
 venv/
 .gstack/
+
+# 시연 미리보기 산출물 (제출물 아님)
+*.mp4
+make_reel.py
