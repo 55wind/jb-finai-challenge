@@ -182,9 +182,9 @@ def add(img, sec):
 # 인트로
 add(title_card('서비스 시연', 'JB 준법 코파일럿', '소비자 오인 방지 중심 준법자문 AI Agent'), 4.5)
 
-# ===== 서비스 소개: AI Agent 구조 (아키텍처) =====
-add(title_card('서비스 소개', 'AI Agent 구조',
-               '판단·행동·검증을 스스로 수행하는 온프레미스 AI Agent'), 4.5)
+# ===== 서비스 소개: JB 준법 코파일럿 (아키텍처) =====
+add(title_card('Introduction', 'JB 준법 코파일럿 소개',
+               'AI Agent 구조 — 판단·행동·검증을 스스로 수행하는 온프레미스 준법자문 AI'), 4.5)
 add(sub_bar(fit_top(Image.open(f'{R}/v_arch.png')),
             '사용자의 입력이 프론트엔드와 백엔드를 거쳐 AI Agent로 처리되고 그 결과가 DB와 외부 연동으로 이어지며, 모든 추론은 온프레미스의 Qwen2.5-7B로 수행되어 데이터가 내부망 밖으로 나가지 않습니다.',
             tag='● 시스템 아키텍처'), 8.0)
