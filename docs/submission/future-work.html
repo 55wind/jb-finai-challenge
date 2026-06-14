@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JB 준법 코파일럿 — 향후 발전 방향 (Future Work)</title>
+<style>
+  :root{
+    --jb:#00529b; --jb-dark:#003a6e; --jb-light:#e8f1fa;
+    --ink:#1a1d21; --muted:#5b6470; --line:#e1e5ea;
+    --green:#1f9d55; --purple:#5b3bbf; --amber:#9a6c00; --code-bg:#f6f8fa;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; color:var(--ink); background:#f3f5f8;
+    font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    line-height:1.7; font-size:15px; -webkit-font-smoothing:antialiased;}
+  .page{max-width:940px; margin:30px auto; background:#fff; padding:0 0 56px;
+    box-shadow:0 1px 3px rgba(0,0,0,.06),0 8px 30px rgba(0,0,0,.06); border-radius:10px; overflow:hidden;}
+  header.cover{background:linear-gradient(135deg,var(--jb) 0%,var(--jb-dark) 100%); color:#fff; padding:38px 48px 30px;}
+  header.cover .kicker{font-size:12.5px; letter-spacing:.12em; text-transform:uppercase; opacity:.85; font-weight:600;}
+  header.cover h1{margin:9px 0 5px; font-size:27px; font-weight:800; letter-spacing:-.01em;}
+  header.cover .sub{font-size:15px; opacity:.92;}
+  main{padding:10px 48px 0;}
+  h2{font-size:19px; font-weight:800; color:var(--jb-dark); margin:30px 0 4px; display:flex; align-items:center; gap:11px;}
+  h2 .n{display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px;
+    background:var(--jb); color:#fff; font-size:14px; font-weight:800; border-radius:8px; flex:none;}
+  h2 + .tag{margin:0 0 12px 41px; font-size:13px; color:var(--muted);}
+  ul{margin:8px 0 4px; padding-left:0; list-style:none;}
+  li{margin:9px 0; padding-left:20px; position:relative;}
+  li:before{content:"▪"; position:absolute; left:2px; top:0; color:var(--jb); font-size:13px;}
+  li b{color:#10131a;}
+  .badge{display:inline-block; font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px; margin-left:4px; vertical-align:1.5px;}
+  .b-now{background:#e7f0fb; color:var(--jb-dark);}
+  .b-poc{background:#fdf3df; color:var(--amber);}
+  .b-next{background:#f0ecff; color:var(--purple);}
+  section.box{border:1px solid var(--line); border-radius:10px; padding:6px 20px 14px; margin:6px 0 4px; background:#fcfdff;}
+  .lead{font-size:15px; background:var(--jb-light); border-left:4px solid var(--jb);
+    padding:13px 18px; border-radius:0 8px 8px 0; margin:16px 0 6px;}
+  .legend{margin:18px 0 0; font-size:12.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap;}
+  .legend span b{font-weight:700;}
+  footer{padding:20px 48px 0; color:var(--muted); font-size:12px;}
+  @media print{ body{background:#fff;} .page{box-shadow:none; margin:0; max-width:none; border-radius:0;}
+    header.cover{padding:26px 0;} main{padding:0;} footer{padding:14px 0 0;} h2{page-break-after:avoid;} section.box{page-break-inside:avoid;} }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="cover">
+  <div class="kicker">JB금융그룹 Fin:AI Challenge · 지정주제2 Compliance AI · 기능명세서 §5</div>
+  <h1>향후 발전 방향 (Future Work)</h1>
+  <div class="sub">JB 준법 코파일럿 — 개선 계획 · 모델 고도화 · 운영 적용 고려사항</div>
+</header>
+
+<main>
+
+<p class="lead">예선 MVP는 F1–F16과 자동 테스트 57건으로 핵심 흐름(작성→오인 시뮬레이션→자동 개선→승인→배포→다국어)을 동작으로 증명했다. 본선·운영 단계의 발전 방향을 세 축으로 정리한다.</p>
+
+<h2><span class="n">1</span>개선 예정 기능 및 추가 데이터 확보 계획</h2>
+<div class="tag">정답셋·실데이터를 확보해 정확도와 커버리지를 끌어올린다.</div>
+<section class="box">
+<ul>
+  <li><b>룰 커버리지·거버넌스</b> — 룰별 양성/음성 정답셋(픽스처) 확장과 <b>커버리지 리포트</b>, 미탐 사례(LLM·사람이 잡은 것)를 신규 룰로 제안하는 <b>피드백 루프</b> 구축<span class="badge b-next">본선</span></li>
+  <li><b>형태소 기반 매칭</b> — 띄어쓰기·이형태·동의어 변형까지 잡도록 정규식을 형태소 분석으로 보강(룰 미탐 축소)<span class="badge b-next">본선</span></li>
+  <li><b>실 심의 정답셋 확보</b> — 준법감시부 과거 심의 사례 50–100건을 <b>블라인드 비교</b>(AI vs 사람)해 정밀도·재현율 측정 및 점수 가중치 캘리브레이션<span class="badge b-poc">PoC</span></li>
+  <li><b>규제·상품 실데이터 연동</b> — 규제 피드를 <b>법제처 국가법령정보 OpenAPI</b>·금융위 고시로, 상품조건을 <b>코어뱅킹 API</b>로 교체(현재 목/피드 어댑터)<span class="badge b-poc">PoC</span></li>
+  <li><b>내규 룰 검증 강화</b> — 적용 전 룰 테스트·미리보기(F13)에 과탐/미탐 통계와 충돌 룰 탐지 추가</li>
+</ul>
+</section>
+
+<h2><span class="n">2</span>모델 고도화 및 서비스 확장 아이디어</h2>
+<div class="tag">온프레미스 제약을 지키며 모델·적용 범위를 넓힌다.</div>
+<section class="box">
+<ul>
+  <li><b>모델 업그레이드·파인튜닝</b> — Qwen2.5-7B → <b>14B-Q4</b>(환경변수 1개 교체) 또는 준법 심의 데이터 <b>LoRA 파인튜닝</b>으로 도메인 정확도 향상<span class="badge b-next">본선</span></li>
+  <li><b>임베딩 기본 탑재</b> — BGE-m3 임베딩 RAG를 기본화하고 <b>리랭커</b>를 더해 근거 검색 정밀도 강화(현재 어휘검색 폴백)</li>
+  <li><b>다국어 정식 확장</b> — 영문에 더해 <b>베트남어·중국어·일본어</b> 룰셋·고지문을 정식화(전북 외국인 거주자 고객 대응)</li>
+  <li><b>적용 범위 확장</b> — 광고·안내문을 넘어 <b>약관·상품설명서·민원 응대 초안·내부통제 점검</b>까지 동일 파이프라인으로 확대</li>
+  <li><b>채널 확장</b> — 배포 Last-Mile(F15)을 영업점 단말·홈페이지 배너·앱 내 고지 등으로 넓혀 전사 일관 심의</li>
+</ul>
+</section>
+
+<h2><span class="n">3</span>실제 운영 환경 적용 시 고려사항</h2>
+<div class="tag">금융 망분리·책임·성능 요건을 충족해야 실서비스로 전환된다.</div>
+<section class="box">
+<ul>
+  <li><b>망분리·인프라 사이징</b> — 온프레미스 GPU 서버에 <b>OLLAMA_NUM_PARALLEL·KEEP_ALIVE·VRAM(8–12GB)</b>를 동시성(심의당 2콜) 기준으로 산정, 미공개 마케팅 자료의 <b>외부 전송 0</b> 보장</li>
+  <li><b>책임 한계·휴먼인더루프</b> — AI는 <b>1차심의 보조</b>이며 최종 판단·법적 책임은 준법감시인. 승인 전 원문 직접 검토 확인과 감사로그로 책임 소재를 명확화</li>
+  <li><b>룰·모델 거버넌스</b> — 룰 변경은 <b>사람 승인 게이트·버전관리·감사</b>를 거치고, 모델 교체 시 회귀 정답셋으로 영향 검증</li>
+  <li><b>성능·가용성</b> — LLM 지연·장애 시 <b>룰 기반 결정적 폴백</b>으로 무중단 동작, 응답 SLA와 정밀도/재현율을 상시 모니터링</li>
+  <li><b>단계적 도입</b> — <b>PoC(블라인드 비교) → 1개 부서 파일럿 → 전사</b> 순으로 적용하며 검출률·시간 절감을 정량 측정</li>
+</ul>
+</section>
+
+<div class="legend">
+  <span><b class="badge b-now" style="margin:0">구현</b> 예선 MVP 반영</span>
+  <span><b class="badge b-poc" style="margin:0">PoC</b> 실데이터·정답셋 단계</span>
+  <span><b class="badge b-next" style="margin:0">본선</b> 본선 고도화 예정</span>
+</div>
+
+</main>
+
+<footer>JB 준법 코파일럿 · 기능명세서 §5 향후 발전 방향 · JB금융그룹 Fin:AI Challenge 지정주제2</footer>
+
+</div>
+</body>
+</html>
