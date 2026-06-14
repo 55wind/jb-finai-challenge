@@ -47,19 +47,39 @@ def title_card(kicker, big, desc, idx=None):
     return img
 
 
+def _wrap(d, text, f, maxw):
+    words = text.split(' ')
+    lines, cur = [], ''
+    for w in words:
+        test = (cur + ' ' + w).strip()
+        if d.textlength(test, font=f) <= maxw or not cur:
+            cur = test
+        else:
+            lines.append(cur); cur = w
+    if cur:
+        lines.append(cur)
+    return lines
+
+
 def sub_bar(pil_img, text, tag='● 실제 작동 화면'):
     img = pil_img.convert('RGB').copy()
     if img.size != (W, H):
         img = img.resize((W, H))
     d = ImageDraw.Draw(img, 'RGBA')
-    bar_h = 76
+    f = font(True, 23)
+    lines = _wrap(d, text, f, W - 200)[:2]
+    line_h = 32
+    bar_h = 58 if len(lines) == 1 else 58 + line_h
     y0 = H - bar_h
-    d.rectangle([0, y0, W, H], fill=(12, 18, 28, 220))
+    d.rectangle([0, y0, W, H], fill=(12, 18, 28, 226))
     d.line([(0, y0), (W, y0)], fill=(0, 130, 220, 255), width=3)
-    # 태그(좌측)
-    d.text((26, y0 + bar_h//2), tag, font=font(True, 17), fill=(120, 200, 255), anchor='lm')
-    # 자막(가운데)
-    center_text(d, W//2, y0 + bar_h//2, text, font(True, 24), WHITE)
+    # 태그(좌측 상단)
+    d.text((26, y0 + 17), tag, font=font(True, 16), fill=(120, 200, 255), anchor='lm')
+    # 자막(가운데, 1~2줄)
+    total = line_h * len(lines)
+    sy = y0 + (bar_h - total) // 2 + line_h // 2
+    for i, ln in enumerate(lines):
+        center_text(d, W // 2, sy + i * line_h, ln, f, WHITE)
     return img
 
 
@@ -105,53 +125,53 @@ def add(img, sec):
 
 
 # 인트로
-add(title_card('기능 시연', 'JB 준법 코파일럿', '소비자 오인 방지 중심 준법자문 AI Agent'), 3.0)
+add(title_card('기능 시연', 'JB 준법 코파일럿', '소비자 오인 방지 중심 준법자문 AI Agent'), 4.5)
 
 S = [
     ('기능 ①', '작성 시점 실시간 심의',
      '작성하는 순간 룰엔진이 즉시 검사하고 LLM·시뮬레이터가 보강합니다',
      D('v_ws'),
-     '타이핑을 멈추면 즉시 룰 검사 → 위험 문구 자동 밑줄 · 준법점수 표시'),
+     '광고 초안을 쓰다가 잠시 멈추면 룰엔진이 곧바로 검사해, 위험한 표현에 밑줄을 긋고 준법 점수를 실시간으로 보여 줍니다.'),
     ('기능 ②', '소비자 오인 시뮬레이터',
      '취약 소비자가 광고를 어떻게 오해하는지 작성 시점에 재현합니다',
      D('v_sim'),
-     '고령자·금융초보·외국인이 1인칭으로 오해 → 유발 문구 + 규제 조항 연결'),
+     '고령자·금융초보·외국인 소비자가 이 광고를 어떻게 읽고 오해하는지 1인칭으로 재현하고, 오해를 부른 문구와 관련 규제 조항을 함께 짚어 줍니다.'),
     ('비교', '안전 초안은 오해가 줄어듭니다',
      '같은 시뮬레이터로 안전(준법) 초안을 보면 등급이 통과로 바뀝니다',
      D('v_safe'),
-     '안전(준법) 초안 — 준법 통과(94) · 위반 0 · 페르소나 오해 "위험→주의"로 완화'),
+     '같은 시뮬레이터에 안전하게 고친 초안을 넣으면 룰 위반이 사라져 준법 등급이 통과로 바뀌고, 소비자 오해도 위험에서 주의 수준으로 완화됩니다.'),
     ('기능 ③', '준법 오토파일럿',
      '위반 초안을 준법 통과 등급까지 스스로 고쳐 씁니다',
      D('v_autopilot'),
-     '심의→고쳐쓰기→재심의 반복 · 50→94 통과 (미수렴 시 사람 에스컬레이션)'),
+     '위반이 있는 초안을 두면 오토파일럿이 심의·고쳐쓰기·재심의를 스스로 반복해 50점에서 94점 통과까지 끌어올리고, 끝내 통과하지 못하면 사람에게 넘깁니다.'),
     ('기능 ④', '준법관리자 검토·승인',
      'AI 1차심의를 근거로 사람이 승인, 모든 이력은 감사로그로 남습니다',
      D('s_approve'),
-     '원문 직접 검토 확인 후 승인 — 최종 판단·책임은 준법감시인'),
+     'AI의 1차 심의 결과를 근거로 준법관리자가 원문을 직접 검토했는지 확인한 뒤 승인하며, 모든 판단의 최종 책임은 사람에게 있습니다.'),
     ('기능 ⑤', '마케팅 배포 Last-Mile',
      '승인된 콘텐츠만 채널로 자동 발송됩니다',
      D('s_distribute'),
-     '승인본을 채널로 자동 발송 · AI 개선→사람 승인→시스템 배포 분리 기록'),
+     '승인된 콘텐츠만 푸시·SMS·이메일 같은 마케팅 채널로 자동 발송되고, AI의 개선과 사람의 승인, 시스템의 배포가 각각 분리되어 감사로그에 기록됩니다.'),
     ('기능 ⑥', '다국어 생성·재심의',
      '외국어 버전을 만들고 직역 오역까지 다시 심의합니다',
      D('s_multilingual'),
-     '외국어 버전 생성·재심의로 직역 보장성 오역·고지 누락 검출'),
+     '승인본의 외국어 버전을 자동으로 만들고 다시 심의해, 직역 과정에서 생기는 보장성 오역이나 고지 누락을 잡아냅니다.'),
 ]
 
 for kicker, big, desc, demo_img, sub in S:
-    add(title_card(kicker, big, desc), 2.6)
-    add(sub_bar(demo_img, sub), 4.2)
+    add(title_card(kicker, big, desc), 4.0)
+    add(sub_bar(demo_img, sub), 6.5)
 
 # ===== 마무리: 아키텍처 → 태그라인 → 감사합니다 =====
 add(title_card('아키텍처', '온프레미스 · 오픈모델 구조',
-               '데이터를 내부망 밖으로 내보내지 않는 온프레미스 AI Agent'), 2.8)
+               '데이터를 내부망 밖으로 내보내지 않는 온프레미스 AI Agent'), 4.5)
 add(sub_bar(fit_top(D('v_arch')),
-            '사용자→프론트엔드→백엔드(AI Agent)→DB/외부연동 · Qwen2.5-7B 온프레미스 추론 · 데이터 외부 유출 0',
-            tag='● 시스템 아키텍처'), 5.5)
+            '사용자의 입력이 프론트엔드와 백엔드를 거쳐 AI Agent로 처리되고 그 결과가 DB와 외부 연동으로 이어지며, 모든 추론은 온프레미스의 Qwen2.5-7B로 수행되어 데이터가 내부망 밖으로 나가지 않습니다.',
+            tag='● 시스템 아키텍처'), 8.0)
 add(title_card('JB 준법 코파일럿', '심의는 AI가, 판단은 사람이',
-               '온프레미스 · 오픈모델(Qwen2.5-7B) · 전 과정 휴먼인더루프'), 3.0)
+               '온프레미스 · 오픈모델(Qwen2.5-7B) · 전 과정 휴먼인더루프'), 4.5)
 add(title_card('Thank you', '감사합니다',
-               'JB 준법 코파일럿 · JB금융그룹 Fin:AI Challenge 지정주제2'), 3.8)
+               'JB 준법 코파일럿 · JB금융그룹 Fin:AI Challenge 지정주제2'), 5.0)
 
 # ===== 인코딩 (크로스페이드) =====
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
