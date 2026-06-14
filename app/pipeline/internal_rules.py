@@ -19,6 +19,8 @@ _SYSTEM = """당신은 은행 준법 룰 엔지니어입니다. 입력된 내부
 각 지침을 forbidden(금지 표현) 또는 required(필수 고지)로 분류합니다.
 - forbidden: 금지할 표현을 잡는 정규식 patterns (한국어; 띄어쓰기는 \\s* 로 유연하게)
 - required: 반드시 포함돼야 하는 문구의 정규식 requires_any (전부 부재 시 위반)
+중요: patterns/requires_any에는 입력 지침에 실제로 나온 표현(따옴표 안 문구)을 그대로 사용하세요.
+유사어로 바꾸거나(예: '최초'를 '최고/최신'으로) 새 표현을 지어내지 마세요.
 반드시 JSON으로만 답하세요. 스키마:
 {"rules":[{"name":"짧은 이름","kind":"forbidden|required","severity":"high|medium|low",
   "message":"위반 설명(한국어 1문장)",

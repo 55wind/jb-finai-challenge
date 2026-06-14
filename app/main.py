@@ -14,7 +14,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import store
-from .pipeline import distribution, internal_rules, llm_client, orchestrator, product_db, regwatch
+from .pipeline import (classifier, distribution, internal_rules, llm_client,
+                       orchestrator, product_db, regwatch, rules_engine)
 
 app = FastAPI(title="JB 준법 코파일럿", version="0.1.0")
 
@@ -55,6 +56,13 @@ class InternalExtractRequest(BaseModel):
 class InternalSaveRequest(BaseModel):
     rules: list[dict]
     source_text: str = ""
+
+
+class InternalTestRequest(BaseModel):
+    rules: list[dict]
+    text: str = ""
+    content_type: str | None = None
+    language: str = "ko"
 
 
 class SubmissionRequest(BaseModel):
@@ -125,6 +133,21 @@ async def autopilot(req: AutopilotRequest):
 async def internal_extract(req: InternalExtractRequest):
     """자연어 내규 → 구조화 룰 미리보기 (저장 안 함)."""
     return {"rules": await internal_rules.extract(req.text)}
+
+
+@app.post("/api/internal-rules/test")
+def internal_test(req: InternalTestRequest):
+    """적용 전 룰 검증 — 생성된 룰을 현재 초안에 돌려 과탐/미탐을 미리 보여준다(F13 신뢰)."""
+    ctype = req.content_type or (classifier.classify(req.text)["content_type"] if req.text else "deposit")
+    out = []
+    for rule in internal_rules.normalize(req.rules):
+        f = rules_engine._eval_rule(rule, req.text, ctype, req.language, "internal") if req.text else None
+        out.append({
+            "name": rule["name"], "kind": rule["kind"],
+            "matched": f is not None,
+            "matched_text": (f.get("matched_text") if f else None),
+        })
+    return {"results": out, "content_type": ctype}
 
 
 @app.post("/api/internal-rules")

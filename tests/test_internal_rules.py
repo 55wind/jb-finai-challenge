@@ -4,6 +4,16 @@ import pytest
 from app.pipeline import internal_rules, rules_engine, orchestrator, llm_client
 
 
+def test_rule_preview_matches_and_no_overdetect():
+    """B-2 룰 테스트·미리보기 — 룰을 초안에 돌려 과탐/미탐 사전 확인."""
+    rule = internal_rules.normalize([{"name": "x", "kind": "forbidden",
+        "patterns": [r"업계\s*최초"], "severity": "medium", "message": "m"}])[0]
+    hit = rules_engine._eval_rule(rule, "저희는 업계 최초입니다", "deposit", "ko", "internal")
+    assert hit and "최초" in hit["matched_text"]
+    miss = rules_engine._eval_rule(rule, "평범한 정기예금 광고입니다", "deposit", "ko", "internal")
+    assert miss is None   # 정상 광고엔 과탐 없음
+
+
 @pytest.fixture(autouse=True)
 def force_fallback(monkeypatch):
     async def _no(force_check=False):

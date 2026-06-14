@@ -1041,12 +1041,41 @@ async function extractInternalRules(){
         <li class="ir-row">
           <input type="checkbox" id="irc${i}" checked style="margin-top:3px">
           <span class="k ${rl.kind}">${rl.kind==="forbidden"?"금지":"필수"}</span>
-          <div><div class="nm">${esc(rl.name)}</div><div class="ms">${esc(rl.message)}</div></div>
+          <div style="flex:1"><div class="nm">${esc(rl.name)}</div><div class="ms">${esc(rl.message)}</div>
+            <div class="ir-test" id="irt${i}" style="font-size:11px;color:#9aa3ad;margin-top:3px">현재 초안에서 검증 중…</div></div>
         </li>`).join("");
       $("irSaveRow").style.display = "flex";
+      testInternalRules();   // 적용 전 현재 초안에 돌려 과탐/미탐 미리보기 (B-2)
     }
   }catch(e){ toast("오류: " + e.message); }
   finally{ $("irExtractBtn").disabled = false; $("irExtractBtn").textContent = "✨ AI로 룰 변환"; }
+}
+
+async function testInternalRules(){
+  try{
+    const r = await api("/api/internal-rules/test", { method:"POST", body: JSON.stringify({
+      rules: irExtracted, text: $("editor").value, content_type: $("selType").value || null })});
+    (r.results||[]).forEach((res,i)=>{
+      const el = $("irt"+i); if(!el) return;
+      if(res.kind==="forbidden"){
+        if(res.matched){
+          el.innerHTML = `✅ 현재 초안에서 <b style="color:#b1003e">「${esc(res.matched_text||"")}」</b> 검출`;
+          el.style.color = "#0a7d3e";
+        } else {
+          el.innerHTML = `⚠ 현재 초안에서 매치 없음 — 금지하려던 표현이 초안에 있는데도 안 잡히면 룰(정규식)이 부정확한 것이니 점검 후 적용하세요`;
+          el.style.color = "#9a6c00";
+        }
+      } else {   // required
+        if(res.matched){
+          el.innerHTML = `⚠ 현재 초안에 필수 문구 <b>없음</b> → 위반으로 표시될 항목`;
+          el.style.color = "#9a6c00";
+        } else {
+          el.innerHTML = `✅ 현재 초안에 필수 문구 있음`;
+          el.style.color = "#0a7d3e";
+        }
+      }
+    });
+  }catch(_){}
 }
 
 async function saveInternalRules(){
