@@ -76,6 +76,17 @@ def fit_canvas(path, crop=None, bg=(244, 246, 248)):
     return canvas
 
 
+def fit_top(pil, bg=(247, 249, 251)):
+    """이미지를 자막바 위 영역(1280x644)에 통째로 맞춰 배치 (다이어그램 안 가림)."""
+    im = pil.convert('RGB'); cw, ch = im.size
+    scale = min(W / cw, (H - 76) / ch)
+    nw, nh = int(cw * scale), int(ch * scale)
+    im = im.resize((nw, nh))
+    canvas = Image.new('RGB', (W, H), bg)
+    canvas.paste(im, ((W - nw) // 2, (H - 76 - nh) // 2))
+    return canvas
+
+
 def pil_to_bgr(img):
     return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
@@ -131,8 +142,16 @@ for kicker, big, desc, demo_img, sub in S:
     add(title_card(kicker, big, desc), 2.6)
     add(sub_bar(demo_img, sub), 4.2)
 
-# 아웃트로
-add(title_card('JB 준법 코파일럿', '심의는 AI가, 판단은 사람이', '온프레미스 · 오픈모델(Qwen2.5-7B) · 전 과정 휴먼인더루프'), 3.2)
+# ===== 마무리: 아키텍처 → 태그라인 → 감사합니다 =====
+add(title_card('아키텍처', '온프레미스 · 오픈모델 구조',
+               '데이터를 내부망 밖으로 내보내지 않는 온프레미스 AI Agent'), 2.8)
+add(sub_bar(fit_top(D('v_arch')),
+            '사용자→프론트엔드→백엔드(AI Agent)→DB/외부연동 · Qwen2.5-7B 온프레미스 추론 · 데이터 외부 유출 0',
+            tag='● 시스템 아키텍처'), 5.5)
+add(title_card('JB 준법 코파일럿', '심의는 AI가, 판단은 사람이',
+               '온프레미스 · 오픈모델(Qwen2.5-7B) · 전 과정 휴먼인더루프'), 3.0)
+add(title_card('Thank you', '감사합니다',
+               'JB 준법 코파일럿 · JB금융그룹 Fin:AI Challenge 지정주제2'), 3.8)
 
 # ===== 인코딩 (크로스페이드) =====
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
