@@ -162,14 +162,12 @@ for kicker, big, desc, demo_img, sub in S:
     add(title_card(kicker, big, desc), 4.0)
     add(sub_bar(demo_img, sub), 6.5)
 
-# ===== 마무리: 아키텍처 → 태그라인 → 감사합니다 =====
-add(title_card('아키텍처', '온프레미스 · 오픈모델 구조',
-               '데이터를 내부망 밖으로 내보내지 않는 온프레미스 AI Agent'), 4.5)
+# ===== 마무리: AI Agent 구조 → 감사합니다 =====
+add(title_card('아키텍처', 'AI Agent 구조',
+               '판단·행동·검증을 스스로 수행하는 온프레미스 AI Agent 파이프라인'), 4.5)
 add(sub_bar(fit_top(D('v_arch')),
             '사용자의 입력이 프론트엔드와 백엔드를 거쳐 AI Agent로 처리되고 그 결과가 DB와 외부 연동으로 이어지며, 모든 추론은 온프레미스의 Qwen2.5-7B로 수행되어 데이터가 내부망 밖으로 나가지 않습니다.',
             tag='● 시스템 아키텍처'), 8.0)
-add(title_card('JB 준법 코파일럿', '심의는 AI가, 판단은 사람이',
-               '온프레미스 · 오픈모델(Qwen2.5-7B) · 전 과정 휴먼인더루프'), 4.5)
 add(title_card('Thank you', '감사합니다',
                'JB 준법 코파일럿 · JB금융그룹 Fin:AI Challenge 지정주제2'), 5.0)
 
