@@ -103,5 +103,81 @@
         "risk": "none"
       }
     }
+  },
+  {
+    "id": "farmer",
+    "emoji": "🌾",
+    "name": "전북 농업인",
+    "region": "jeonbuk",
+    "tag": "전북 특화",
+    "profile": "전북에서 벼농사를 짓는 65세 농업인. 수확기에 목돈이 한 번에 들어와 1년 예치를 즐겨 쓴다. 금융이해도 낮고 '보장·안심·만기' 같은 단어에 안심하지만, 중도해지 시 약정이자를 못 받는 점·세전 표기는 잘 모른다. 영농자금이 급하면 만기 전에 해지해야 할 수 있다.",
+    "vulnerabilities": ["guarantee", "notice", "rate"],
+    "fallback": {
+      "guarantee": {
+        "understanding": "원금이 보장된다니 올해 수확한 돈을 통째로 넣어도 안전하겠구나.",
+        "action": "농협 거래까지 정리해 수확 자금 전액을 이 상품에 예치하려 한다.",
+        "misunderstanding": "예금자보호 한도(5천만원)를 모른 채 목돈 전액이 무조건 보장된다고 오해",
+        "risk": "high"
+      },
+      "notice": {
+        "understanding": "만기 이자가 좋으니 넣어두면 된다. 급하면 중간에 빼도 비슷하게 주겠지.",
+        "action": "영농자금이 필요할 때 중도해지해도 손해가 없다고 믿고 가입한다.",
+        "misunderstanding": "중도해지 시 약정이자를 받지 못한다는 조건을 인지하지 못함(농번기 자금 수요 간과)",
+        "risk": "high"
+      },
+      "rate": {
+        "understanding": "광고에 적힌 이자를 그대로 다 받는 거구나.",
+        "action": "세금·우대조건을 빼지 않고 수령액을 계산해 영농 계획을 세운다.",
+        "misunderstanding": "세전·우대조건부 금리를 실수령 금리로 오해",
+        "risk": "medium"
+      },
+      "safe": {
+        "understanding": "만기·중도해지 조건이 적혀 있어 자금 쓸 시기를 따져볼 수 있다.",
+        "action": "수확 자금 운용 시기를 확인하고 한도 내에서 가입을 검토한다.",
+        "misunderstanding": null,
+        "risk": "none"
+      }
+    }
+  },
+  {
+    "id": "merchant",
+    "emoji": "🏪",
+    "name": "전북 소상공인",
+    "region": "jeonbuk",
+    "tag": "전북 특화",
+    "profile": "전주에서 가게를 운영하는 48세 자영업자. 운전자금 대출 한도와 금리에 민감하고 '최저금리·우대·즉시'에 강하게 끌린다. 바빠서 약관·우대조건을 끝까지 읽지 않으며, 가산금리·중도상환수수료 개념이 약하다.",
+    "vulnerabilities": ["assertive", "superlative", "rate", "notice"],
+    "fallback": {
+      "superlative": {
+        "understanding": "업계 최저금리라니 더 알아볼 것 없이 여기서 받으면 되겠다.",
+        "action": "다른 은행 비교 없이 바로 대출을 신청한다.",
+        "misunderstanding": "근거 없는 최상급 표현을 객관적 사실로 오해(실제 적용금리는 신용·조건별 상이)",
+        "risk": "medium"
+      },
+      "assertive": {
+        "understanding": "무조건 이 금리로 빌려준다는 거네. 한도도 다 나오겠지.",
+        "action": "조건 확인 없이 운전자금 계획을 그대로 세우고 신청한다.",
+        "misunderstanding": "표시금리·한도가 심사 없이 확정 적용된다고 오해",
+        "risk": "high"
+      },
+      "rate": {
+        "understanding": "광고 금리가 내가 낼 금리구나.",
+        "action": "가산금리·우대조건을 빼고 월 상환액을 계산한다.",
+        "misunderstanding": "기본금리를 실제 적용금리로 오해(가산금리·우대조건 미반영)",
+        "risk": "medium"
+      },
+      "notice": {
+        "understanding": "급하면 중간에 갚으면 되지, 별 문제 없겠지.",
+        "action": "여유자금이 생기면 바로 중도상환할 생각으로 약정한다.",
+        "misunderstanding": "중도상환수수료·조건 고지를 인지하지 못함",
+        "risk": "medium"
+      },
+      "safe": {
+        "understanding": "금리·한도가 조건부라는 게 보이니 심사 후 정해지는 걸 알겠다.",
+        "action": "우대조건과 실제 적용금리를 상담으로 확인한 뒤 결정한다.",
+        "misunderstanding": null,
+        "risk": "none"
+      }
+    }
   }
 ]

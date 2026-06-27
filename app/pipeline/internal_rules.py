@@ -79,6 +79,73 @@ def _valid_regex(p: str) -> bool:
         return False
 
 
+def _literal_sample(pattern: str) -> str:
+    """정규식 패턴 → 대표 리터럴 문자열 (충돌 비교 전용, 판정용 아님).
+
+    내규 룰은 시스템 프롬프트상 '실제 표현 그대로 + \\s* 유연화'만 쓰므로
+    \\s*/\\s+ 를 공백으로, 나머지 메타문자를 제거하면 원 표현이 복원된다.
+    """
+    s = re.sub(r"\\s[*+]", " ", pattern)      # \s* \s+ → 공백
+    s = re.sub(r"\\[a-zA-Z]", "", s)          # 그 외 문자클래스(\d 등) 제거
+    s = re.sub(r"[()\[\]{}?*+.^$|]", "", s)    # 메타문자 제거
+    s = s.replace("\\", "")                     # 이스케이프된 리터럴(\%→%)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def detect_conflicts(new_rules: list[dict], law_rules: list[dict] | None = None) -> list[dict]:
+    """내규 룰 ↔ 기존 법규 룰 충돌 탐지 (피드백 #5 · 거버넌스).
+
+    · 내규 required(필수)가 요구하는 표현을 기존 법규 forbidden(금지)이 막는 경우
+    · 내규 forbidden(금지)이 막는 표현을 기존 법규 required(필수)가 요구하는 경우
+    겹침이 보이면 경고를 반환한다. 실제 수정/예외 여부는 사람이 판단(휴먼인더루프).
+    """
+    if law_rules is None:
+        from .rules_engine import load_rules
+        law_rules = load_rules()
+    conflicts: list[dict] = []
+
+    for nr in new_rules or []:
+        kind = nr.get("kind")
+        name = nr.get("name", "내규 룰")
+        if kind == "required":
+            for pat in nr.get("requires_any", []):
+                sample = _literal_sample(pat)
+                if len(sample) < 2:
+                    continue
+                for lr in law_rules:
+                    if lr.get("kind") != "forbidden":
+                        continue
+                    if any(re.search(p, sample) for p in lr.get("patterns", [])):
+                        conflicts.append({
+                            "new_rule": name, "new_kind": "required",
+                            "law_rule_id": lr["id"], "law_rule_name": lr["name"],
+                            "overlap": sample,
+                            "message": (f"내규 「{name}」가 필수로 요구하는 표현('{sample}')을 "
+                                        f"기존 법규 {lr['id']}({lr['name']})가 금지합니다. "
+                                        f"내규를 수정하거나 예외 적용 여부를 검토하세요."),
+                        })
+        elif kind == "forbidden":
+            for pat in nr.get("patterns", []):
+                if not _valid_regex(pat):
+                    continue
+                for lr in law_rules:
+                    if lr.get("kind") != "required":
+                        continue
+                    for rp in lr.get("requires_any", []):
+                        sample = _literal_sample(rp)
+                        if len(sample) >= 2 and re.search(pat, sample):
+                            conflicts.append({
+                                "new_rule": name, "new_kind": "forbidden",
+                                "law_rule_id": lr["id"], "law_rule_name": lr["name"],
+                                "overlap": sample,
+                                "message": (f"내규 「{name}」가 금지하는 표현('{sample}')을 "
+                                            f"기존 법규 {lr['id']}({lr['name']})가 필수 고지로 요구합니다. "
+                                            f"내규를 수정하거나 예외 적용 여부를 검토하세요."),
+                            })
+                            break
+    return conflicts
+
+
 def normalize(rules) -> list[dict]:
     """LLM/휴리스틱 산출 룰을 룰엔진 스키마로 검증·정규화. 잘못된 정규식은 폐기."""
     out: list[dict] = []

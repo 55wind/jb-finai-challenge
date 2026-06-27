@@ -14,6 +14,7 @@ from pathlib import Path
 
 from . import internal_rules
 from .retriever import load_corpus
+from .rules_engine import run_rules
 
 _FEED = Path(__file__).resolve().parent.parent / "data" / "reg_feed.json"
 
@@ -50,3 +51,34 @@ async def scan(affected_counter=None) -> list[dict]:
             "proposed_rules": proposed,
         })
     return changes
+
+
+def recheck_approved(changes: list[dict], submissions: list[dict]) -> list[dict]:
+    """이미 승인·배포된 과거 콘텐츠 재검사 (피드백 #4 · 사후 관리).
+
+    감지된 규제 변경의 '제안 룰'을 기존 승인 콘텐츠에 결정적으로 돌려,
+    새 규제에 걸리는 건을 찾아 '재심의 필요'로 표시한다. 룰엔진 판정이므로
+    환각 없이 사후 영향만 잡아낸다. 실제 수정/회수는 사람이 결정.
+    """
+    flagged: list[dict] = []
+    for ch in changes:
+        rules = ch.get("proposed_rules") or []
+        if not rules:
+            continue
+        reg = ch["regulation"]
+        for sub in submissions:
+            findings = run_rules(sub["text"], sub["content_type"],
+                                 sub.get("language", "ko"), extra_rules=rules)
+            new_hits = [f for f in findings if f.get("source") == "internal"]
+            if not new_hits:
+                continue
+            flagged.append({
+                "submission_id": sub["id"],
+                "title": sub["title"],
+                "content_type": sub["content_type"],
+                "regulation_id": reg["id"],
+                "regulation_title": reg["title"],
+                "hits": [{"rule_name": f["rule_name"], "matched_text": f.get("matched_text"),
+                          "severity": f["severity"]} for f in new_hits],
+            })
+    return flagged

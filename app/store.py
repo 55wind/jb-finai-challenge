@@ -142,6 +142,11 @@ def save_translation(sid: int, target_lang: str, text: str, engine: str, report:
             (sid, _now(), target_lang, text, engine, json.dumps(report, ensure_ascii=False)))
         log(conn, sid, actor, "translate",
             f"{target_lang} 버전 생성({engine}) + 재심의 {report.get('grade_emoji','')}{report.get('grade_label','')}({report.get('score','')}점)")
+        # 피드백 #1 — 재심의 불통과 시 알림(감사로그): 직역 오역·고지 누락 사후 관리
+        if report.get("grade") != "pass":
+            log(conn, sid, "시스템-알림", "translate_alert",
+                f"⚠ {target_lang} 재심의 불통과({report.get('grade_label','')}) — "
+                f"마케터·준법감시인 확인 필요(번역 수정 후 재승인). 외국어 채널 배포 보류.")
 
 
 def add_internal_rules(rules: list[dict], source_text: str = "") -> list[dict]:
@@ -182,6 +187,15 @@ def set_internal_rule_active(rule_id: int, active: bool) -> None:
 def delete_internal_rule(rule_id: int) -> None:
     with _conn() as conn:
         conn.execute("DELETE FROM internal_rules WHERE id=?", (rule_id,))
+
+
+def approved_submissions_for_recheck() -> list[dict]:
+    """승인·배포된 콘텐츠의 본문 — 규제 변경 시 사후 재검사 대상 (피드백 #4)."""
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT id, title, content_type, language, text, status FROM submissions "
+            "WHERE status='approved' ORDER BY id DESC").fetchall()
+    return [dict(r) for r in rows]
 
 
 def count_submissions_by_types(types: list[str]) -> int:
