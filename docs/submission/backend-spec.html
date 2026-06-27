@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>JB 준법 코파일럿 — 백엔드 기능명세서</title>
+<style>
+  :root{
+    --jb:#00529b; --jb-dark:#003a6e; --jb-light:#e8f1fa;
+    --ink:#1a1d21; --muted:#5b6470; --line:#e1e5ea;
+    --red:#d6334a; --amber:#e3a008; --green:#1f9d55; --code-bg:#f6f8fa;
+    --mono:'Noto Sans Mono CJK KR',Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; color:var(--ink); background:#fff;
+    font-family:'Noto Sans CJK KR','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    line-height:1.68; font-size:14px;}
+  .page{max-width:920px; margin:0 auto; padding:0 0 48px;}
+  header.cover{background:linear-gradient(135deg,var(--jb) 0%,var(--jb-dark) 100%);
+    color:#fff; padding:42px 48px 36px;}
+  header.cover .kicker{font-size:12.5px; letter-spacing:.12em; text-transform:uppercase; opacity:.85; font-weight:600;}
+  header.cover h1{margin:8px 0 4px; font-size:27px; font-weight:800;}
+  header.cover .sub{font-size:15px; opacity:.92;}
+  header.cover .meta{margin-top:18px; display:grid; grid-template-columns:repeat(2,1fr); gap:6px 24px; font-size:13px;}
+  header.cover .meta b{opacity:.78; font-weight:600; margin-right:8px;}
+  main{padding:6px 48px 0;}
+  h2{font-size:18.5px; font-weight:800; color:var(--jb-dark); margin:34px 0 8px;
+    padding-bottom:7px; border-bottom:2px solid var(--jb-light);}
+  h2 .num{display:inline-block; background:var(--jb); color:#fff; font-size:12px; font-weight:700;
+    width:24px; height:24px; line-height:24px; text-align:center; border-radius:6px; margin-right:9px; vertical-align:2px;}
+  h3{font-size:15px; font-weight:700; margin:18px 0 5px;}
+  p{margin:6px 0;}
+  ul,ol{margin:6px 0; padding-left:22px;} li{margin:3px 0;}
+  code{background:var(--code-bg); border:1px solid var(--line); border-radius:5px; padding:1px 6px;
+    font-size:12px; font-family:var(--mono); color:#b1003e;}
+  pre{background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:12px 15px;
+    overflow-x:auto; font-family:var(--mono); font-size:11.5px;
+    line-height:1.55; white-space:pre-wrap;}
+  pre code{background:none; border:none; padding:0; color:#222;}
+  table{border-collapse:collapse; width:100%; margin:11px 0; font-size:12.5px;}
+  th,td{border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top;}
+  th{background:var(--jb-light); color:var(--jb-dark); font-weight:700;}
+  tbody tr:nth-child(even){background:#fafbfc;}
+  .lead{font-size:15px; background:var(--jb-light); border-left:4px solid var(--jb);
+    padding:12px 17px; border-radius:0 8px 8px 0; margin:11px 0;}
+  .callout{border-radius:8px; padding:11px 15px; margin:13px 0; font-size:13px; border:1px solid;}
+  .callout.tip{background:#eefaf3; border-color:#bfe6cf;}
+  .callout.warn{background:#fff7e6; border-color:#f0d99a;}
+  .callout b{display:block; margin-bottom:2px;}
+  .pill{display:inline-block; font-size:10.5px; font-weight:700; padding:1.5px 8px; border-radius:999px; vertical-align:1px;}
+  .pill.get{background:#e7f0fb; color:var(--jb-dark);}
+  .pill.post{background:#e6f6ec; color:var(--green);}
+  .pill.del{background:#fdecec; color:var(--red);}
+  .m{font-family:var(--mono); font-size:11.5px;}
+  footer{padding:22px 48px 0; color:var(--muted); font-size:12px;}
+  @media print{ h2{page-break-after:avoid;} pre,table,.callout{page-break-inside:avoid;} }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="cover">
+  <div class="kicker">JB금융그룹 Fin:AI Challenge · 지정주제2 Compliance AI · 본선 산출물 ② 백엔드 기능명세서</div>
+  <h1>JB 준법 코파일럿 — 백엔드 기능명세서</h1>
+  <div class="sub">FastAPI 오케스트레이션 · REST API · 승인 워크플로 · 감사로그 · 망분리 아키텍처</div>
+  <div class="meta">
+    <div><b>프레임워크</b>FastAPI (비동기) · Uvicorn (ASGI)</div>
+    <div><b>저장소</b>SQLite (운영: PostgreSQL 전환)</div>
+    <div><b>핵심</b>명시적 파이썬 파이프라인 (블랙박스 프레임워크 미사용)</div>
+    <div><b>구동</b><code>uvicorn app.main:app --reload</code> (단일 커맨드)</div>
+  </div>
+</header>
+
+<main>
+
+<h2><span class="num">1</span>개요 · 설계 원칙</h2>
+<p class="lead">백엔드는 프론트와 AI 모델 사이에서 <b>명시적이고 설명가능한 심의 파이프라인</b>을 오케스트레이션한다. LangChain 같은 블랙박스 에이전트 프레임워크 대신 <b>일반 파이썬 함수의 명시적 호출 그래프</b>로 구성해 각 단계를 추적·테스트·감사할 수 있게 했고, LLM 미연결 시 결정적 룰엔진으로 폴백해 <b>오프라인에서도 전 기능이 동작</b>한다. 모든 제출·승인·배포는 SQLite 감사로그에 영구 기록된다.</p>
+
+<h3>1.1 설계 원칙</h3>
+<table>
+  <thead><tr><th style="width:160px">원칙</th><th>구현</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td>명시적 파이프라인</td><td><code>orchestrator.py</code>가 ①~⑥ 단계를 직접 호출. 프레임워크 추상화 없음</td><td>설명가능성·감사대응 — 금융 규제상 "왜 이 판정인지" 추적 가능해야. 블랙박스 회피</td></tr>
+    <tr><td>비동기 병렬</td><td>독립 단계를 <code>asyncio.gather</code>로 병렬화(②∥③, ④∥⑤)</td><td>RAG·룰엔진·LLM심의·시뮬레이터의 지연을 겹쳐 응답시간 단축</td></tr>
+    <tr><td>결정적 폴백</td><td>LLM 불가 시 각 모듈이 룰 기반 결정적 결과 반환</td><td>평가환경 의존성 0 — Ollama 없이도 전 데모 재현. 테스트 결정성 확보</td></tr>
+    <tr><td>룰엔진이 판정 권위</td><td>준법 등급은 결정적 룰엔진이 결정, LLM·시뮬은 점수 보정(상한)만</td><td>LLM 환각이 등급을 좌우하지 못하게 — 합격 위장 차단</td></tr>
+    <tr><td>외부연동 어댑터 분리</td><td>규제피드·배포채널·상품DB를 어댑터 인터페이스로 격리</td><td>데모는 목/피드로 증명, 운영은 실 API로 교체. 망분리 게이트웨이 경유 설계</td></tr>
+    <tr><td>휴먼인더루프 게이트</td><td>승인 안 된 콘텐츠의 배포·번역을 HTTP 409로 차단</td><td>책임소재 — 자동화의 최종 게이트는 항상 사람</td></tr>
+  </tbody>
+</table>
+
+<h3>1.2 모듈 구성</h3>
+<pre><code>app/
+  main.py        FastAPI 앱 + 전체 REST 엔드포인트 + 정적 SPA 서빙
+  store.py       SQLite 저장소 — 제출/승인(F8)·감사로그(F9)·내규·번역·배포로그
+  pipeline/
+    orchestrator.py   심의 파이프라인 + autopilot(F12, +diff·가독성) 루프 + 번역 재심의(F10, +불통과 알림)
+    classifier.py     ① 콘텐츠 유형 분류(F1)
+    retriever.py      ② 규제 근거 검색 RAG(F2)
+    rules_engine.py   ③ 룰엔진 결정적 심의(F3)
+    llm_reviewer.py   ④ LLM 뉘앙스 심의(F4)
+    simulator.py      ⑤ 소비자 오인 시뮬레이터(F5, 페르소나 5종 +전북 특화)
+    report.py         ⑥ 리포트 종합·점수·등급(F6)
+    remediator.py     오토파일럿 수정 에이전트(F12)
+    textdiff.py       수정 전/후 비교 뷰 diff(F12, 결정적·피드백 반영)
+    readability.py    가독성 참고지표(F12, 결정적·피드백 반영)
+    internal_rules.py 내규 자연어→룰 + 법규 충돌 탐지(F13)
+    regwatch.py       규제 자동 추적·룰 제안 + 승인본 사후 재검사(F14)
+    distribution.py   마케팅 배포 Last-Mile(F15)
+    product_db.py     상품 DB 조회(F16)
+    multilingual.py   다국어 생성(F10)
+    llm_client.py     Ollama 클라이언트(온프레미스)
+  data/          regulations.json · rules.yaml · personas.json · fixtures.json
+                 reg_feed.json · products.json · app.db</code></pre>
+
+<h2><span class="num">2</span>오케스트레이션 파이프라인</h2>
+<p><code>orchestrator.run_review()</code>가 단일 심의 요청을 처리하는 핵심 흐름:</p>
+<pre><code>run_review(text, content_type, language, product_facts, quick):
+  0. 길이 가드   len(text) &lt; MIN_TEXT_LEN(2) → skip ("너무 짧음")
+  ① 유형 분류    classify(text)  — 수동 지정 시 분류기는 참고로만
+  내규 주입      _internal_rules_loader()  — 활성 내규를 법규와 함께 적용
+  ②∥③ 병렬      asyncio.gather(
+                   retrieve(text, ctype),              # RAG
+                   run_rules(text, ctype, lang, intl)  # 룰엔진(법규+내규)
+                 )
+  ④∥⑤ 분기      if not quick and LLM 가용:
+                   asyncio.gather(llm_reviewer.review(...), simulator.simulate(...))
+                 else:  # quick 모드 또는 LLM 미연결
+                   결정적 폴백(룰 기반 심의의견 + 결정적 시뮬레이션)
+  ⑥ 종합        report.compose(...) → 점수·등급·하이라이트·인용
+  다국어 방어    language ∈ {vi,zh,ja} → language_confidence="low" + 경고문</code></pre>
+<table>
+  <thead><tr><th style="width:140px">설정값</th><th style="width:80px">값</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td><code>MIN_TEXT_LEN</code></td><td>2</td><td>"원금 보장", "확정 연 5%" 같은 <b>짧은 위험 구절도 즉시 검사</b>. 2자 미만만 스킵</td></tr>
+    <tr><td><code>quick</code> 모드</td><td>bool</td><td>실시간 타이핑용 — LLM(④⑤) 생략하고 룰+RAG+결정적 시뮬만 → 밀림 방지(프론트 0.7초 디바운스와 연동)</td></tr>
+    <tr><td><code>LOW_CONFIDENCE_LANGS</code></td><td>{vi,zh,ja}</td><td>로컬 7B가 한/영 대비 뉘앙스 신뢰도 낮은 저자원 언어 → LLM 출력은 참고로만, 룰엔진을 권위로 + 사람검토 권장</td></tr>
+  </tbody>
+</table>
+<div class="callout tip"><b>왜 명시적 파이프라인인가</b>평가 기준의 "AI Agent 정의(판단·행동·검증·종료조건)"를 프레임워크 마법이 아니라 <b>읽히는 코드</b>로 구현했다. 각 단계가 일반 함수라 단위 테스트·감사·근거 추적이 가능하고, 금감원 검사 시 "이 등급이 나온 경로"를 그대로 제시할 수 있다.</div>
+
+<h2><span class="num">3</span>REST API 명세</h2>
+<h3>3.1 심의 · 수정 · 오토파일럿</h3>
+<table>
+  <thead><tr><th style="width:60px">메서드</th><th style="width:215px">경로</th><th>요청 → 응답</th></tr></thead>
+  <tbody>
+    <tr><td><span class="pill get">GET</span></td><td class="m">/api/health</td><td>→ LLM 가용여부·모델명·엔진 모드(llm / fallback)</td></tr>
+    <tr><td><span class="pill get">GET</span></td><td class="m">/api/fixtures</td><td>→ 데모 입력=TDD 정답셋 목록</td></tr>
+    <tr><td><span class="pill post">POST</span></td><td class="m">/api/review</td><td><code>{text, content_type?, language, product_facts, quick}</code> → 종합 리포트</td></tr>
+    <tr><td><span class="pill post">POST</span></td><td class="m">/api/apply-fixes</td><td><code>{text, fixes[]}</code> → 수정 적용된 본문(replace 치환·append 고지추가)</td></tr>
+    <tr><td><span class="pill post">POST</span></td><td class="m">/api/autopilot</td><td><code>{text, ..., max_iter(1~6)}</code> → 회차별 trace + 수렴/종료사유 + <b>diff(수정 전/후)·diff_stats·readability(가독성 참고지표)</b></td></tr>
+  </tbody>
+</table>
+
+<h3>3.2 내부 심의기준(내규) — F13</h3>
+<table>
+  <thead><tr><th style="width:60px">메서드</th><th style="width:255px">경로</th><th>용도</th></tr></thead>
+  <tbody>
+    <tr><td><span class="pill post">POST</span></td><td class="m">/api/internal-rules/extract</td><td>평문 내규 → 구조화 룰 미리보기 + <b>기존 법규 충돌 탐지(conflicts)</b> (저장 안 함)</td></tr>
+    <tr><td><span class="pill post">POST</span></td><td class="m">/api/internal-rules/test</td><td>적용 전 룰을 현재 초안에 돌려 과탐/미탐 미리보기 + <b>법규 충돌(conflicts)</b> (신뢰)</td></tr>
+    <tr><td><span class="pill post">POST</span></td><td class="m">/api/internal-rules</td><td>확인된 룰 저장 → 이후 심의에 법규와 함께 적용</td></tr>
+    <tr><td><span class="pill get">GET</span></td><td class="m">/api/internal-rules</td><td>저장된 내규 목록</td></tr>
+    <tr><td><span class="pill post">POST</span></td><td class="m">/api/internal-rules/{id}/toggle</td><td>활성/비활성 토글</td></tr>
+    <tr><td><span class="pill del">DELETE</span></td><td class="m">/api/internal-rules/{id}</td><td>내규 삭제</td></tr>
+  </tbody>
+</table>
+
+<h3>3.3 규제추적 · 상품DB · 배포</h3>
+<table>
+  <thead><tr><th style="width:60px">메서드</th><th style="width:255px">경로</th><th>용도</th></tr></thead>
+  <tbody>
+    <tr><td><span class="pill post">POST</span></td><td class="m">/api/regwatch/scan</td><td>규제 피드 스캔 → 변경감지+영향분석+룰 제안 + <b>승인본 사후 재검사(recheck)</b> (F14)</td></tr>
+    <tr><td><span class="pill get">GET</span></td><td class="m">/api/dist/channels</td><td>배포 가능 채널 목록 (F15)</td></tr>
+    <tr><td><span class="pill post">POST</span></td><td class="m">/api/submissions/{id}/distribute</td><td>승인 콘텐츠 채널 배포 — <b>미승인 시 409</b> (F15)</td></tr>
+    <tr><td><span class="pill get">GET</span></td><td class="m">/api/products · /api/products/{code}</td><td>상품 목록·조건 (F16, 코어뱅킹 연동 슬롯)</td></tr>
+  </tbody>
+</table>
+
+<h3>3.4 승인 워크플로 · 감사 — F8·F9·F10</h3>
+<table>
+  <thead><tr><th style="width:60px">메서드</th><th style="width:255px">경로</th><th>용도</th></tr></thead>
+  <tbody>
+    <tr><td><span class="pill post">POST</span></td><td class="m">/api/submissions</td><td>검토 제출 생성(+자동개선 요약 분리 기록)</td></tr>
+    <tr><td><span class="pill get">GET</span></td><td class="m">/api/submissions · /{id}</td><td>대기열 목록 · 상세(번역 포함)</td></tr>
+    <tr><td><span class="pill post">POST</span></td><td class="m">/api/submissions/{id}/decision</td><td><code>approve|reject|comment</code> (Human-in-the-loop)</td></tr>
+    <tr><td><span class="pill post">POST</span></td><td class="m">/api/submissions/{id}/translate</td><td>다국어 생성+재심의 — <b>승인본만, 미승인 시 409</b>. 재심의 불통과 시 <code>needs_attention</code> + 감사로그 알림(F10)</td></tr>
+    <tr><td><span class="pill get">GET</span></td><td class="m">/api/audit</td><td>감사 로그(전체 또는 제출별)</td></tr>
+  </tbody>
+</table>
+<p>요청 검증은 <b>Pydantic 모델</b>로 수행: <code>DecisionRequest.action</code>은 <code>^(approve|reject|comment)$</code> 정규식, <code>AutopilotRequest.max_iter</code>는 <code>ge=1, le=6</code>으로 입력 단계에서 방어한다.</p>
+
+<h2><span class="num">4</span>데이터 모델 (SQLite)</h2>
+<table>
+  <thead><tr><th style="width:130px">테이블</th><th>핵심 컬럼</th><th>역할</th></tr></thead>
+  <tbody>
+    <tr><td><code>submissions</code></td><td>id, created_at, title, submitter, content_type, language, text, report_json, <b>status</b>(pending/approved/rejected), decided_by/at, decision_comment</td><td>검토 제출 · 승인 상태(F8)</td></tr>
+    <tr><td><code>translations</code></td><td>id, submission_id→, target_lang, text, engine, report_json</td><td>다국어 버전 + 재심의 결과(F10)</td></tr>
+    <tr><td><code>audit_log</code></td><td>id, ts, submission_id, <b>actor</b>, <b>action</b>, detail</td><td>전 액션 추적(F9) — 누가/언제/근거</td></tr>
+    <tr><td><code>internal_rules</code></td><td>id, name, source_text, rule_json, active</td><td>내규 룰 저장(F13) — 원본 평문 + 룰엔진 스키마</td></tr>
+  </tbody>
+</table>
+<h3>4.1 책임소재 분리 기록</h3>
+<p>제출 시 <b>AI 자동개선</b>과 <b>사람의 제출</b>을 별도 감사 엔트리로 분리한다 — 내부통제·금감원 검사 대응:</p>
+<pre><code>create_submission():
+  if autopilot_summary:
+    log(sid, actor="AI-오토파일럿", action="auto_remediate", detail=요약)   # AI가 한 일
+  log(sid, actor=submitter, action="submit", detail="AI 1차심의 🟢통과(88점) — 검토 요청")  # 사람이 한 일
+decide(approve): log(actor="준법관리자", action="approve", "승인 — 배포가능 상태 전환")
+distribute():    log(actor="배포시스템", action="distribute", "마케팅 채널 자동 배포: ...")</code></pre>
+<div class="callout tip"><b>분리 기록의 의미</b>감사로그에 <b>"AI 자동개선 → 사람 승인 → 시스템 배포"</b>가 각각 다른 actor로 남아, "AI가 자동으로 게시했다"가 아니라 "사람이 승인해 배포됐다"는 책임 경계가 데이터로 증명된다.</div>
+
+<h2><span class="num">5</span>망분리(Air-gap) 아키텍처 — 3-zone</h2>
+<pre><code>┌─ 내부망 (Air-gap) ────────────┐   ┌─ DMZ 망연계 게이트웨이 ───┐   ┌─ 외부망 ───────────┐
+│ 심의 코어: LLM·RAG·룰엔진·     │   │ 단방향/배치 전송·검역       │   │ 법제처 OpenAPI(F14) │
+│ 시뮬레이터·승인·감사로그       │←──│  · 규제 피드 수신(배치)     │←──│ 고시 RSS            │
+│ (심의 데이터 외부 유출 0)      │──→│  · 승인본 발송(일방향)      │──→│ FCM·SNS·알림톡(F15) │
+└───────────────────────────────┘   └────────────────────────────┘   │ 코어뱅킹 상품DB(F16) │
+                                                                       └────────────────────┘</code></pre>
+<ul>
+  <li><b>심의 코어</b>(모델·룰·심의 데이터)는 내부망 격리 — 미공개 마케팅 자료·내규가 외부로 나가지 않음(외부 API 0).</li>
+  <li><b>외부 연동</b>(F14·F15·F16)은 코어가 직접 통신하지 않고 <b>어댑터 인터페이스 → DMZ 게이트웨이 경유</b>. 데모는 목/피드, 운영은 실 API 교체.</li>
+  <li>규제 피드는 <b>배치 수신</b>(실시간 크롤 아님), 승인본은 <b>일방향 발송</b> — 검역·단방향 전송으로 데이터 유출 차단.</li>
+</ul>
+
+<h2><span class="num">6</span>폴백 전략 — 오프라인 전체 동작</h2>
+<table>
+  <thead><tr><th style="width:140px">단계</th><th>LLM 모드</th><th>폴백(LLM 미연결)</th></tr></thead>
+  <tbody>
+    <tr><td>② RAG</td><td>BGE-m3 임베딩(설치 시)</td><td>어휘 검색(토큰 중첩+카테고리 부스팅, 의존성 0)</td></tr>
+    <tr><td>③ 룰엔진</td><td colspan="2" style="text-align:center">항상 결정적 — LLM 무관</td></tr>
+    <tr><td>④ LLM 심의</td><td>Qwen2.5 뉘앙스 심의</td><td>룰엔진 결과를 심의의견 형태로 결정적 변환</td></tr>
+    <tr><td>⑤ 시뮬레이터</td><td>페르소나 5종 1인칭 역할극(+전북 특화)</td><td>룰 카테고리→페르소나 취약점 매핑 템플릿(5종)</td></tr>
+    <tr><td>오토파일럿</td><td>LLM 재작성</td><td>결정적 룰 치환 + 고위험 표현 제거(안전망)까지 동작, 잔여는 사람 에스컬레이션</td></tr>
+  </tbody>
+</table>
+<p><b>근거:</b> 대회 평가환경에 GPU/Ollama가 없을 수 있다. 폴백 모드는 "축소판"이 아니라 <b>전체 데모 플로우(심의→시뮬→수정→승인→배포→다국어→감사)를 결정적으로 재현</b>한다. 동시에 테스트가 결정적이 되어 회귀 검증이 가능하다(69개 테스트는 폴백 고정).</p>
+
+<h2><span class="num">7</span>설정값 · 환경변수와 근거</h2>
+<table>
+  <thead><tr><th style="width:150px">환경변수 / 상수</th><th style="width:160px">기본값</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td><code>OLLAMA_URL</code></td><td>http://localhost:11434</td><td>온프레미스 로컬 서빙 표준 포트. 내부망 모델 서버로 교체 가능</td></tr>
+    <tr><td><code>OLLAMA_MODEL</code></td><td>qwen2.5:7b-instruct</td><td>Apache 2.0·한국어/다국어 강함·GPU 8~12GB. <b>모델 교체가 환경변수 1개</b> → 14B·신모델 즉시 수용</td></tr>
+    <tr><td><code>LLM_TIMEOUT</code></td><td>120초</td><td>로컬 7B의 긴 JSON 생성(시뮬 3종·재작성) 여유. 가용성 체크는 별도 2초</td></tr>
+    <tr><td>가용성 체크 타임아웃</td><td>2.0초</td><td><code>/api/tags</code> 헬스체크 — 빠르게 LLM 유무 판정 후 폴백 전환</td></tr>
+    <tr><td><code>JB_DB_PATH</code></td><td>app/data/app.db</td><td>SQLite 경로. 운영 시 PostgreSQL DSN으로 교체</td></tr>
+    <tr><td>LLM 호출 <code>retries</code></td><td>1</td><td>JSON 파싱 실패 시 1회 재시도, 그래도 실패면 폴백(무한 대기 방지)</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">8</span>비기능 요구 · 견고성</h2>
+<ul>
+  <li><b>병렬성</b>: <code>asyncio.gather</code> + 동기 함수는 <code>asyncio.to_thread</code>로 오프로드(RAG·룰엔진) — 이벤트 루프 블로킹 방지.</li>
+  <li><b>입력 검증</b>: Pydantic 모델로 타입·범위·enum 강제. 미존재 리소스 404, 상태 위반 409(미승인 배포/번역).</li>
+  <li><b>멱등·결정성</b>: 폴백 경로는 동일 입력→동일 출력 → 테스트·시연 재현성.</li>
+  <li><b>관측성</b>: <code>/api/health</code>로 엔진 모드 노출, 감사로그로 전 액션 추적.</li>
+  <li><b>보안</b>: 고객 개인정보 미취급(콘텐츠 텍스트만), 외부 전송 0, 감사 불변 기록.</li>
+</ul>
+
+<h2><span class="num">9</span>본선 고도화 계획</h2>
+<table>
+  <thead><tr><th style="width:130px">항목</th><th>MVP</th><th>본선/운영</th></tr></thead>
+  <tbody>
+    <tr><td>DB</td><td>SQLite</td><td>PostgreSQL — 동시성·인덱싱·백업·역할기반 접근</td></tr>
+    <tr><td>RAG 백엔드</td><td>어휘 + BGE-m3(선택)</td><td>Qdrant/Chroma 하이브리드(BM25+임베딩) + 형태소 분석</td></tr>
+    <tr><td>F14 규제추적</td><td>데모 피드(reg_feed.json)</td><td>법제처 국가법령정보 OpenAPI·금융위 고시 RSS 실연동</td></tr>
+    <tr><td>F15 배포</td><td>모의 어댑터</td><td>FCM·AWS SNS·SendGrid·알림톡 실 API</td></tr>
+    <tr><td>F16 상품DB</td><td>products.json</td><td>코어뱅킹 상품조건 API 실연동</td></tr>
+    <tr><td>인증/권한</td><td>역할 미구분</td><td>작성자/승인자 RBAC, 감사로그 위변조 방지(append-only·해시체인)</td></tr>
+    <tr><td>스트리밍</td><td>요청-응답</td><td>SSE/WebSocket — LLM 토큰·오토파일럿 진행 실시간</td></tr>
+  </tbody>
+</table>
+
+<div class="callout tip"><b>정합성</b>본 문서의 API·파이프라인 번호(①~⑧)·기능 ID(F1~F18)는 프론트엔드/AI Agent 명세서·통합 기능명세서·코드와 동일 체계로 정합한다.</div>
+
+</main>
+<footer>JB금융그룹 Fin:AI Challenge 지정주제2 · JB 준법 코파일럿 · 백엔드 기능명세서 · 무료·오픈소스 모델만 사용 · 100% 온프레미스</footer>
+</div>
+</body>
+</html>

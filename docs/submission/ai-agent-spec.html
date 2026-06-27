@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>JB 준법 코파일럿 — AI Agent 기능명세서</title>
+<style>
+  :root{
+    --jb:#00529b; --jb-dark:#003a6e; --jb-light:#e8f1fa;
+    --ink:#1a1d21; --muted:#5b6470; --line:#e1e5ea;
+    --red:#d6334a; --amber:#e3a008; --green:#1f9d55; --code-bg:#f6f8fa;
+    --mono:'Noto Sans Mono CJK KR',Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; color:var(--ink); background:#fff;
+    font-family:'Noto Sans CJK KR','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    line-height:1.68; font-size:14px;}
+  .page{max-width:920px; margin:0 auto; padding:0 0 48px;}
+  header.cover{background:linear-gradient(135deg,var(--jb) 0%,var(--jb-dark) 100%);
+    color:#fff; padding:42px 48px 36px;}
+  header.cover .kicker{font-size:12.5px; letter-spacing:.12em; text-transform:uppercase; opacity:.85; font-weight:600;}
+  header.cover h1{margin:8px 0 4px; font-size:27px; font-weight:800;}
+  header.cover .sub{font-size:15px; opacity:.92;}
+  header.cover .meta{margin-top:18px; display:grid; grid-template-columns:repeat(2,1fr); gap:6px 24px; font-size:13px;}
+  header.cover .meta b{opacity:.78; font-weight:600; margin-right:8px;}
+  main{padding:6px 48px 0;}
+  h2{font-size:18.5px; font-weight:800; color:var(--jb-dark); margin:34px 0 8px;
+    padding-bottom:7px; border-bottom:2px solid var(--jb-light);}
+  h2 .num{display:inline-block; background:var(--jb); color:#fff; font-size:12px; font-weight:700;
+    width:24px; height:24px; line-height:24px; text-align:center; border-radius:6px; margin-right:9px; vertical-align:2px;}
+  h3{font-size:15px; font-weight:700; margin:18px 0 5px;}
+  p{margin:6px 0;}
+  ul,ol{margin:6px 0; padding-left:22px;} li{margin:3px 0;}
+  code{background:var(--code-bg); border:1px solid var(--line); border-radius:5px; padding:1px 6px;
+    font-size:12px; font-family:var(--mono); color:#b1003e;}
+  pre{background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:12px 15px;
+    overflow-x:auto; font-family:var(--mono); font-size:11.5px;
+    line-height:1.55; white-space:pre-wrap;}
+  pre code{background:none; border:none; padding:0; color:#222;}
+  table{border-collapse:collapse; width:100%; margin:11px 0; font-size:12.5px;}
+  th,td{border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top;}
+  th{background:var(--jb-light); color:var(--jb-dark); font-weight:700;}
+  tbody tr:nth-child(even){background:#fafbfc;}
+  .lead{font-size:15px; background:var(--jb-light); border-left:4px solid var(--jb);
+    padding:12px 17px; border-radius:0 8px 8px 0; margin:11px 0;}
+  .callout{border-radius:8px; padding:11px 15px; margin:13px 0; font-size:13px; border:1px solid;}
+  .callout.tip{background:#eefaf3; border-color:#bfe6cf;}
+  .callout.warn{background:#fff7e6; border-color:#f0d99a;}
+  .callout b{display:block; margin-bottom:2px;}
+  .pill{display:inline-block; font-size:10.5px; font-weight:700; padding:1.5px 8px; border-radius:999px; vertical-align:1px;}
+  .pill.det{background:#e6f6ec; color:var(--green);}
+  .pill.llm{background:#f0ecff; color:#5b3bbf;}
+  footer{padding:22px 48px 0; color:var(--muted); font-size:12px;}
+  @media print{ h2{page-break-after:avoid;} pre,table,.callout{page-break-inside:avoid;} }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="cover">
+  <div class="kicker">JB금융그룹 Fin:AI Challenge · 지정주제2 Compliance AI · 본선 산출물 ③ AI Agent 기능명세서</div>
+  <h1>JB 준법 코파일럿 — AI Agent 기능명세서</h1>
+  <div class="sub">인지·판단·행동·검증·개선 구조 · 준법 오토파일럿 · 환각 방어 · 하이퍼파라미터 근거</div>
+  <div class="meta">
+    <div><b>LLM</b>Qwen2.5-7B-Instruct (Ollama 온프레미스)</div>
+    <div><b>구조</b>결정적 룰엔진(권위) + LLM(뉘앙스 보강) 이중방어</div>
+    <div><b>임베딩</b>BGE-m3 (선택) · 기본 어휘검색</div>
+    <div><b>에이전트</b>준법 오토파일럿 — 목표지향 자율 개선 루프</div>
+  </div>
+</header>
+
+<main>
+
+<h2><span class="num">1</span>에이전트 개요 · 정의 부합</h2>
+<p class="lead">본 시스템의 AI는 단순 분류기가 아니라 <b>목표(준법 통과)를 향해 판단·행동·검증·개선을 자율 반복</b>하는 에이전트다. 핵심 안전장치는 <b>판정 권위를 결정적 룰엔진에 두는 것</b> — LLM은 뉘앙스 심의·재작성·역할극을 담당하되, 합격 여부는 항상 룰엔진(YAML·정규식)이 심판한다. 따라서 LLM이 "통과했다"고 환각해도 등급을 위장할 수 없다.</p>
+
+<h3>1.1 평가기준의 AI Agent 정의 대응</h3>
+<table>
+  <thead><tr><th style="width:90px">단계</th><th>구현</th><th style="width:130px">담당 모듈</th></tr></thead>
+  <tbody>
+    <tr><td><b>인지</b></td><td>콘텐츠 유형 분류(①) + 규제 근거 RAG 검색(②)로 맥락 수집</td><td>classifier · retriever</td></tr>
+    <tr><td><b>판단</b></td><td>룰엔진 결정적 판정(③) + LLM 뉘앙스 심의(④) + 페르소나 역할극→오해 판정(⑤)</td><td>rules_engine · llm_reviewer · simulator</td></tr>
+    <tr><td><b>행동</b></td><td>수정안 치환·고지추가(F7) · <b>오토파일럿 자율 재작성(F12)</b> · 다국어 생성(F10)</td><td>orchestrator · remediator · multilingual</td></tr>
+    <tr><td><b>검증</b></td><td>수정 후 <b>자동 재심의 루프</b> · 인용 화이트리스트 · quote 원문 검증 · 최종 사람 승인</td><td>orchestrator.autopilot · report</td></tr>
+    <tr><td><b>종료조건</b></td><td>통과(passed) / 정체(plateau) / 발산(regressed) / 불변(no_change) / 최대회차 → 미수렴 시 사람 에스컬레이션</td><td>orchestrator.autopilot</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">2</span>① 콘텐츠 유형 분류기 (F1)</h2>
+<p><span class="pill det">결정적</span> 예금·투자·대출을 다국어 키워드 가중치로 분류. <code>classify()</code> → <code>{content_type, confidence, scores}</code>.</p>
+<table>
+  <thead><tr><th style="width:160px">설정</th><th>값</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td>키워드 가중치</td><td>핵심어 2점 / 보조어 1점</td><td>"예금·펀드·대출" 등 직접 신호는 2점, "세전·승인" 등 정황 신호는 1점으로 차등 → 오분류 억제</td></tr>
+    <tr><td>다국어 패턴</td><td>KO·EN·VI·ZH·JA 정규식</td><td>전북 외국인 고객 콘텐츠도 유형 라우팅 — 언어별 룰셋 진입점</td></tr>
+    <tr><td>무신호 기본값</td><td>deposit</td><td>총점 0이면 가장 보편적·보수적 유형으로. 수동 지정이 항상 우선(분류기는 참고)</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">3</span>② 규제 근거 검색 / RAG (F2)</h2>
+<p><span class="pill det">결정적 기본</span> 어휘 검색(토큰 중첩 + 카테고리 키워드 부스팅), <code>sentence-transformers</code> 설치 시 <b>BGE-m3 임베딩 코사인</b>으로 자동 전환. 인용은 검색된 코퍼스 조항으로만 제한.</p>
+<table>
+  <thead><tr><th style="width:170px">설정값</th><th style="width:90px">값</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td><code>SCORE_THRESHOLD</code></td><td>0.05</td><td>이 미만은 "근거 불충분" 처리 → <b>약한 매치로 억지 인용하는 환각 방지</b>. 짧은 광고 문구도 관련 조항을 잡되 무관 조항은 배제하는 균형점</td></tr>
+    <tr><td><code>top_k</code></td><td>4</td><td>상위 4개 조항이 한 화면 인용에 적정 — 너무 많으면 LLM 프롬프트·UI 과부하, 적으면 교차참조 누락</td></tr>
+    <tr><td>참조 그래프 확장</td><td>연계 조항 0.5배 가중</td><td>법률은 의미 유사성이 아니라 <b>참조 트리(조→시행령→고시)</b>로 얽힘. 검색 조항이 참조하는 규정을 맥락으로 추가하되, 직접 매치보다 낮은 점수로</td></tr>
+    <tr><td>질의 확장</td><td>카테고리 시드 키워드</td><td>"확정 5%" 같은 짧은 입력에 "보장·확실·오인" 등 시드를 더해 어휘 검색 재현율 보강</td></tr>
+    <tr><td>임베딩 모델</td><td>BAAI/bge-m3 (선택)</td><td>MIT·다국어 강함. 미설치 시 어휘검색 폴백 → 의존성 0으로 즉시 구동</td></tr>
+  </tbody>
+</table>
+<div class="callout tip"><b>등급 권위는 RAG가 아니다</b>RAG 오검색이 나도 <b>준법 등급은 결정적 룰엔진</b>이 정하므로, 잘못된 검색은 LLM '참고 의견'에만 영향을 줄 뿐 등급을 흔들지 못한다 — RAG 실패의 폭발 반경을 구조적으로 제한.</div>
+
+<h2><span class="num">4</span>③ 룰엔진 — 결정적 심의 백본 (F3)</h2>
+<p><span class="pill det">결정적</span> YAML 룰(KO 8종 + EN 재심의 2종 + 내규) + 정규식. <b>준법 등급의 판정 권위.</b></p>
+<ul>
+  <li><b>forbidden 룰</b>: 패턴 매치 시 위반 + span 추출(에디터 밑줄). <code>condition_absent_any</code>로 면제 조건(이미 고지 있으면 제외) 지원.</li>
+  <li><b>required 룰</b>: <code>requires_any</code> 패턴이 전부 부재하면 위반 → <code>fix_append</code>로 고지문 추가 제안.</li>
+  <li><b>수정안 생성</b>: "확정 연 5%"의 숫자를 보존한 치환안(예: "연 5%(세전, 변동가능)") 등 룰별 <code>suggestion_map</code>.</li>
+</ul>
+<p>코드 수정 없이 <code>rules.yaml</code>에 룰 추가만으로 확장 가능 — 결정적·설명가능·테스트 가능(TDD 정답셋).</p>
+
+<h2><span class="num">5</span>④ LLM 뉘앙스 심의 (F4)</h2>
+<p><span class="pill llm">LLM</span> RAG 근거 + 룰엔진 결과를 주입받아 <b>룰이 놓친 뉘앙스 리스크</b>(맥락상 오인, 조건 축약, 과장 분위기)를 도출. 한국 준법감시인 페르소나, JSON 강제 출력.</p>
+<table>
+  <thead><tr><th style="width:200px">환각 방어 장치</th><th>구현</th></tr></thead>
+  <tbody>
+    <tr><td>인용 화이트리스트</td><td><code>basis_id</code>가 <b>검색된 조항 id 집합</b>에 없으면 제거(null) — 존재하지 않는 조항 창작 차단</td></tr>
+    <tr><td>quote 원문 검증</td><td>지적 문구가 초안 원문에 실제로 없으면 비표시 — "없는 문구 지적" 차단</td></tr>
+    <tr><td>과탐 억제 프롬프트</td><td>"준수하면 빈 배열, 억지로 만들지 말 것 · 이미 포함된 고지를 누락으로 지적 말 것" 명시</td></tr>
+    <tr><td>점수 영향 상한</td><td>LLM 단독 지적은 <code>_LLM_CAP=6</code>점까지만 감점 + advisory(참고의견)로 분리 — 룰엔진을 권위로</td></tr>
+    <tr><td>폴백</td><td>JSON 파싱 실패·LLM 불가 시 룰엔진 결과를 심의의견으로 결정적 변환</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">6</span>⑤ ★소비자 오인 시뮬레이터 (F5) — 헤드라인</h2>
+<p><span class="pill llm">LLM</span> 페르소나 5종(고령자·금융초보·외국인 + <b>전북 특화 농업인·소상공인</b>)이 광고를 <b>1인칭으로 읽고</b>, 자신이 믿게 된 것 중 ⓐ상품 실제조건 또는 ⓑ규제상 암시 금지 항목과 어긋나는 <b>'오해'를 스스로 식별</b>한다. 오해 판정기가 위험 오해를 플래그하고 유발 문구를 역추적.</p>
+<table>
+  <thead><tr><th style="width:180px">설계 결정</th><th>구현</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td>3 페르소나 1콜 처리</td><td>역할극+판정을 단일 LLM 호출로</td><td>로컬 7B 큐 적체·레이턴시 방지 — 3콜이면 작성 흐름이 밀림</td></tr>
+    <tr><td>프로필 이해도 제약</td><td>"금융이해도를 벗어난 전문 해석 금지"</td><td>72세 은퇴자가 전문가처럼 읽으면 시뮬 의미 상실 — 취약성 재현이 목적</td></tr>
+    <tr><td>오해만 수집</td><td>실제조건과 일치하는 올바른 이해는 제외, 없으면 빈 배열</td><td>과잉 경고 억제 — "진짜 오해"만 헤드라인에</td></tr>
+    <tr><td>유발문구 원문 검증</td><td><code>trigger_phrase</code>가 본문에 없으면 null</td><td>역추적 클릭 이동의 정확성 + 환각 차단</td></tr>
+    <tr><td>위험도 집계</td><td>high 2건↑=높음 · 1건↑=중간 · 그외 낮음</td><td>단일 오해로 과민 반응하지 않되, 복수 고위험은 명확히 경고</td></tr>
+    <tr><td>advisory 분리</td><td>점수 상한 <code>_SIM_CAP=12</code> · 등급은 룰 기준</td><td><b>"법적 판정이 아닌 표현 개선 권고"</b> — 룰이 깨끗하면 페르소나만으로 반려 불가(과잉규제 방지)</td></tr>
+    <tr><td>전북 특화 페르소나</td><td>🌾농업인·🏪소상공인 추가(<code>region:jeonbuk</code> 태그)</td><td>전북은행 고객 특성 반영 — 농업인(계절성 목돈·중도해지 미인지), 소상공인(운전자금 대출·우대조건/가산금리 간과). 지역 밀착 마케팅의 실제 오인을 재현</td></tr>
+  </tbody>
+</table>
+<p><b>폴백:</b> LLM 불가 시 룰 카테고리 → 페르소나 취약점(<code>vulnerabilities</code>) 매핑 템플릿으로 결정적 시뮬레이션 — 오프라인에서도 헤드라인 재현.</p>
+
+<h2><span class="num">7</span>⑥ 리포트 종합 — 점수·등급 (F6)</h2>
+<p>룰·LLM·시뮬 결과를 통합. <b>감점식 점수(100 시작)</b> + 등급 판정. 핵심은 "룰엔진이 권위, LLM·시뮬은 보정만".</p>
+<table>
+  <thead><tr><th style="width:150px">감점 계수</th><th>high / medium / low</th><th>상한</th></tr></thead>
+  <tbody>
+    <tr><td>룰 위반 <code>_RULE_PENALTY</code></td><td>12 / 4 / 1</td><td>무제한 (권위)</td></tr>
+    <tr><td>LLM 단독 <code>_LLM_PENALTY</code></td><td>5 / 2 / 1</td><td><code>_LLM_CAP=6</code></td></tr>
+    <tr><td>시뮬 <code>_SIM_PENALTY</code></td><td>4 / 2 / —</td><td><code>_SIM_CAP=12</code></td></tr>
+  </tbody>
+</table>
+<p><b>근거:</b> 룰 high(12점)는 LLM high(5점)·시뮬 high(4점)보다 훨씬 무겁다 — 결정적 위반이 추정성 지적을 압도하게. LLM·시뮬은 상한(6·12)을 둬 "참고 의견이 등급을 뒤집지 못하게" 한다. 점수 하한 5점.</p>
+<h3>7.1 등급 판정 로직</h3>
+<pre><code>if 룰 위반 0건 and rule_penalty==0:        # 결정적으로 준법
+    grade = pass(≥80) | caution            # 페르소나·LLM만으론 위험 강등 불가
+elif score&lt;60 or (high≥1 and score&lt;75): grade = danger 🔴
+elif score≥85 and high==0:                grade = pass 🟢
+else:                                     grade = caution 🟡</code></pre>
+<div class="callout tip"><b>설계 핵심</b>"룰 위반이 없으면 LLM·시뮬레이터 참고의견만으로 위험 등급을 줄 수 없다"는 규칙이 <b>과잉규제와 환각 등급 조작을 동시에 차단</b>한다. 합법이지만 오해 유발인 콘텐츠는 반려가 아니라 "표현 개선 권고".</div>
+
+<h2><span class="num">8</span>★ 준법 오토파일럿 — 자율 개선 루프 (F12)</h2>
+<p><span class="pill llm">LLM+결정적</span> 위반 초안을 <b>심의→고쳐쓰기→재심의</b>로 통과/종료조건까지 자율 반복하는 목표지향 에이전트. 합격 판정은 <b>결정적 룰엔진(run_review의 grade)만</b> — LLM이 합격을 위장할 수 없다.</p>
+<h3>8.1 한 회차의 행동 순서</h3>
+<pre><code>for i in range(max_iter):
+  report = run_review(current)              # 재심의(판단)
+  if score &lt; prev_score: stop "regressed"   # 발산 방지 — 직전 결과 유지
+  if grade == "pass": converged; stop "passed"
+  if score == prev_score: stop "plateau"    # 정체 — 진전 없음
+  ── 행동 ──
+  (a) det_fixes  : 결정적 룰 치환·고지추가 적용
+  (b) _strip_residual_high : LLM이 못 없앤 고위험 금지문구 안전망 제거(위험 등급 탈출 보장)
+  (c) remediate  : 잔여(비정형) 위반만 LLM 재작성(셀링포인트 보존)
+  (d) _dedup_disclosures : 중복 고지문 정리
+  if nxt == current: stop "no_change"       # 불변 — 더 개선 불가</code></pre>
+<table>
+  <thead><tr><th style="width:160px">설정 / 종료조건</th><th>값</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td><code>AUTOPILOT_MAX_ITER</code></td><td>4 (요청 1~6)</td><td>로컬 7B 4회면 대개 수렴 + 무한루프·과도 레이턴시 방지. 종료보장의 상한</td></tr>
+    <tr><td>passed</td><td>grade==pass</td><td>목표 달성 — 결정적 룰엔진이 통과 선언</td></tr>
+    <tr><td>regressed</td><td>score↓</td><td>발산 시 이 회차 버리고 직전(더 나은) 결과 유지 — 개악 방지</td></tr>
+    <tr><td>plateau / no_change</td><td>점수·텍스트 불변</td><td>진전 없으면 즉시 종료 → 사람 에스컬레이션</td></tr>
+    <tr><td>합격 무결성</td><td>grade는 run_review만</td><td>LLM 재작성이 "통과"라 주장해도 룰엔진 재심의로만 합격 — 환각 위장 불가</td></tr>
+  </tbody>
+</table>
+<p><b>검증 결과(데모):</b> 🔴46 → 🟡82 → 🟢88로 자율 수렴. 최종 게시는 <code>pending</code>으로만 제출되어 <b>사람 승인 필수</b>, AI 자동개선 이력은 감사로그에 분리 기록.</p>
+
+<h3>8.2 수정 에이전트 (remediator) 제약</h3>
+<ul>
+  <li><b>셀링포인트 보존</b>: "금리 수치·상품명·혜택은 최대한 보존" — 과교정으로 마케팅 가치 훼손 방지.</li>
+  <li><b>중복 고지 금지</b>: 필수 고지문은 룰엔진이 처리하므로 LLM은 새로 추가 안 함(중복 방지).</li>
+  <li><b>인용 제한</b>: <code>basis_id</code>는 검색 조항으로만.</li>
+  <li><b>폴백</b>: LLM 불가 시 변경 없이 반환 → 루프가 "수렴 실패 → 사람 에스컬레이션"으로 안전 종료.</li>
+</ul>
+<h3>8.3 결과 표시 — 수정 내역·가독성 (결정적, 피드백 반영)</h3>
+<ul>
+  <li><b>수정 전/후 비교 뷰(diff)</b> <span class="pill det">결정적</span>: 초안→최종을 어절 단위로 비교(<code>textdiff.word_diff</code>, <code>difflib</code> 기반)해 삭제·추가 세그먼트로 표시 — 준법감시인·마케터가 <b>AI가 무엇을 바꿨는지</b> 한눈에 파악, 감사 추적 강화. LLM 불필요.</li>
+  <li><b>가독성 참고지표</b> <span class="pill det">결정적</span>: 자동수정 완료 후 1회 표시(<code>readability.score</code> — 문장 길이·전문용어 밀도). <b>준법 점수와 별개의 참고지표이며 마케팅 효과를 예측하지 않는다</b> — 준법 통과만 추구할 때의 문장 경직을 작성자가 인지하도록 보조하는 신호로 한정.</li>
+</ul>
+
+<h2><span class="num">9</span>다국어 생성 + 재심의 (F10)</h2>
+<p>승인본(KO) → 타깃언어 생성 후 <b>동일 파이프라인으로 재심의</b>. 직역이 만드는 보장성 오역(예: "확정 5%"→"Guaranteed 5%")을 영문 룰셋이 검출. <b>한국어가 주력 시장이므로 우선 배포하고 다국어는 후속</b>(생성·심의 한계비용 ≈ 0)이라 영어 재심의가 한국어 발송을 지연시키지 않는다. <b>재심의 불통과 시 <code>needs_attention</code> 플래그 → 마케터·준법감시인 알림(감사로그) + 외국어 채널 배포 보류.</b> 비-한/영 언어는 <code>language_confidence=low</code> 플래그 + 사람검토 권장(KO 피벗 계획).</p>
+
+<h2><span class="num">10</span>내규 자연어→룰 (F13) · 규제 추적 (F14)</h2>
+<table>
+  <thead><tr><th style="width:120px">기능</th><th>동작</th><th>신뢰 모델</th></tr></thead>
+  <tbody>
+    <tr><td>F13 내규 변환</td><td>비개발자의 평문 내규를 LLM이 정규식 룰로 변환 + <b>법규 충돌 탐지</b></td><td>LLM은 <b>제안만</b> → 정규식 컴파일 검증(<code>_valid_regex</code>) + 적용 전 테스트(과탐/미탐 미리보기) + <b>기존 법규 룰과 충돌 자동 탐지</b>(<code>detect_conflicts</code> — 내규 required↔법규 forbidden 패턴 겹침 경고) + <b>사람 승인 게이트</b> → 결정적 룰엔진이 실제 판정</td></tr>
+    <tr><td>F14 규제 추적</td><td>규제 피드 변경 감지→영향분석→룰 자동 제안 + <b>승인본 사후 재검사</b></td><td>제안만, 사람 승인해야 적용(휴먼인더루프). <b>이미 승인·배포된 과거 콘텐츠를 제안 룰로 재검사(<code>recheck_approved</code>) → 새 규제 영향분 탐지 시 "재심의 필요" 알림</b>. 운영: 법제처 OpenAPI</td></tr>
+  </tbody>
+</table>
+<div class="callout warn"><b>7B 룰 생성 오류 방어</b>LLM이 정규식을 잘못 만들어도("최초"→"최고") <b>적용 전 미리보기</b>로 사람이 과탐/미탐을 발견하고, 권위는 결정적 룰엔진+승인자에 있다. 되돌리기·토글·감사로그로 안전망 다중화.</div>
+
+<h2><span class="num">11</span>LLM 클라이언트 · 추론 설정</h2>
+<table>
+  <thead><tr><th style="width:150px">설정</th><th style="width:130px">값</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td>모델</td><td>qwen2.5:7b-instruct</td><td>Apache 2.0(상업가능)·한국어/다국어 강함·GPU 8~12GB. 환경변수 1개로 14B·신모델 교체</td></tr>
+    <tr><td><code>temperature</code></td><td>0.2</td><td>준법 심의는 창의성이 아니라 <b>일관성·재현성</b>이 중요 → 낮은 온도로 결정적에 가깝게</td></tr>
+    <tr><td><code>format</code></td><td>"json" 강제</td><td>구조화 출력 — 파싱 안정성. 실패 시 코드펜스/잡담 제거 후 재파싱</td></tr>
+    <tr><td><code>retries</code></td><td>1</td><td>JSON 실패 1회 재시도 후 폴백 — 무한 대기 방지</td></tr>
+    <tr><td>가용성 체크</td><td>2초 / <code>/api/tags</code></td><td>빠른 헬스체크로 LLM 유무 판정 → 미연결 즉시 폴백 전환</td></tr>
+    <tr><td><code>LLM_TIMEOUT</code></td><td>120초</td><td>로컬 7B의 긴 JSON 생성(시뮬 3종·재작성) 여유</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">12</span>환각·운영 리스크 대응 (종합)</h2>
+<table>
+  <thead><tr><th style="width:150px">리스크</th><th>대응(구현)</th></tr></thead>
+  <tbody>
+    <tr><td>허위 인용</td><td>인용을 검색 조항 id로 화이트리스트 제한 + quote 원문 존재 검증 + 근거 부족 시 "근거 불충분" 명시</td></tr>
+    <tr><td>합격 위장</td><td>오토파일럿 합격 판정은 결정적 룰엔진만 — LLM 재작성이 통과 주장 불가</td></tr>
+    <tr><td>과잉규제</td><td>시뮬·LLM 단독 지적은 advisory, 점수 상한(6·12). 룰 깨끗하면 위험 강등 불가</td></tr>
+    <tr><td>마케팅 훼손</td><td>remediator "셀링포인트 보존" 제약 + 사람 승인으로 과교정 반려 가능</td></tr>
+    <tr><td>비영어권 환각</td><td><code>language_confidence=low</code> + 경고 + 룰셋 권위 + 사람검토. 환각이 등급 못 흔듦</td></tr>
+    <tr><td>설명가능성</td><td>판정 뼈대는 결정적 룰엔진(YAML 공개) + 모든 지적에 조항·URL + 명시적 파이프라인(블랙박스 미사용)</td></tr>
+    <tr><td>책임소재</td><td>AI=1차심의·권고, 사람=최종 승인. 자동개선·승인·배포가 다른 actor로 감사 분리 기록</td></tr>
+    <tr><td>모델 노후화</td><td>교체가 환경변수 1개 — 오픈모델 발전 즉시 수용</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">13</span>검증 · 본선 고도화</h2>
+<ul>
+  <li><b>TDD 정답셋</b>: 픽스처(알려진 위반)→기대 룰 플래그 회귀, 오토파일럿 수렴·종료보장·합격무결성·폴백, 피드백 반영 6건(전북 페르소나·diff·가독성·충돌탐지·재검사·다국어 알림) 등 <b>69개 테스트 전체 통과</b>(폴백 고정으로 결정적).</li>
+  <li><b>본선</b>: RAG를 Qdrant 하이브리드+형태소 매칭으로, F14/F15/F16을 실 API로, 룰 커버리지 리포트 + 미탐 사례→신규 룰 피드백 루프, PoC 정밀도·재현율 캘리브레이션(준법감시부 과거 사례 블라인드 비교).</li>
+</ul>
+
+<div class="callout tip"><b>정합성</b>본 문서의 모듈·파이프라인 번호(①~⑧)·기능 ID(F1~F18)·하이퍼파라미터는 프론트엔드/백엔드 명세서·통합 기능명세서·코드와 동일 체계로 정합한다.</div>
+
+</main>
+<footer>JB금융그룹 Fin:AI Challenge 지정주제2 · JB 준법 코파일럿 · AI Agent 기능명세서 · 무료·오픈소스 모델만 사용 · 100% 온프레미스</footer>
+</div>
+</body>
+</html>

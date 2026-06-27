@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>JB 준법 코파일럿 — 프론트엔드 기능명세서</title>
+<style>
+  :root{
+    --jb:#00529b; --jb-dark:#003a6e; --jb-light:#e8f1fa;
+    --ink:#1a1d21; --muted:#5b6470; --line:#e1e5ea;
+    --red:#d6334a; --amber:#e3a008; --green:#1f9d55; --code-bg:#f6f8fa;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; color:var(--ink); background:#fff;
+    font-family:'Noto Sans CJK KR','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    line-height:1.68; font-size:14px;}
+  .page{max-width:920px; margin:0 auto; padding:0 0 48px;}
+  header.cover{background:linear-gradient(135deg,var(--jb) 0%,var(--jb-dark) 100%);
+    color:#fff; padding:42px 48px 36px;}
+  header.cover .kicker{font-size:12.5px; letter-spacing:.12em; text-transform:uppercase; opacity:.85; font-weight:600;}
+  header.cover h1{margin:8px 0 4px; font-size:27px; font-weight:800;}
+  header.cover .sub{font-size:15px; opacity:.92;}
+  header.cover .meta{margin-top:18px; display:grid; grid-template-columns:repeat(2,1fr); gap:6px 24px; font-size:13px;}
+  header.cover .meta b{opacity:.78; font-weight:600; margin-right:8px;}
+  main{padding:6px 48px 0;}
+  h2{font-size:18.5px; font-weight:800; color:var(--jb-dark); margin:34px 0 8px;
+    padding-bottom:7px; border-bottom:2px solid var(--jb-light);}
+  h2 .num{display:inline-block; background:var(--jb); color:#fff; font-size:12px; font-weight:700;
+    width:24px; height:24px; line-height:24px; text-align:center; border-radius:6px; margin-right:9px; vertical-align:2px;}
+  h3{font-size:15px; font-weight:700; margin:18px 0 5px;}
+  p{margin:6px 0;}
+  ul,ol{margin:6px 0; padding-left:22px;} li{margin:3px 0;}
+  code{background:var(--code-bg); border:1px solid var(--line); border-radius:5px; padding:1px 6px;
+    font-size:12px; font-family:'Noto Sans Mono CJK KR',Consolas,monospace; color:#b1003e;}
+  pre{background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:12px 15px;
+    overflow-x:auto; font-family:'Noto Sans Mono CJK KR',Consolas,monospace; font-size:11.5px;
+    line-height:1.55; white-space:pre-wrap;}
+  pre code{background:none; border:none; padding:0; color:#222;}
+  table{border-collapse:collapse; width:100%; margin:11px 0; font-size:12.5px;}
+  th,td{border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top;}
+  th{background:var(--jb-light); color:var(--jb-dark); font-weight:700;}
+  tbody tr:nth-child(even){background:#fafbfc;}
+  .lead{font-size:15px; background:var(--jb-light); border-left:4px solid var(--jb);
+    padding:12px 17px; border-radius:0 8px 8px 0; margin:11px 0;}
+  .callout{border-radius:8px; padding:11px 15px; margin:13px 0; font-size:13px; border:1px solid;}
+  .callout.tip{background:#eefaf3; border-color:#bfe6cf;}
+  .callout.warn{background:#fff7e6; border-color:#f0d99a;}
+  .callout b{display:block; margin-bottom:2px;}
+  .pill{display:inline-block; font-size:10.5px; font-weight:700; padding:1.5px 8px; border-radius:999px; vertical-align:1px;}
+  .pill.done{background:#e6f6ec; color:var(--green);}
+  .pill.str{background:#f0ecff; color:#5b3bbf;}
+  .pill.mvp{background:#e7f0fb; color:var(--jb-dark);}
+  figure{margin:13px 0;}
+  figure img{width:100%; border:1px solid var(--line); border-radius:9px;}
+  figcaption{font-size:12px; color:var(--muted); margin-top:4px; text-align:center;}
+  footer{padding:22px 48px 0; color:var(--muted); font-size:12px;}
+  .kbd{font-family:var(--mono);background:#f0f2f5;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;font-size:11px;}
+  @media print{
+    h2{page-break-after:avoid;} pre,table,figure,.callout{page-break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="cover">
+  <div class="kicker">JB금융그룹 Fin:AI Challenge · 지정주제2 Compliance AI · 본선 산출물 ① 프론트엔드 기능명세서</div>
+  <h1>JB 준법 코파일럿 — 프론트엔드 기능명세서</h1>
+  <div class="sub">심의 워크스페이스 · 소비자 오인 시뮬레이터 헤드라인 · 준법관리자 검토 SPA</div>
+  <div class="meta">
+    <div><b>구성</b>정적 SPA (단일 <code>app/static/index.html</code> · 빌드 불필요)</div>
+    <div><b>기술</b>바닐라 JS · Pretendard 웹폰트 · CSS 변수 디자인 토큰</div>
+    <div><b>서빙</b>FastAPI 정적 서빙 (<code>/</code> · <code>/static</code>)</div>
+    <div><b>통신</b>REST(JSON) · <code>fetch</code> · AbortController</div>
+  </div>
+</header>
+
+<main>
+
+<h2><span class="num">1</span>개요 · 설계 원칙</h2>
+<p class="lead">프론트엔드는 준법 심의를 <b>"문서 작성 도구"의 경험</b>으로 제공한다. Grammarly·린터처럼 작성 중 실시간으로 위험 표현에 물결 밑줄을 긋고, 화면 최상단(헤드라인)에 <b>「👥 소비자는 이렇게 오해합니다」</b>를 띄워 작성자가 배포 전에 위험을 체감하게 한다. 별도 빌드·번들러 없이 단일 HTML로 1-커맨드 구동되며, 백엔드 폴백 모드와 맞물려 <b>오프라인에서도 전 기능 시연</b>이 가능하다.</p>
+
+<h3>1.1 설계 원칙</h3>
+<table>
+  <thead><tr><th style="width:150px">원칙</th><th>구현</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td>제로 빌드</td><td>단일 <code>index.html</code>에 HTML·CSS·JS 인라인. 외부 의존은 Pretendard 웹폰트(CDN) 1종</td><td>하드마감(6/12)·평가환경 의존성 제거 — <code>uvicorn</code> 한 줄로 구동, npm/webpack 불요</td></tr>
+    <tr><td>작성 흐름 보호</td><td>실시간 검사를 <b>2단계</b>(빠른 룰 0.7초 / 깊은 LLM 2.5초)로 분리해 타이핑을 막지 않음</td><td>매 키 입력마다 LLM을 부르면 7B 로컬 모델 큐가 적체 → 입력 지연. §3.1 참조</td></tr>
+    <tr><td>오인 시뮬레이터 우선</td><td>검토 패널 <b>최상단</b>에 페르소나 오해를 배치(점수 바로 아래)</td><td>규제의 본질은 "표현 적발"이 아니라 "소비자 오인 방지" — 화면을 열면 그것이 가장 먼저 보이게</td></tr>
+    <tr><td>설명가능 UI</td><td>모든 지적에 조항 인용(클릭 시 출처 URL), 유발 문구 역추적(클릭 시 본문 이동)</td><td>준법관리자가 "왜 위반인가"를 근거와 함께 즉시 확인 → 무지성 승인 억제</td></tr>
+    <tr><td>휴먼인더루프 가시화</td><td>AI 자동개선 · 사람 승인 · 시스템 배포를 분리된 UI 단계로 표현</td><td>책임소재 명확화 — AI는 권고, 배포 결정은 항상 사람</td></tr>
+  </tbody>
+</table>
+
+<h3>1.2 화면 구성 (2-뷰 + 4-모달)</h3>
+<pre><code>┌ 사이드바 ─┬─ 콘텐츠 영역 ───────────────────────────────────────────┐
+│ ⚖ 브랜드  │ 토픽바: [제목입력] [수정안 전체적용][🚀자동개선][검토전송 →] │
+│           │ ┌─ 뷰1 심의 워크스페이스 ────────────────────────────────┐ │
+│ ▸ 심의    │ │ 에디터(물결밑줄 오버레이)  │  검토 패널               │ │
+│   워크스   │ │  · 픽스처 · 유형 · 언어     │  ① 준법 점수 게이지       │ │
+│   페이스   │ │  · 내부심의기준 · 규제모니터 │  ② 👥 소비자 오인(헤드라인)│ │
+│           │ │  · 상품 실제조건(상품DB)    │  ③ 검토 결과 + 규제 출처   │ │
+│ ▸ 준법관리 │ └───────────────────────────────────────────────────────┘ │
+│   자 검토  │ ┌─ 뷰2 준법관리자 검토 ──────────────────────────────────┐ │
+│   [배지N]  │ │ 검토 대기열  │  제출 상세(승인/반려/배포/다국어/감사) │ │
+│           │ └───────────────────────────────────────────────────────┘ │
+│ v0.1.0    │ 상태바: 점수 · 카운트 · 유형 · [엔진 모드 배지] · 다국어    │
+└───────────┴─────────────────────────────────────────────────────────────┘
+모달: 🚀오토파일럿 · 📋내부 심의기준 · 🛰규제 모니터 · (호버) 빠른수정 말풍선</code></pre>
+
+<h2><span class="num">2</span>화면별 기능 명세</h2>
+
+<h3>2.1 심의 워크스페이스 — 에디터 (좌측)</h3>
+<table>
+  <thead><tr><th style="width:160px">컴포넌트</th><th>동작</th><th style="width:70px">연계</th></tr></thead>
+  <tbody>
+    <tr><td>물결 밑줄 에디터</td><td><code>textarea</code>(실제 입력) 위에 투명 <code>.backdrop</code> 오버레이를 겹쳐 위험 문구에만 <code>&lt;mark&gt;</code> 물결 밑줄(高=적색·中=황색). 스크롤 동기화. 오버레이는 클릭 통과시키되 <code>mark</code>만 상호작용</td><td>F3·F4·F5</td></tr>
+    <tr><td>호버 빠른수정 말풍선</td><td>밑줄에 마우스 오버 → 룰명·심각도·설명·조항 인용·수정안 + <b>[적용]</b> 버튼. Grammarly식 인라인 수정</td><td>F7</td></tr>
+    <tr><td>문구 클릭 점프</td><td>밑줄/검토항목 클릭 → 에디터 해당 span 선택·스크롤 이동(<code>focusSpan</code>)</td><td>UX</td></tr>
+    <tr><td>예시 픽스처 칩</td><td><code>/api/fixtures</code>의 데모 입력을 칩으로 노출 → 원클릭 로드(=TDD 정답셋과 동일)</td><td>F-데모</td></tr>
+    <tr><td>유형 셀렉터</td><td>자동분류 / 예금·적금 / 투자(펀드) / 대출 — 수동 지정 시 즉시 재심의</td><td>F1</td></tr>
+    <tr><td>언어 셀렉터</td><td>KO · EN · VI · ZH · JA — 비-한/영 선택 시 신뢰도 배너 노출</td><td>F10</td></tr>
+    <tr><td>상품 실제조건(접이식)</td><td>상품 DB 셀렉트 → 코어뱅킹(연동 슬롯) 조건 자동 주입, 또는 직접 입력. 시뮬레이터의 "오해 vs 실제조건" 판정 입력</td><td>F16·F5</td></tr>
+    <tr><td>라이브 상태 표시등</td><td><code>.live-dot</code> 회색(대기)·황색 점멸(분석중)·녹색(완료) + 라벨로 현재 단계 안내</td><td>F11</td></tr>
+  </tbody>
+</table>
+
+<h3>2.2 심의 워크스페이스 — 검토 패널 (우측)</h3>
+<table>
+  <thead><tr><th style="width:175px">섹션</th><th>표시 내용</th></tr></thead>
+  <tbody>
+    <tr><td>① 준법 점수 게이지</td><td><code>n/100</code> + 색상 게이지(🟢통과·🟡주의·🔴위험). 점수 변동은 0.55초 ease 트랜지션으로 애니메이션</td></tr>
+    <tr><td>① 다국어 신뢰도 배너</td><td>비-한/영 언어일 때 "다국어 베타 — 룰엔진이 판정 권위, AI는 참고용, 사람검토 권장" 경고 배너</td></tr>
+    <tr><td>② 👥 소비자 오인 (★헤드라인)</td><td>페르소나 5종(👵 72세 은퇴자·🧑 20대 초보·🌏 외국인 + <b>🌾전북 농업인·🏪전북 소상공인</b>, 「전북 특화」 배지)이 <b>1인칭</b>으로 오해 → 🔴위험 오해 + ⟵ 유발 문구(클릭 시 본문 이동) + 금소법 조항. <b>"참고지표 — 법적 판정 아님"</b> 명시</td></tr>
+    <tr><td>③ 검토 결과</td><td>위반·주의·참고(advisory) 카운트 + 항목 리스트(심각도 점·문구·설명·조항 인용). LLM 단독 지적은 advisory로 분리 표기</td></tr>
+    <tr><td>③ 규제 출처</td><td>RAG 검색 조항 칩(법·조문·출처 URL). 참조 그래프로 확장된 연계 조항 포함</td></tr>
+  </tbody>
+</table>
+<div class="callout tip"><b>헤드라인 배치의 의도</b>경쟁 제품(Saifr·PerformLine 등)은 "표현 적발 리스트"가 첫 화면이다. 본 제품은 <b>"이 광고를 72세가 어떻게 오해하는지"</b>를 점수 바로 아래 최상단에 둬, 작성자·심의자가 규제의 목적(소비자 오인 방지)을 즉시 체감하도록 설계했다.</div>
+
+<h3>2.3 토픽바 액션 (작성 → 검토 전송)</h3>
+<table>
+  <thead><tr><th style="width:185px">버튼</th><th>동작</th><th style="width:60px">기능</th></tr></thead>
+  <tbody>
+    <tr><td>수정안 전체 적용</td><td>모든 결정적 룰 수정안(치환·고지추가)을 일괄 적용 후 자동 재심의</td><td>F7</td></tr>
+    <tr><td>🚀 준법 통과까지 자동 개선</td><td>오토파일럿 모달 실행 — 점수 게이지가 🔴→🟢로 자율 상승하는 과정을 회차별 애니메이션</td><td>F12</td></tr>
+    <tr><td>검토 전송 →</td><td>제목 + 현재 초안 + 리포트 + (있으면)오토파일럿 요약을 제출 → 준법관리자 대기열로</td><td>F8</td></tr>
+    <tr><td>📋 내부 심의기준</td><td>모달 — 평문 내규를 AI 룰로 변환·미리보기·적용. <b>기존 법규와 충돌 시 ⚠ 경고 박스</b> 표시</td><td>F13</td></tr>
+    <tr><td>🛰 규제 모니터</td><td>모달 — 규제 피드 변경 감지·영향분석·룰 제안 + <b>이미 배포된 콘텐츠 「🔁 재심의 필요」 배너</b></td><td>F14</td></tr>
+  </tbody>
+</table>
+
+<h3>2.4 준법관리자 검토 뷰</h3>
+<ul>
+  <li><b>검토 대기열</b>: 제출 목록(제목·제출자·유형·등급 요약). 사이드바 배지에 <code>pending</code> 건수 표시.</li>
+  <li><b>제출 상세</b>: 본문 + AI 리포트(점수·페르소나 오해·규제 인용) + <b>승인 / 반려 / 코멘트</b> 버튼.</li>
+  <li><b>승인 후 액션</b>: <b>[📤 마케팅 채널 자동 배포]</b>(F15, 미승인 차단) · <b>[🌏 영문 버전 생성+재심의]</b>(F10).</li>
+  <li><b>다국어 재심의 결과 배너</b>(F10): 번역본마다 재심의 등급 표시 — 통과 시 🟢"외국어 채널 후속 배포 가능", <b>불통과 시 🔴"재심의 불통과 — 마케터·준법감시인 확인 필요, 외국어 채널 배포 보류"</b>.</li>
+  <li><b>감사 로그</b>: 제출·자동개선·승인·배포·번역·재심의 알림이 누가/언제/근거로 시간순 표시(F9).</li>
+</ul>
+
+<h3>2.5 모달 — 오토파일럿 자율 개선 애니메이션</h3>
+<p>백엔드 <code>/api/autopilot</code>가 반환한 회차 trace를 받아 <b>한 회차씩 순차 재생</b>한다: 점수 게이지가 회차마다 상승(<code>animateScore</code>), 회차별 변경내역(before→after·근거 조항)이 스텝 리스트로 쌓이고, 종료 시 결과 헤더(passed/plateau/regressed/사람 에스컬레이션)와 <b>[검토로 전송]</b> 노출. "심의 도구"가 아니라 "통과시켜 주는 에이전트"임을 시각적으로 증명.</p>
+<p><b>종료 후 부가 표시(피드백 반영):</b></p>
+<ul>
+  <li><b>수정 전/후 비교 뷰(diff)</b> <span class="pill mvp">F12</span>: 초안→최종을 어절 단위로 <code>&lt;del&gt;</code>(삭제·적색 취소선)·<code>&lt;ins&gt;</code>(추가·녹색)로 인라인 렌더 + 「− N / + N 어절」 요약. AI 수정 내역을 한눈에(감사 추적).</li>
+  <li><b>가독성 참고지표</b> <span class="pill mvp">F12</span>: 점수·라벨(쉬움/보통/어려움)·게이지 + 평균 문장 길이·전문용어. <b>"준법 점수와 별개 · 마케팅 효과 아님"</b>을 라벨에 명시해 과대표현·오해 방지.</li>
+</ul>
+
+<h2><span class="num">3</span>핵심 인터랙션 로직 · 설정값과 근거</h2>
+
+<h3>3.1 실시간 검사 — 2단계 디바운스 (F11)</h3>
+<p>작성 중에는 결정적 룰 검사·점수만 즉시 갱신하고, LLM이 필요한 소비자 반응 시뮬레이션은 <b>충분히 멈췄을 때만</b> 발화한다. 매 키 입력마다 LLM을 호출하면 로컬 7B 모델 큐가 적체돼 타이핑이 밀리기 때문이다.</p>
+<table>
+  <thead><tr><th style="width:140px">상수 / 트리거</th><th style="width:90px">값</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td><code>quickTimer</code> (빠른 룰 검사)</td><td>700ms</td><td>입력 멈춤 직후 룰·점수 즉시 갱신. <code>quick=true</code>로 LLM(④⑤) 생략 → 룰+RAG+결정적 시뮬만(체감 즉시)</td></tr>
+    <tr><td><code>DEEP_IDLE</code> (깊은 LLM 분석)</td><td>2500ms</td><td>2.5초 멈춤 = "생각이 일단락된" 신호로 판단 → LLM 심의·페르소나 3종 시뮬 자동 발화. 작성 흐름 방해 최소화</td></tr>
+    <tr><td><code>paste</code> 이벤트</td><td>250 / 1500ms</td><td>붙여넣기는 "완성된 덩어리" 의도 → 빠른검사 250ms·깊은분석 1.5초로 더 공격적</td></tr>
+    <tr><td>유형·언어 변경</td><td>즉시 + 800ms</td><td>명시적 조작이므로 빠른검사 즉시, 깊은분석 0.8초 후</td></tr>
+    <tr><td>[지금 분석] / 재심의</td><td>0ms</td><td>사용자 명시 요청 → 대기 타이머 모두 취소하고 전체 LLM 심의 즉시 실행</td></tr>
+  </tbody>
+</table>
+
+<h3>3.2 경합 제어 — 최신 요청만 반영</h3>
+<pre><code>let reviewSeq = 0, reviewAbort = null;
+async function runReview(quick){
+  if(reviewAbort) reviewAbort.abort();      // ① 진행 중 fetch 중단(밀림·stale 방지)
+  const ac = new AbortController(); reviewAbort = ac;
+  const seq = ++reviewSeq;                   // ② 요청 시퀀스 발급
+  const rep = await api("/api/review", { signal: ac.signal, ... });
+  if(seq !== reviewSeq) return;              // ③ 더 최신 요청이 있으면 이 응답 폐기
+  state.report = rep; render(rep);
+}</code></pre>
+<p><b>근거:</b> 타이핑 중 여러 심의가 겹치면(특히 느린 LLM 응답) 오래된 결과가 최신 화면을 덮어쓸 수 있다. <code>AbortController</code>로 직전 요청을 끊고, 시퀀스 번호로 "최신 요청의 응답만" 렌더링해 화면 일관성을 보장한다. <code>AbortError</code>는 정상(새 입력)으로 무시.</p>
+
+<h3>3.3 물결 밑줄 오버레이 합성</h3>
+<ul>
+  <li>백엔드 리포트의 <code>highlights</code>(룰 span + LLM quote 위치 + 오인 유발 문구, start 정렬)를 받아, <b>겹치지 않는 구간만</b> 골라(<code>h.start &gt;= last</code>) <code>&lt;mark&gt;</code>로 감싼다 — 중첩 밑줄로 인한 깨짐 방지.</li>
+  <li>오버레이 텍스트는 항상 <b>현재 에디터 본문과 동일</b>(<code>state.report.text !== text</code>면 일반 텍스트로 폴백) → 입력과 밑줄 위치 어긋남 방지.</li>
+  <li>HTML 이스케이프(<code>esc</code>) 후 삽입 — 사용자 입력의 <code>&lt;</code>,<code>&amp;</code> 등 XSS·렌더깨짐 차단.</li>
+</ul>
+
+<h2><span class="num">4</span>상태 관리 · API 소비</h2>
+<h3>4.1 클라이언트 상태</h3>
+<pre><code>let state = { report, busy, selectedSub, fixtures, hintMap };
+// report     : 현재 심의 리포트(점수·findings·simulation·highlights·text)
+// busy       : 심의 진행 여부(라이브 표시등)
+// selectedSub: 검토 뷰에서 선택된 제출 id
+// fixtures   : 데모/정답셋 입력 캐시
+// hintMap    : 밑줄 키(start_end) → 룰·수정안 정보(호버 말풍선)</code></pre>
+<p>외부 상태관리 라이브러리 없이 단일 <code>state</code> 객체 + 직접 DOM 갱신. MVP 화면 수(2뷰)·상호작용 규모에 React/Redux는 과설계 — 디버깅 단순성과 제로 빌드를 우선했다.</p>
+
+<h3>4.2 소비하는 백엔드 API</h3>
+<table>
+  <thead><tr><th>호출 함수</th><th>엔드포인트</th><th>용도</th></tr></thead>
+  <tbody>
+    <tr><td><code>checkHealth</code></td><td>GET <code>/api/health</code></td><td>엔진 모드 배지(LLM/폴백) 표시</td></tr>
+    <tr><td><code>loadFixtures</code></td><td>GET <code>/api/fixtures</code></td><td>데모 픽스처 칩 + 자동 로드</td></tr>
+    <tr><td><code>runReview</code></td><td>POST <code>/api/review</code></td><td>실시간 심의(quick/deep)</td></tr>
+    <tr><td><code>applyFix / applyAllFixes</code></td><td>POST <code>/api/apply-fixes</code></td><td>수정안 적용</td></tr>
+    <tr><td><code>runAutopilot</code> (+renderDiff·renderReadability)</td><td>POST <code>/api/autopilot</code></td><td>자율 개선 회차 trace + 수정 전/후 diff·가독성 참고지표</td></tr>
+    <tr><td><code>extract/test/save InternalRules</code> (+renderConflicts)</td><td><code>/api/internal-rules*</code></td><td>내규 변환·검증·저장 + 법규 충돌 경고</td></tr>
+    <tr><td><code>scanRegwatch / applyRegRule</code></td><td>POST <code>/api/regwatch/scan</code></td><td>규제 변경 감지·룰 제안 + 승인본 사후 재검사 배너</td></tr>
+    <tr><td><code>loadProducts / loadProduct</code></td><td><code>/api/products*</code></td><td>상품 조건 자동 주입</td></tr>
+    <tr><td><code>sendForApproval</code></td><td>POST <code>/api/submissions</code></td><td>검토 제출</td></tr>
+    <tr><td><code>loadSubmissions / selectSub</code></td><td>GET <code>/api/submissions*</code></td><td>검토 대기열·상세</td></tr>
+    <tr><td><code>decide</code></td><td>POST <code>/api/submissions/{id}/decision</code></td><td>승인/반려/코멘트</td></tr>
+    <tr><td><code>distributeSub</code></td><td>POST <code>/api/submissions/{id}/distribute</code></td><td>채널 자동 배포</td></tr>
+    <tr><td><code>translateSub</code></td><td>POST <code>/api/submissions/{id}/translate</code></td><td>다국어 생성+재심의</td></tr>
+    <tr><td><code>loadAudit</code></td><td>GET <code>/api/audit</code></td><td>감사 로그</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">5</span>디자인 시스템</h2>
+<table>
+  <thead><tr><th style="width:150px">토큰</th><th>값 / 정책</th><th>근거</th></tr></thead>
+  <tbody>
+    <tr><td>브랜드 컬러</td><td><code>--jb:#0a5bc2</code> (+ dark/light 파생)</td><td>JB금융 블루 계열 — 금융사 신뢰감, 라이트/다크 파생으로 위계 표현</td></tr>
+    <tr><td>심각도 컬러</td><td>🔴<code>#e5484d</code> · 🟡<code>#e0900a</code> · 🟢<code>#1f9d55</code></td><td>위험/주의/통과의 보편적 신호등 매핑 — 학습비용 0</td></tr>
+    <tr><td>타이포</td><td>Pretendard (CDN, 폴백 시스템 한글 폰트)</td><td>한글 가독성·공공/금융 문서에 보편. CDN 1종으로 의존 최소화</td></tr>
+    <tr><td>본문 크기</td><td>13.5px / 에디터 16px</td><td>UI는 정보밀도, 에디터는 장문 작성 가독성 우선으로 차등</td></tr>
+    <tr><td>그림자·반경</td><td><code>--shadow-*</code> 4단계 · <code>--r:10px</code></td><td>토큰화로 일관성 — 카드/버튼/모달 깊이 위계 통일</td></tr>
+    <tr><td>반응형</td><td>고정 폭 사이드바 248px + 검토패널 392px, 본문 가변</td><td>데스크톱 심의 업무 환경 기준(좌 작성·우 검토 동시 가시). 발표·시연 해상도 최적</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">6</span>접근성 · 견고성</h2>
+<ul>
+  <li><b>키보드</b>: 에디터 포커스 유지, 셀렉트·버튼 표준 포커스 링(<code>--ring</code>). 모달은 오버레이 클릭/닫기 버튼.</li>
+  <li><b>입력 안전</b>: 모든 사용자 텍스트는 <code>esc()</code> 이스케이프 후 DOM 삽입 — 밑줄 오버레이·말풍선·리스트 전부.</li>
+  <li><b>오류 처리</b>: <code>api()</code>가 비정상 응답을 throw → 라이브 표시등에 오류 라벨. 네트워크 중단(<code>AbortError</code>)은 정상 흐름으로 무시.</li>
+  <li><b>폴백 인지</b>: 상태바 엔진 배지가 LLM/폴백을 항상 표시 → 시연 환경에서 현재 동작 모드를 투명하게 안내.</li>
+  <li><b>빈 상태</b>: 모든 패널에 안내형 empty 메시지 — 첫 사용자도 다음 행동을 알 수 있음.</li>
+</ul>
+
+<h2><span class="num">7</span>본선 고도화 계획</h2>
+<table>
+  <thead><tr><th style="width:150px">항목</th><th>MVP</th><th>본선/운영</th></tr></thead>
+  <tbody>
+    <tr><td>프레임워크</td><td>정적 SPA(바닐라 JS)</td><td>Next.js + React + Tailwind 전환(설계 §10 와이어프레임 동일 재현). 컴포넌트화·상태관리·SSR</td></tr>
+    <tr><td>에디터</td><td><code>textarea</code> + 오버레이 합성</td><td>ProseMirror/CodeMirror 기반 리치 에디터 — 인라인 위젯·실시간 협업</td></tr>
+    <tr><td>스트리밍</td><td>요청-응답(폴링형)</td><td>SSE/WebSocket으로 LLM 토큰 스트리밍·오토파일럿 실시간 진행</td></tr>
+    <tr><td>대시보드</td><td>검토 대기열 리스트</td><td>콘텐츠 큐 대시보드(F18) — 리스크 등급 일람·필터·통계</td></tr>
+    <tr><td>접근성</td><td>기본 포커스/이스케이프</td><td>WCAG 2.1 AA, ARIA 라이브리전(심의 결과 announce), 다크모드</td></tr>
+    <tr><td>권한</td><td>역할 미구분(데모)</td><td>작성자/승인자 RBAC — 승인 버튼 권한 분리</td></tr>
+  </tbody>
+</table>
+
+<div class="callout tip"><b>정합성</b>본 문서의 기능 ID(F1~F18)·파이프라인 번호(①~⑧)는 통합 기능명세서·백엔드/AI Agent 명세서·코드·사용/로직 설명서와 동일 체계로 정합한다.</div>
+
+</main>
+<footer>JB금융그룹 Fin:AI Challenge 지정주제2 · JB 준법 코파일럿 · 프론트엔드 기능명세서 · 무료·오픈소스 모델만 사용 · 100% 온프레미스</footer>
+</div>
+</body>
+</html>
