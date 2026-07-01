@@ -10,6 +10,8 @@ JB금융그룹 Fin:AI Challenge 지정주제2 (Compliance AI) MVP.
 
 ## 빠른 시작 (LLM 없이도 전 기능 테스트 가능)
 
+> 📄 **처음 받으셨나요?** 내려받기부터 Ollama 연결까지 단계별 안내: **[SETUP.md](SETUP.md)**
+
 ```bash
 pip install -r requirements.txt
 uvicorn app.main:app --reload
