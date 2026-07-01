@@ -30,7 +30,7 @@
   }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--bg); color:var(--text); font-size:13.5px; line-height:1.55;
-    letter-spacing:-.003em;
+    letter-spacing:-.003em; zoom:1.15;
     font-family:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Segoe UI',Roboto,'Malgun Gothic',sans-serif;
     -webkit-font-smoothing:antialiased;}
   button{font-family:inherit; cursor:pointer;}
@@ -42,7 +42,8 @@
   /* ───── Shell ───── */
   .app{display:flex; min-height:100vh;}
   .sidebar{width:var(--sbw); flex-shrink:0; background:var(--surface); border-right:1px solid var(--border);
-    display:flex; flex-direction:column; padding:16px 12px; position:sticky; top:0; height:100vh;}
+    display:flex; flex-direction:column; padding:16px 12px; position:sticky; top:0;
+    height:calc(100vh / 1.15);}   /* body zoom 1.15 보정 — 정확히 뷰포트 높이(푸터 접힘 방지) */
   .brand{display:flex; align-items:center; gap:11px; padding:6px 8px 16px;}
   .brand-mark{width:36px; height:36px; border-radius:10px; flex-shrink:0;
     background:linear-gradient(140deg,#1466d8,#073f87); color:#fff; font-size:18px;
@@ -324,13 +325,13 @@
     opacity:0; transition:opacity .25s,transform .25s; pointer-events:none; z-index:100; box-shadow:var(--shadow-lg);}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
-  @media (max-width:980px){
+  @media (max-width:1150px){
     .ws{flex-direction:column;}
     .ws-review{width:auto; border-left:none; border-top:1px solid var(--border);}
     .persona-list{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
     .approve-cols{grid-template-columns:1fr;}
   }
-  @media (max-width:860px){
+  @media (max-width:1010px){
     :root{--sbw:0px;}
     .app{flex-direction:column;}
     .sidebar{width:auto; height:auto; position:sticky; top:0; flex-direction:row; align-items:center; padding:9px 12px; gap:6px; z-index:30; border-right:none; border-bottom:1px solid var(--border);}
