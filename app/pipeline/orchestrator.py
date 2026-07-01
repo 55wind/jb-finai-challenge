@@ -7,7 +7,8 @@ from __future__ import annotations
 import asyncio
 import re
 
-from . import llm_client, llm_reviewer, multilingual, remediator, report, simulator
+from . import (llm_client, llm_reviewer, multilingual, readability, remediator,
+               report, simulator, textdiff)
 from .classifier import classify
 from .retriever import retrieve
 from .rules_engine import run_rules
@@ -213,8 +214,13 @@ async def autopilot(text: str, content_type: str | None = None, language: str = 
 
     initial = _summary(iterations[0]["report"], iterations[0]["draft"])
     final = _summary(iterations[-1]["report"], iterations[-1]["draft"])
+    # 피드백 #2 수정 전/후 비교 뷰(diff) · #6 가독성 참고지표 — 결과에 부가(결정적, LLM 불필요)
+    diff = textdiff.word_diff(initial["text"], final["text"])
     return {"iterations": iterations, "initial": initial, "final": final,
             "converged": converged, "stop_reason": stop_reason,
+            "diff": diff,
+            "diff_stats": textdiff.change_stats(initial["text"], final["text"]),
+            "readability": readability.score(final["text"]),
             "content_type": iterations[-1]["report"]["content_type"], "language": language}
 
 
@@ -224,5 +230,8 @@ async def translate_and_rereview(text: str, content_type: str, target_lang: str 
     translated = await multilingual.translate(text, target_lang)
     rereview = await run_review(translated["text"], content_type,
                                 language=target_lang, product_facts=product_facts)
+    # 피드백 #1 — 재심의 불통과 시 마케터·준법감시인 알림 플래그(직역 오역·고지 누락 사후 관리)
+    needs_attention = rereview.get("grade") != "pass"
     return {"translation": translated["text"], "engine": translated["engine"],
-            "target_lang": target_lang, "report": rereview}
+            "target_lang": target_lang, "report": rereview,
+            "needs_attention": needs_attention, "rereview_grade": rereview.get("grade")}

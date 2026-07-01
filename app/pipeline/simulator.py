@@ -63,6 +63,8 @@ def _fallback_persona(persona: dict, rule_findings: list[dict]) -> dict:
         "persona_id": persona["id"],
         "emoji": persona["emoji"],
         "name": persona["name"],
+        "region": persona.get("region"),
+        "tag": persona.get("tag"),
         "understanding": tpl["understanding"],
         "action": tpl["action"],
         "misunderstandings": [] if not misread else [{
@@ -107,6 +109,7 @@ def _persona_result(persona: dict, pr: dict, text: str) -> dict:
         })
     return {
         "persona_id": persona["id"], "emoji": persona["emoji"], "name": persona["name"],
+        "region": persona.get("region"), "tag": persona.get("tag"),
         "understanding": pr.get("understanding", ""), "action": pr.get("action", ""),
         "misunderstandings": cleaned, "safe": len(cleaned) == 0, "engine": "llm",
     }

@@ -30,7 +30,7 @@
   }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--bg); color:var(--text); font-size:13.5px; line-height:1.55;
-    letter-spacing:-.003em;
+    letter-spacing:-.003em; zoom:1.15;
     font-family:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Segoe UI',Roboto,'Malgun Gothic',sans-serif;
     -webkit-font-smoothing:antialiased;}
   button{font-family:inherit; cursor:pointer;}
@@ -42,7 +42,8 @@
   /* ───── Shell ───── */
   .app{display:flex; min-height:100vh;}
   .sidebar{width:var(--sbw); flex-shrink:0; background:var(--surface); border-right:1px solid var(--border);
-    display:flex; flex-direction:column; padding:16px 12px; position:sticky; top:0; height:100vh;}
+    display:flex; flex-direction:column; padding:16px 12px; position:sticky; top:0;
+    height:calc(100vh / 1.15);}   /* body zoom 1.15 보정 — 정확히 뷰포트 높이(푸터 접힘 방지) */
   .brand{display:flex; align-items:center; gap:11px; padding:6px 8px 16px;}
   .brand-mark{width:36px; height:36px; border-radius:10px; flex-shrink:0;
     background:linear-gradient(140deg,#1466d8,#073f87); color:#fff; font-size:18px;
@@ -324,13 +325,13 @@
     opacity:0; transition:opacity .25s,transform .25s; pointer-events:none; z-index:100; box-shadow:var(--shadow-lg);}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
-  @media (max-width:980px){
+  @media (max-width:1150px){
     .ws{flex-direction:column;}
     .ws-review{width:auto; border-left:none; border-top:1px solid var(--border);}
     .persona-list{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
     .approve-cols{grid-template-columns:1fr;}
   }
-  @media (max-width:860px){
+  @media (max-width:1010px){
     :root{--sbw:0px;}
     .app{flex-direction:column;}
     .sidebar{width:auto; height:auto; position:sticky; top:0; flex-direction:row; align-items:center; padding:9px 12px; gap:6px; z-index:30; border-right:none; border-bottom:1px solid var(--border);}
@@ -369,6 +370,26 @@
   .ap-final{margin-top:16px; padding-top:14px; border-top:1px solid var(--border,#e1e5ea);}
   .ap-final .head{font-size:15px; font-weight:800; margin-bottom:10px;}
   .ap-actions{display:flex; gap:8px; justify-content:flex-end;}
+  /* 수정 전/후 비교 뷰(diff) — 피드백 #2 */
+  .ap-block{margin:12px 0; padding:11px 13px; border:1px solid var(--border,#e1e5ea); border-radius:9px; background:#fafbfc;}
+  .ap-block .bt{font-size:12px; font-weight:800; color:#5b6470; margin-bottom:7px; display:flex; align-items:center; gap:7px;}
+  .diff-view{font-size:13px; line-height:1.7; word-break:break-word;}
+  .diff-view del{background:#ffe3ea; color:#b1003e; text-decoration:line-through; border-radius:3px; padding:0 2px;}
+  .diff-view ins{background:#dcf5e6; color:#0a7d3e; text-decoration:none; border-radius:3px; padding:0 2px;}
+  .diff-legend{font-size:11px; color:#9aa3ad; margin-top:6px;}
+  /* 가독성 참고지표 — 피드백 #6 */
+  .read-row{display:flex; align-items:center; gap:10px; font-size:12.5px;}
+  .read-bar{flex:1; height:7px; border-radius:999px; background:#e8ebef; overflow:hidden;}
+  .read-bar > i{display:block; height:100%; border-radius:999px;}
+  .read-meta{font-size:11px; color:#9aa3ad; margin-top:5px;}
+  /* 전북 특화 페르소나 배지 — 피드백 #3 */
+  .p-region{display:inline-block; font-size:9.5px; font-weight:800; color:#0a66c2; background:#e7f0fb;
+    border-radius:999px; padding:1px 6px; margin-left:5px; vertical-align:middle;}
+  /* 내규-법규 충돌 경고 — 피드백 #5 · 다국어 불통과 알림 — 피드백 #1 */
+  .warn-box{border:1px solid #f3c9a6; background:#fff6ec; border-radius:9px; padding:10px 12px; margin-top:9px;
+    font-size:12.5px; color:#8a4b00; line-height:1.55;}
+  .warn-box.danger{border-color:#f0b6c6; background:#fff0f4; color:#a4032f;}
+  .warn-box b{font-weight:800;}
   /* ── 내부 심의기준(내규) ── */
   .src-internal{display:inline-block; font-size:10.5px; font-weight:800; padding:1px 7px; border-radius:999px;
     background:#5b3bbf; color:#fff; margin-right:4px; vertical-align:1px;}
@@ -542,6 +563,17 @@
     <ul class="ap-steps" id="apSteps"></ul>
     <div class="ap-final" id="apFinal" style="display:none">
       <div class="head" id="apFinalHead"></div>
+      <div class="ap-block" id="apDiffBlock" style="display:none">
+        <div class="bt">🔍 수정 전 → 후 비교 <span style="font-weight:600;color:#9aa3ad" id="apDiffStat"></span></div>
+        <div class="diff-view" id="apDiff"></div>
+        <div class="diff-legend"><del>삭제</del> · <ins>추가</ins> — AI가 무엇을 바꿨는지 한눈에(감사 추적)</div>
+      </div>
+      <div class="ap-block" id="apReadBlock" style="display:none">
+        <div class="bt">📖 가독성 참고지표 <span style="font-weight:600;color:#9aa3ad">(준법 점수와 별개 · 마케팅 효과 아님)</span></div>
+        <div class="read-row"><span id="apReadScore" style="font-weight:800"></span>
+          <div class="read-bar"><i id="apReadBar"></i></div></div>
+        <div class="read-meta" id="apReadMeta"></div>
+      </div>
       <div class="ap-actions">
         <button class="btn small" onclick="closeAutopilot()">닫기</button>
         <button class="btn small primary" id="apSendBtn" onclick="sendFromAutopilot()">검토관리자 검토로 전송 →</button>
@@ -562,9 +594,10 @@
     <div class="ap-actions" style="justify-content:flex-start">
       <button class="btn small autopilot" id="irExtractBtn" onclick="extractInternalRules()">✨ AI로 룰 변환</button>
     </div>
+    <div id="irConflicts"></div>
     <ul class="ir-preview" id="irPreview"></ul>
     <div class="ap-actions" id="irSaveRow" style="display:none; margin-top:12px">
-      <button class="btn small" onclick="$('irPreview').innerHTML='';$('irSaveRow').style.display='none'">취소</button>
+      <button class="btn small" onclick="$('irPreview').innerHTML='';$('irConflicts').innerHTML='';$('irSaveRow').style.display='none'">취소</button>
       <button class="btn small primary" id="irSaveBtn" onclick="saveInternalRules()">선택한 룰 적용 →</button>
     </div>
     <div class="ir-existing" id="irExisting"></div>
@@ -906,6 +939,7 @@ function render(rep){
         ? `onclick="focusSpan(${rep.text.indexOf(m.trigger_phrase)},${rep.text.indexOf(m.trigger_phrase)+m.trigger_phrase.length})"` : "";
       return `<div class="persona ${cls}" ${click}>
         <div class="p-top"><span class="p-avatar">${p.emoji}</span><span class="p-name">${esc(p.name)}</span>
+          ${p.tag?`<span class="p-region">${esc(p.tag)}</span>`:""}
           <span class="risk-pill risk-${risk}">${rlabel}</span></div>
         <div class="p-speech">"${esc(p.understanding)}"</div>
         ${m ? `<div class="p-mis"><span class="mis-tag">오해</span>${esc(m.text)}</div>${
@@ -999,6 +1033,8 @@ async function playAutopilot(res){
   const stopMsg = res.converged ? "준법 통과까지 자동 개선 완료" :
     ({plateau:"점수 정체로 종료", no_change:"더 개선 불가로 종료", regressed:"품질 저하 감지로 종료", max_iter:"최대 회차 도달"}[res.stop_reason] || "종료") + " — 잔여 위반은 사람 검토 필요";
   $("apFinalHead").innerHTML = `${gradeEmoji(init.grade)}${init.score} → ${gradeEmoji(f.grade)}${f.score} · ${nSteps}회 자동 개선<br><span style="font-weight:600;font-size:12.5px;color:#5b6470">${stopMsg}</span>`;
+  renderDiff(res.diff, res.diff_stats);            // 피드백 #2
+  renderReadability(res.readability);              // 피드백 #6
   $("apFinal").style.display = "block";
   // 에디터에 최종안 반영 + 재심의 동기화 (마지막 회차의 전체 리포트 사용)
   const lastReport = res.iterations[res.iterations.length-1].report;
@@ -1007,6 +1043,32 @@ async function playAutopilot(res){
   render(lastReport);
   // 감사로그용 요약 저장 (은행 내부통제)
   state.autopilotSummary = `AI 자동개선 ${nSteps}회 · ${init.score}→${f.score}(${gradeLabel(f.grade)}) · ${res.converged?"통과 수렴":"미수렴("+res.stop_reason+")"}`;
+}
+
+/* 수정 전/후 비교 뷰 — 피드백 #2 */
+function renderDiff(diff, stats){
+  const block = $("apDiffBlock");
+  if(!diff || !diff.length || !(stats && stats.changed)){ block.style.display = "none"; return; }
+  $("apDiff").innerHTML = diff.map(s=>{
+    const t = esc(s.text);
+    if(s.op==="delete") return `<del>${t}</del>`;
+    if(s.op==="insert") return `<ins>${t}</ins>`;
+    return t;
+  }).join("");
+  $("apDiffStat").textContent = `(− ${stats.deleted}어절 / + ${stats.inserted}어절)`;
+  block.style.display = "block";
+}
+
+/* 가독성 참고지표 — 피드백 #6 */
+function renderReadability(r){
+  const block = $("apReadBlock");
+  if(!r || r.score==null){ block.style.display = "none"; return; }
+  const col = r.score>=80 ? "#0a7d3e" : (r.score>=60 ? "#9a6c00" : "#b1003e");
+  $("apReadScore").innerHTML = `<span style="color:${col}">${r.score}점 · ${r.label}</span>`;
+  const bar = $("apReadBar"); bar.style.width = r.score + "%"; bar.style.background = col;
+  $("apReadMeta").textContent = `평균 문장 ${r.avg_sentence_len}자 · 전문용어 ${r.jargon_count}개`
+    + (r.jargon_terms.length ? ` (${r.jargon_terms.join(", ")})` : "") + " — " + r.note;
+  block.style.display = "block";
 }
 
 function animateScore(from, to, grade){
@@ -1035,6 +1097,7 @@ async function extractInternalRules(){
   try{
     const r = await api("/api/internal-rules/extract", { method:"POST", body: JSON.stringify({ text })});
     irExtracted = r.rules || [];
+    renderConflicts(r.conflicts);   // 피드백 #5 — 기존 법규와의 충돌 경고
     if(!irExtracted.length){ $("irPreview").innerHTML = `<li class="ir-row">변환된 룰이 없습니다. 금지/필수 키워드를 넣어 다시 시도해 보세요.</li>`; $("irSaveRow").style.display="none"; }
     else{
       $("irPreview").innerHTML = irExtracted.map((rl,i)=>`
@@ -1051,10 +1114,17 @@ async function extractInternalRules(){
   finally{ $("irExtractBtn").disabled = false; $("irExtractBtn").textContent = "✨ AI로 룰 변환"; }
 }
 
+function renderConflicts(conflicts){
+  const el = $("irConflicts");
+  if(!conflicts || !conflicts.length){ el.innerHTML = ""; return; }
+  el.innerHTML = conflicts.map(c=>`<div class="warn-box danger">⚠ <b>내규-법규 충돌</b> — ${esc(c.message)}</div>`).join("");
+}
+
 async function testInternalRules(){
   try{
     const r = await api("/api/internal-rules/test", { method:"POST", body: JSON.stringify({
       rules: irExtracted, text: $("editor").value, content_type: $("selType").value || null })});
+    if(r.conflicts) renderConflicts(r.conflicts);
     (r.results||[]).forEach((res,i)=>{
       const el = $("irt"+i); if(!el) return;
       if(res.kind==="forbidden"){
@@ -1082,7 +1152,7 @@ async function saveInternalRules(){
   const chosen = irExtracted.filter((_,i)=>$("irc"+i) && $("irc"+i).checked);
   if(!chosen.length){ toast("적용할 룰을 선택하세요"); return; }
   await api("/api/internal-rules", { method:"POST", body: JSON.stringify({ rules: chosen, source_text: $("irText").value })});
-  $("irPreview").innerHTML = ""; $("irSaveRow").style.display="none"; $("irText").value="";
+  $("irPreview").innerHTML = ""; $("irConflicts").innerHTML=""; $("irSaveRow").style.display="none"; $("irText").value="";
   toast(`내규 ${chosen.length}건 적용 · 재심의`);
   await loadExistingInternalRules();
   if(state.report && !state.report.skipped) runReview();   // 즉시 반영
@@ -1110,7 +1180,13 @@ async function scanRegwatch(){
   try{
     const r = await api("/api/regwatch/scan", { method:"POST" });
     const changes = r.changes || [];
-    $("rwResult").innerHTML = changes.map((c,ci)=>{
+    const recheck = r.recheck || [];   // 피드백 #4 — 승인 콘텐츠 사후 재검사
+    const recheckHtml = recheck.length ? `<li class="ir-row" style="flex-direction:column;align-items:stretch">
+      <div class="warn-box danger"><b>🔁 이미 배포된 콘텐츠 재심의 필요 (${recheck.length}건)</b> — 새 규제에 영향받는 과거 승인 콘텐츠를 자동 탐지했습니다.</div>
+      ${recheck.map(rc=>`<div class="ms" style="margin-top:6px">· <b>#A-${rc.submission_id} ${esc(rc.title)}</b>
+        — ${esc(rc.regulation_title)} 위반 가능: ${rc.hits.map(h=>`「${esc(h.matched_text||h.rule_name)}」`).join(", ")}</div>`).join("")}
+      </li>` : "";
+    $("rwResult").innerHTML = recheckHtml + changes.map((c,ci)=>{
       const reg = c.regulation;
       const rules = c.proposed_rules.map((rl,ri)=>`
         <div class="ir-row" style="margin-top:6px">
@@ -1227,9 +1303,13 @@ function renderSubDetail(s){
           ${f.matched_text?`"${esc(f.matched_text)}"`:"(누락)"}</div>
         <div class="msg">${esc(f.message)}</div>${citationHtml(f.citation)}
       </div>`).join("") || '<div class="empty">🟢 재심의 통과</div>';
+    const alert = tr.grade !== "pass"
+      ? `<div class="warn-box danger">⚠ <b>재심의 불통과 (${tr.grade_label})</b> — 직역 오역·고지 누락 가능. 마케터·준법감시인 확인 후 번역 수정·재승인 필요. <b>외국어 채널 배포 보류.</b></div>`
+      : `<div class="warn-box" style="border-color:#bfe3cd;background:#f1faf4;color:#0a7d3e">✅ 재심의 통과 — 외국어 채널 후속 배포 가능.</div>`;
     return `<div class="tr-block">
       <b>🌏 ${t.target_lang.toUpperCase()} 버전</b> <span style="font-size:12px;color:var(--muted)">(${esc(t.engine)}) ·
       재심의 ${tr.grade_emoji} ${tr.score}/100 ${tr.grade_label}</span>
+      ${alert}
       <div class="doc-text" style="margin-top:7px">${esc(t.text)}</div>
       <div style="margin-top:8px">${tf}</div>
     </div>`;

@@ -131,23 +131,26 @@ async def autopilot(req: AutopilotRequest):
 
 @app.post("/api/internal-rules/extract")
 async def internal_extract(req: InternalExtractRequest):
-    """자연어 내규 → 구조화 룰 미리보기 (저장 안 함)."""
-    return {"rules": await internal_rules.extract(req.text)}
+    """자연어 내규 → 구조화 룰 미리보기 + 기존 법규 룰 충돌 탐지 (저장 안 함)."""
+    rules = await internal_rules.extract(req.text)
+    return {"rules": rules, "conflicts": internal_rules.detect_conflicts(rules)}
 
 
 @app.post("/api/internal-rules/test")
 def internal_test(req: InternalTestRequest):
     """적용 전 룰 검증 — 생성된 룰을 현재 초안에 돌려 과탐/미탐을 미리 보여준다(F13 신뢰)."""
     ctype = req.content_type or (classifier.classify(req.text)["content_type"] if req.text else "deposit")
+    normalized = internal_rules.normalize(req.rules)
     out = []
-    for rule in internal_rules.normalize(req.rules):
+    for rule in normalized:
         f = rules_engine._eval_rule(rule, req.text, ctype, req.language, "internal") if req.text else None
         out.append({
             "name": rule["name"], "kind": rule["kind"],
             "matched": f is not None,
             "matched_text": (f.get("matched_text") if f else None),
         })
-    return {"results": out, "content_type": ctype}
+    return {"results": out, "content_type": ctype,
+            "conflicts": internal_rules.detect_conflicts(normalized)}
 
 
 @app.post("/api/internal-rules")
@@ -177,8 +180,10 @@ def internal_delete(rule_id: int):
 
 @app.post("/api/regwatch/scan")
 async def regwatch_scan():
-    """규제 피드 스캔 → 변경 감지 + 영향분석 + 룰 제안."""
-    return {"changes": await regwatch.scan(store.count_submissions_by_types)}
+    """규제 피드 스캔 → 변경 감지 + 영향분석 + 룰 제안 + 승인 콘텐츠 사후 재검사."""
+    changes = await regwatch.scan(store.count_submissions_by_types)
+    recheck = regwatch.recheck_approved(changes, store.approved_submissions_for_recheck())
+    return {"changes": changes, "recheck": recheck}
 
 
 # ── 마케팅 배포 Last-Mile (F15) ────────────────────────────
