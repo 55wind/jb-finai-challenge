@@ -9,19 +9,28 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 
 import httpx
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b-instruct")
 LLM_TIMEOUT = float(os.environ.get("LLM_TIMEOUT", "120"))
+# 가용성 캐시 TTL(초). 이 시간이 지나면 재프로브 →
+#  · 서버가 뒤늦게 뜨면 폴백→LLM 자동 전환(README "새 심의 시 자동 전환"을 실제로 보장)
+#  · 서버가 죽으면 LLM→폴백 자동 강등(매 심의 120s 타임아웃 hang을 TTL로 제한)
+# 상시 캐시는 stale(전환 못 감지), 매 요청 프로브는 과함 — 그 사이의 균형.
+LLM_PROBE_TTL = float(os.environ.get("LLM_PROBE_TTL", "10"))
 
 _available: bool | None = None
+_checked_at: float = 0.0
 
 
 async def is_available(force_check: bool = False) -> bool:
-    global _available
-    if _available is not None and not force_check:
+    global _available, _checked_at
+    now = time.monotonic()
+    fresh = _available is not None and (now - _checked_at) < LLM_PROBE_TTL
+    if fresh and not force_check:
         return _available
     try:
         async with httpx.AsyncClient(timeout=2.0) as client:
@@ -29,6 +38,7 @@ async def is_available(force_check: bool = False) -> bool:
             _available = r.status_code == 200
     except Exception:
         _available = False
+    _checked_at = now
     return _available
 
 
